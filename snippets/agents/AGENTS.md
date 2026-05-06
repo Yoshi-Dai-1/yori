@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- 推奨行数：60〜100行 -->
+<!-- 推奨行数：60〜100行（記入後の完成版。設定コメントとプレースホルダーを除いた行数） -->
 <!-- このファイルはAIエージェントが自動で読み込む「作業指示書」-->
 <!-- 詳細ドキュメントへの参照を書く。詳細をここに書かない（段階的開示）-->
 
@@ -88,10 +88,20 @@ UIデザイン仕様は `DESIGN.md` を参照。（UIなしプロジェクトは
 **以下の両方を満たす実装依頼を受けたとき**：
 1. ユーザーのメッセージが機能の列挙・スプリント計画・完了の定義を含んでいない（仕様が1〜4文程度）
 2. 複数のファイル変更・複数の機能・複数のステップが必要と判断できる
-→ 実装を開始する前に `@planner` を呼び出して仕様書（docs/spec.md）を作成する
+→ 実装を開始する前に `@planner` を呼び出して仕様書（docs/spec.md）と
+  Feature List（docs/features.json）を作成する
 
-**スプリント完了後**（@plannerで定義したスプリントが完了したとき）：
+**各スプリント開始前**：
+→ `@evaluator` に `docs/spec.md` の当該スプリントの Sprint Contract レビューを依頼する
+  - 「承認済み」が返れば実装を開始する
+  - 「差し戻し」が返れば、指摘された条件を `docs/spec.md` の Sprint Contract に追記し
+    再度 `@evaluator` を呼び出す（承認されるまで繰り返す）
+  Feature List の `passes` フィールドは **Evaluator のみ** が更新する
+
+**スプリント完了後**（Sprint Contract で定義したスプリントが完了したとき）：
 → `@evaluator` を呼び出してQA評価を行う
+  - PASS の場合：Evaluator が `docs/features.json` を更新する。次のスプリントへ進む
+  - FAIL の場合：Evaluator のフィードバックに基づいて修正し、再度 `@evaluator` を呼ぶ
 
 **調査が必要なとき**（「この機能はどこか」「影響範囲はどこか」を把握する必要があるとき）：
 → `@codebase-investigator` を呼び出す。メインのコンテキストで大量ファイルを読まない
@@ -111,11 +121,19 @@ UIデザイン仕様は `DESIGN.md` を参照。（UIなしプロジェクトは
 
 ## Session Protocol
 
-**セッション開始時**：`.claude/handoff-artifact.md` を読んで前のセッションの文脈を復元する。
-その後、Current Task と `.claude/project-context.md` の「現在のタスク」を現在の状態に更新する。
+**セッション開始時**：
+1. `.claude/handoff-artifact.md` が存在する場合は読んで前のセッションの文脈を復元する
+   （存在しない場合は初回セッション。`AGENTS.md` の Current Task と `ARCHITECTURE.md` を読む）
+2. `docs/features.json` が存在する場合、未完了フィーチャー（`"passes": false`）を確認する
+3. **Smoke Test**：Dev コマンドが定義されており、実装が存在する場合のみ実行する
+   （初回セッション・プロジェクト立ち上げ直後でコードがまだない場合はスキップ）
+   （APIのみ・CLIツール等サーバーを持たないプロジェクトはテストコマンドで代替）
+   → ビルドエラー・基本機能が壊れている場合は、新フィーチャーより修復を優先する
+4. Current Task と `.claude/project-context.md` の「現在のタスク」を現在の状態に更新する
 
-**セッション終了時**：`Stop` イベントのHook（`.claude/hooks/on-stop.generate-handoff.sh`）が自動で
-`.claude/handoff-artifact.md` を生成する。
+**セッション終了時**：`Stop` イベントのHook（`.claude/hooks/on-stop.generate-handoff.sh`）が
+`.claude/handoff-artifact.md` のテンプレートを自動生成する（handoff スキル使用時は内容が記入済み）。
+`docs/build-log.md` には Hook が日付行を追記し、handoff スキルが最終行を実際の内容で更新する。
 Hookを設定していない場合はAIに「handoff-artifact.mdを更新して」と依頼する。
 
 ## Report Format

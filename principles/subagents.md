@@ -110,28 +110,39 @@ src/ 以下のコードベースを対象に品質診断を実施してくださ
               実装しやすい方向に仕様が歪みやすい。
               独立したコンテキストで仕様を策定することで、実装都合に引きずられない設計ができる
 **使うタイミング**：中規模以上のタスク（数時間以上）開始時・フルアプリ構築の起点
+**出力**：`docs/spec.md`（仕様書・Sprint Contract を含む）と
+          `docs/features.json`（Feature List・pass/fail 追跡）の 2 ファイル
 
 ```
 @planner
 [1〜4文でやりたいことを書く]
 ```
 
-→ 詳細は `principles/harness-engineering.md` のPlanner・Build・QA 3段階構成を参照。
+→ 詳細は `principles/harness-engineering.md` の Planner・Generator・Evaluator の 3 段階構成を参照。
 
-### 8. スプリントQA評価
+### 8. スプリントQA評価 および Sprint Contract レビュー
 **使うサブエージェント**：`evaluator`
 **有効な理由**：実装エージェントは自分が作ったものを過大評価する。
               独立したコンテキストで実際のコードを読み・動作を確認することで
-              客観的な品質評価が得られる
-**使うタイミング**：フルアプリ構築の各スプリント完了後・主観的品質（デザイン・UX）の検証
+              客観的な品質評価が得られる。Sprint Contract のレビューも Generator とは
+              独立したコンテキストで行うことで、完了基準の甘い設定を事前に排除できる
+**使うタイミング**：
+  ① 各スプリント開始前（Sprint Contract レビュー・承認）
+  ② 各スプリント完了後（QA評価・Feature List の passes フィールド更新）
 
 ```
+# スプリント開始前（Sprint Contract レビュー）
+@evaluator
+Sprint [番号] の Contract を docs/spec.md で確認して承認してください。
+
+# スプリント完了後（QA評価 + Feature List 更新）
 @evaluator
 Sprint [番号] の評価をしてください。
 仕様は docs/spec.md を参照してください。
+PASSの場合は docs/features.json の該当スプリントの passes を true に更新してください。
 ```
 
-→ 詳細は `principles/harness-engineering.md` のPlanner・Build・QA 3段階構成を参照。
+→ 詳細は `principles/harness-engineering.md` の Planner・Generator・Evaluator の 3 段階構成を参照。
 
 ---
 

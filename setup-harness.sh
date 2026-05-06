@@ -40,7 +40,7 @@ mkdir -p docs
 
 # decisions/ ディレクトリ作成（ADR・技術選定・スキル化候補の記録先）
 mkdir -p decisions
-cp "$DEV_STANDARDS_DIR/decisions/skill-candidates.md" decisions/skill-candidates.md
+cp "$DEV_STANDARDS_PATH/decisions/skill-candidates.md" decisions/skill-candidates.md
 echo "✅ decisions/skill-candidates.md をコピーしました"
 
 # ===== AGENTS.md のコピー =====
@@ -147,20 +147,25 @@ echo "✅ .claude/usage/ に使用履歴ファイルをコピーしました"
 # handoff-artifact の雛形を作成
 cat > .claude/handoff-artifact.md << 'EOF'
 # Handoff Artifact
-
-<!-- セッション終了時にAIが記入する。または on-stop.generate-handoff.sh で自動生成 -->
-<!-- 次のセッション開始時にこのファイルをAIに渡す -->
+# 更新日時: （セッション終了時にAIが記入）
+# このファイルは次のセッション開始時にコンテキストとして渡す
+# 内容が空欄の場合は次のセッション開始時に「handoff-artifact.mdを更新して」と依頼する
 
 ## 前のセッションの状態
 
-**取り組んでいた機能**:
-**完了した部分**:
-**途中で止まっている部分**:
-**次にやるべきこと**:
+取り組んでいた機能:
+完了した部分:
+途中で止まっている部分:
+次にやるべきこと:
 
 ## 重要な決定事項
 
+
 ## 未解決の問題
+
+
+## 変更したファイル
+
 EOF
 echo "✅ .claude/handoff-artifact.md を作成しました"
 
@@ -380,6 +385,11 @@ echo "       playwright-cli install-browser"
 echo "    → スキル（このプロジェクト内に配置・プロジェクトごとに1回）："
 echo "       playwright-cli install --skills"
 echo "    → .playwright-cli/ を .gitignore に追加することを推奨"
+echo ""
+echo "  Step 5：AIとの最初のセッションを開始する"
+echo "    → 以下をAIに渡してセッションを開始する："
+echo "       AGENTS.md（このプロジェクトの作業指示）"
+echo "       docs/project-definition.md（プロジェクトの目的・制約）"
 echo ""
 echo "参考ドキュメント："
 echo "  $DEV_STANDARDS_PATH/principles/harness-engineering.md"

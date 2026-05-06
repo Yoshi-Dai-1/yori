@@ -10,6 +10,7 @@ description: |
 kind: local
 tools:
   - read_file
+  - write_file
   - list_directory
 model: inherit
 temperature: 0.3
@@ -21,10 +22,11 @@ max_turns: 20
 
 ## 入力
 
-ユーザーから受け取る情報：
-- プロンプト（1〜4文）
-- ARCHITECTURE.md（技術スタック・層のルール）
-- docs/project-definition.md（プロジェクトの目的・制約）
+呼び出し時のプロンプト（1〜4文）に加えて、以下を read_file で自律的に読む：
+- `ARCHITECTURE.md`（技術スタック・層のルール）
+- `docs/project-definition.md`（存在する場合。プロジェクトの目的・制約）
+
+ユーザーが手動でこれらのファイルを渡す必要はない。
 
 ## 仕様書の作成方針
 
@@ -64,6 +66,9 @@ max_turns: 20
 実装する機能：[機能リスト]
 完了の定義：[ユーザーが実際に操作できる状態の記述]
 
+##### Sprint 1 Contract
+（フォーマットは下記「出力形式 > Sprint N Contract」に従う）
+
 #### Sprint 2：[テーマ]
 ...
 
@@ -74,16 +79,58 @@ max_turns: 20
 
 ## 確認すること
 
-仕様書を作成する前に以下を読む：
-1. ARCHITECTURE.md（技術スタック・制約を把握する）
-2. docs/project-definition.md（存在する場合。プロジェクトの目的・Won'tを確認する）
-
+仕様書を作成する前に、上記「入力」ファイルを必ず読む。
 Won'tセクションに記載された機能は仕様書に含めない。
 
 ## 出力形式
 
-仕様書を `docs/spec.md` として出力することを提案する。
-ファイルに書き込む前に「この仕様で進めてよいか」を確認する。
+以下の 2 ファイルを生成する。ファイルに書き込む前に「この仕様で進めてよいか」を確認する。
+
+### 1. docs/spec.md（仕様書・人間が読む）
+
+仕様書を `docs/spec.md` として出力する。
+各スプリントに **Sprint Contract** セクションを含める：
+
+```markdown
+##### Sprint N Contract（承認待ち）
+
+**Generator が実装すること**：
+- [具体的な機能]
+
+**Evaluator が検証する完了基準**：
+- [ ] [操作手順と期待結果を検証可能な形式で記述]
+       例：「新規チャットボタンを押す → 空のチャット画面が表示される」
+- [ ] [エラー系・エッジケースの確認事項]
+
+**承認**：（スプリント開始前に Evaluator が記入）
+```
+
+Sprint Contract は「何ができれば完了か」を操作手順として記述する。
+「動いていれば OK」のような主観的な表現は使わない。
+
+### 2. docs/features.json（Feature List・機械が追跡する）
+
+フィーチャーごとに pass/fail 状態を管理する JSON ファイル。
+**Evaluator のみが `"passes": true` に更新できる。Generator は `passes` フィールドを変更しない。**
+Markdown ではなく JSON を使う理由：エージェントが Markdown より JSON を誤って
+上書き・編集する可能性が低く、状態追跡が安定するため。
+
+```json
+[
+  {
+    "id": "F001",
+    "sprint": 1,
+    "category": "functional",
+    "description": "[ユーザーが何をできるか 1 文で記述]",
+    "steps": [
+      "[操作手順 1]",
+      "[操作手順 2]",
+      "[期待結果]"
+    ],
+    "passes": false
+  }
+]
+```
 
 ## 重要
 

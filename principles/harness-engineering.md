@@ -17,6 +17,13 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
   AGENTS.md              エントリポイント（60〜100行）常にロードされる
   ARCHITECTURE.md        設計の詳細（AGENTS.mdから参照）
 
+  docs/（プロジェクト成果物・AIと人間が共有するドキュメント）
+    project-definition.md  プロジェクトの目的・制約・Won't
+    spec.md                仕様書・Sprint Contract（Plannerが生成）
+    features.json          Feature List・pass/fail追跡（Plannerが生成・Evaluatorが更新）
+    build-log.md           セッション間の意思決定・試行錯誤の積み上げログ
+    operations.md          本番運用手順書
+
   .claude/（ハーネスの詳細）
     rules/               glob matchで自動読込（判断基準）
     skills/              プロジェクトスコープのスキル（gitで共有）
@@ -24,7 +31,9 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
     agents/              サブエージェント定義（@名前で呼び出す）
     hooks/               コードによる自動ガードレール（イベント駆動）
     usage/               使用履歴（GCの判断基準）
-    handoff-artifact.md  コンテキストリセット時の引き継ぎ
+    coding-conventions.md  プロジェクト固有のコーディング規約（AIが常に参照）
+    project-context.md   プロジェクト文脈・現在のフェーズ（AIがセッション開始時に参照）
+    handoff-artifact.md  Context Reset 時の引き継ぎ（スナップショット・毎回上書き）
     persona.md           エージェントの性格定義（任意）
 
 # ~/.claude/skills/ にインストールされるスキル（グローバルスコープ・全プロジェクト共通）
@@ -46,45 +55,77 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
 
 ---
 
-## 単一エージェントが長時間タスクで崩れる2つの理由
+## 単一エージェントが長時間タスクで崩れる3つの理由
 
 **理由1：コンテキストウィンドウの肥大化**
 長時間タスクでは会話が積み重なり、初期の指示を忘れる。
-解決策：コンテキストリセット＋handoff-artifact.md
+解決策：Context Reset（コンテキストリセット）＋handoff-artifact.md
 
-**理由2：自己評価の甘さ**
+**理由2：自己評価の甘さ（自己評価バイアス）**
 自分が書いたコードを自分でレビューすると過大評価する。
-解決策：独立コンテキストのサブエージェント（code-reviewer等）
+解決策：独立コンテキストのサブエージェント（Evaluator等）
+
+**理由3：Context Anxiety（コンテキスト不安）**
+コンテキストウィンドウが埋まるにつれ、エージェントが無意識に作業を切り上げようとする。
+未完成の機能を「完了」と報告する・中途半端な状態でコミットしようとする挙動として現れる。
+
+⚠️ Context Anxiety は**AIが自己検知できるものではない**。
+「コンテキストが苦しい」と自己申告するよう促しても信頼できない。
+自己評価バイアスと同様に、同じモデルが自分の状態を正確に認識することは期待できない。
+正しい対処は AIへの検知依頼ではなく、**ハーネス設計による構造的な予防**：
+- Feature List（`docs/features.json`）：pass/fail が外部に管理され、宣言的な「完了」が通らない
+- Sprint Contract：完了基準をスプリント開始前に合意・外部化する
+- Context Reset：コンテキストをクリアして新しいエージェントに引き継ぐ（clean slate）
 
 ---
 
-## Planner・Build・QAの3段階構成
+## Planner・Generator・Evaluator の3段階構成
 
-現代的なハーネスの構成。Generatorはメインエージェントが担う。
+GANの Generator-Evaluator 構造に着想を得た現代的なハーネス設計。
 
 ```
 Planner（サブエージェント）
-  役割：1〜4文のプロンプトを詳細な仕様書に変換する
+  役割：1〜4文のプロンプトを詳細な仕様書（docs/spec.md）と
+        Feature List（docs/features.json）に変換する
   使うタイミング：中規模以上のタスク開始時
   書く場所：agents/planner.md
 
-メインエージェント（Build）
-  役割：仕様書から実装する
+Generator（メインエージェント・Build）
+  役割：仕様書から実装する。各スプリント開始前に Evaluator へ
+        Sprint Contract のレビューを依頼し、承認を得てから実装に入る
   使うタイミング：常時
   書く場所：AGENTS.md（＋rules/ skills/ が自動補助）
 
 Evaluator（サブエージェント）
-  役割：ビルド完了後に実際に動かして品質を評価する
+  役割：① Sprint Contract のレビュー（スプリント開始前・合意）
+        ② ビルド完了後の品質評価（playwright-cli で実機確認）
   使うタイミング：フルアプリ構築・主観的品質が重要なとき
   書く場所：agents/evaluator.md
 ```
+
+### Feature List（docs/features.json）
+
+Planner がスプリント計画と同時に生成する機能追跡ファイル。
+各フィーチャーに `"passes": false` フィールドを持ち、Evaluator のみが `true` に更新する。
+**Markdown ではなく JSON を使う理由**：エージェントが Markdown より JSON を
+誤って上書き・編集する可能性が低いため、状態が安定して追跡できる。
+
+### Sprint Contract（スプリント契約）
+
+スプリント開始前に Generator と Evaluator が「完了の定義」を合意する仕組み。
+Sprint Contract の枠組みは Planner が spec.md 生成時に作成する。
+Generator は各スプリント開始前に @evaluator を呼び出してレビューを依頼し、
+Evaluator が承認してから実装に入る。
+「実装者の解釈」と「評価者の期待」のずれを事前に防ぐ。
+詳細フォーマットは agents/planner.md と agents/evaluator.md を参照。
 
 タスク規模別の推奨構成：
 
 ```
 10分以内の単機能実装   → ハーネスなし（プロンプト直接）
 30分〜1時間の中規模   → AGENTS.md + rules/ + skills/ + code-reviewer
-数時間のフルアプリ    → 上記 + Planner + Evaluator（Build→QAサイクル）
+数時間のフルアプリ    → 上記 + Planner + Generator + Evaluator
+                        （Sprint Contract → Build → QA サイクル）
 ```
 
 ---
@@ -132,12 +173,26 @@ Month 1：使っていないものを削除（最初のGC）
 
 ---
 
-## コンテキストリセットとhandoff-artifact
+## Context Reset と handoff-artifact
+
+### Context Reset vs Compaction
+
+長時間タスクで使えるコンテキスト管理の方法は 2 種類ある。
+
+| 方法 | 動作 | Context Anxiety への効果 |
+|------|------|--------------------------|
+| **Compaction** | 会話の前半を要約して同じエージェントが継続する | 解消されない（同じエージェントが継続するため） |
+| **Context Reset** | コンテキストを完全にクリアし、新しいエージェントが handoff-artifact から引き継ぐ | clean slate になる |
+
+Context Anxiety の兆候（不完全な状態で完了宣言が増える等）が見られるときは
+Compaction ではなく Context Reset を選ぶ。
+
+### Context Reset の手順
 
 長時間タスクでコンテキストが肥大化したとき：
 
 1. 現在のセッションを終了する前に「handoff-artifact.mdを生成して」と指示する
-2. または `on-stop.generate-handoff.sh.example` Hookで自動生成する
+2. または `.claude/hooks/on-stop.generate-handoff.sh` Hook（.example を外して有効化）で自動生成する
 3. 新しいセッション開始時に handoff-artifact.md を渡す
 4. 「このファイルを読んで、前の状態から続きを進めてください」と指示する
 
@@ -169,7 +224,7 @@ setup-harness.sh でテンプレートをコピーして、
 
 ## AIへの活用
 
-このファイルをAIに渡すときの指示テンプレート：
+**ハーネス健全性の評価（定期実行）**：
 
 ```
 principles/harness-engineering.md を読んで、
@@ -179,4 +234,20 @@ principles/harness-engineering.md を読んで、
 2. rules/ に使われていないファイルがないか
 3. skills/ に使われていないスキルがないか
 4. usage/ の履歴から削除候補を特定する
+```
+
+**フルアプリ構築の開始**（1〜4文の仕様がある場合）：
+
+```
+@planner
+[1〜4文でやりたいことを書く]
+```
+
+→ Planner が docs/spec.md（Sprint Contract 含む）と docs/features.json を生成する。
+→ 生成後、Sprint 1 の Contract を @evaluator にレビューしてもらってから実装を開始する。
+
+**Feature List の現在の進捗を確認する**：
+
+```
+docs/features.json を読んで、未完了（passes: false）のフィーチャーを一覧してください。
 ```

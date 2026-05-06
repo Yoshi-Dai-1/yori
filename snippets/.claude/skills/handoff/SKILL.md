@@ -5,9 +5,10 @@ description: |
   development long-term, or resuming after a break. Use this skill whenever
   the user says: 「本番に出した」「リリースできた」「公開できた」
   「長期間開発を止める」「別の人に引き継ぐ」「しばらく触らない」
+  「今日はここまで」「終わりにする」「セッションを終了する」「一旦ここで止める」
   「再開したい」「続きをやりたい」「前回の続きから」
   Make sure to use this skill even when the user does not say "handoff"
-  explicitly — any context reset, development pause, or session resumption
+  explicitly — any context reset, development pause, session end, or session resumption
   qualifies. Do NOT use for release preparation (use release-prep instead).
 version: 1.0.0
 status: active
@@ -28,28 +29,55 @@ status: active
 ## Workflow
 
 1. **現在の状態を保存する**
-   `.claude/handoff-artifact.md` を現在の状態に更新する。以下を必ず含める：
-   - 完了していること・未完了のこと
-   - 重要な判断とその理由
-   - 次に取り組むべきこと
-   - 未解決の問題・懸念点
+   `.claude/handoff-artifact.md` を以下のフォーマットで write_file で保存する
+   （既存の内容は上書きしてよい。毎回最新のスナップショットを保存する）：
 
-2. **人間に確認する**
+   ```markdown
+   # Handoff Artifact
+   # 更新日時: YYYY-MM-DD HH:MM
 
+   ## 前のセッションの状態
+
+   取り組んでいた機能: [具体的な内容]
+   完了した部分: [具体的な内容]
+   途中で止まっている部分: [具体的な内容・なければ「なし」]
+   次にやるべきこと: [具体的な1タスク]
+
+   ## 重要な決定事項
+
+   [このセッションで行った設計判断。なければ「なし」]
+
+   ## 未解決の問題
+
+   [バグ・疑問点・要確認事項。なければ「なし」]
+
+   ## 変更したファイル
+
+   [主要な変更ファイルのリスト]
+
+   <!-- HANDOFF_FILLED -->
    ```
-   現在の状態を保存しました：
-     Taking on: [内容]
-     Done: [内容]
-     Next: [内容]
 
-   引き継ぎ・再開の準備が整っています。
-   次のセッションでは .claude/handoff-artifact.md を最初に渡してください。
+   末尾の `<!-- HANDOFF_FILLED -->` は必ず含める（on-stop Hook が記入済みを認識するマーカー）。
+
+2. **Build Log の最終行を更新する**
+   `docs/build-log.md` を read_file で読み込む。
+   最終行が `| YYYY-MM-DD | （更新待ち） | - |` の形式の場合、
+   その行を実際の内容で置換して write_file で保存する：
    ```
+   | YYYY-MM-DD | [完了した内容の概要] | [未解決があれば記載。なければ「なし」] |
+   ```
+   最終行が「（更新待ち）」でない場合（handoff SKILL が2回呼ばれた等）は新しい行を追記する。
+   `docs/build-log.md` が存在しない場合は作成してから内容行を追記する。
+   このログはセッション間の意思決定の経緯・試行錯誤の積み上げ履歴。
+   `handoff-artifact.md`（スナップショット：毎回上書き）とは役割が異なる。
 
 3. **Current Taskを更新する**
-   転換後の最初のタスクをAGENTS.mdのCurrent Taskに記録する。
+   次のセッションで最初に取り組むタスクを AGENTS.md の Current Task（Next 欄）に記録する。
 
-## Output Format
+## Output Format（会話への出力）
+
+Workflow 完了後、以下の形式で会話に出力する：
 
 ```
 ## 引き継ぎレポート [YYYY-MM-DD]
