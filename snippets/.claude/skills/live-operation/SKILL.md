@@ -50,7 +50,7 @@ status: active
 **DDD診断**：services/・features/のビジネスロジックを読んで以下を確認する：
 - 同じバリデーション・ビジネスルールが複数箇所に重複していないか
 - 1つの条件を変えると複数ファイルの修正が必要になっていないか
-→ `[DEV_STANDARDS_PATH]/principles/production-deployment.md` のDDDセクション参照
+→ `.claude/standards/principles/production-deployment.md` のDDDセクション参照
 
 **スキル化候補**：このセッション中に同じ種類の作業が3回以上発生した場合、
 `decisions/skill-candidates.md` に記録して人間に報告する。
@@ -64,7 +64,7 @@ status: active
 ```
 
 商用プロジェクトの場合は追加で：
-`[DEV_STANDARDS_PATH]/principles/commercial-operations.md` の月次確認項目を実施する。
+`.claude/standards/principles/commercial-operations.md` の月次確認項目を実施する。
 
 メインエージェントが直接実行する（毎月）：
 ```
@@ -79,12 +79,20 @@ decisions/ の各ファイルを読んで以下を確認する：
 
 ```
 現在使用しているモデルのバージョンを確認し、以下を評価する：
-1. `.claude/agents/` 内の Planner・Evaluator は現在のモデルに最適化されているか
+1. Evaluator は今のモデルに対してまだ必要か
+   モデルが単独で十分な品質を出せるなら Evaluator は不要なオーバーヘッドになる。
+   「Evaluator なしでスプリント完了とした場合に実際にバグや品質問題が残るか」で判断する。
+2. Sprint Contract レビューは今のモデルに対してまだ必要か
+   モデルが仕様の解釈を誤りにくくなっているなら、レビューなしで実装を開始してもよい。
+3. `.claude/agents/` 内の Planner・Evaluator は現在のモデルに最適化されているか
    （新モデルでスプリント分割が過細分割になっていないか等）
-2. AGENTS.md の行数が 100 行を超えていないか
+4. AGENTS.md の行数が 100 行を超えていないか
    （超えている場合は段階的開示の見直しが必要）
-3. Evaluator の Sprint Contract レビューで差し戻しが頻発していないか
+5. Evaluator の Sprint Contract レビューで差し戻しが頻発していないか
    （頻発している場合は Planner の仕様書品質の改善が必要）
+
+原則：ハーネスの各コンポーネントは「現在のモデルが単独でできないこと」への補助である。
+      モデルが改善されれば補助が不要になる部分が生じる。不要なコンポーネントは削除する。
 問題があれば decisions/[連番]-harness-review-YYYY-MM.md として記録する。
 ```
 

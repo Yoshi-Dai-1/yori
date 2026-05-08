@@ -38,7 +38,7 @@ max_turns: 15
 
 - エラーアラートが設定されている記録があるか
 - 死活監視（/health エンドポイント等）が実装されているか
-- ログ設計が principles/resilience.md の基準を満たしているか
+- ログ設計が `.claude/standards/principles/resilience.md` の基準を満たしているか
 
 ### 最小権限（Least Privilege）
 

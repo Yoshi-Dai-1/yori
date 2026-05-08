@@ -171,8 +171,8 @@ logger.info(f"銘柄 {stock.code} の処理完了: {elapsed:.2f}秒")
 
 ## テスト方針（TDD）
 
-→ 詳細は `[DEV_STANDARDS_PATH]/principles/tdd-with-ai.md` を参照。
-<!-- DEV_STANDARDS_PATH はsetup-harness.sh実行時に案内されるパスに置き換える -->
+→ 詳細は `.claude/standards/principles/tdd-with-ai.md` を参照。
+<!-- 参照先は .claude/standards/principles/ に配置済み（setup-harness.sh が自動コピー） -->
 
 - ビジネスロジック（services・hooks・utils）はTDDで実装する
 - テストケースは人間が日本語で定義し、AIがコードに変換する
@@ -180,4 +180,4 @@ logger.info(f"銘柄 {stock.code} の処理完了: {elapsed:.2f}秒")
 - AIが実装を書く際、テストコードは変更しない
 - テストが通らない実装は提出しない（エラーとともに修正を継続する）
 - 確認順序：tsc → ESLint → ユニットテスト → @code-reviewer → 人間レビュー
-  （詳細は `[DEV_STANDARDS_PATH]/principles/tdd-with-ai.md` を参照）
+  （詳細は `.claude/standards/principles/tdd-with-ai.md` を参照）

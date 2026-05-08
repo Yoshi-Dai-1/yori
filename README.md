@@ -93,6 +93,10 @@ dev-standards/
         rule-hits.md            ルール参照履歴
       project-context.md.template
       coding-conventions.md.template
+      standards/                  dev-standards 参照ドキュメント（setup-harness.sh が自動コピー）
+        principles/               開発原則集（security-implementation / tdd-with-ai 等）
+        architectures/            アーキテクチャパターン集
+        tech-decision.md.template 技術選定記録テンプレート
 
 # setup-harness.sh 実行時に ~/.claude/skills/ にインストールされるスキル（グローバルスコープ）
 # ※ ~/.claude/skills/ はすべてのプロジェクトで有効。gitには含まれない。
@@ -114,9 +118,10 @@ dev-standards/
 
 ```bash
 # GitHubからdev-standardsをダウンロードする（1回だけ実行）
-# ⚠️ プロジェクトを置く予定のフォルダと同じ場所にクローンすること
+# プロジェクトと同じ親ディレクトリにクローンすると便利（デフォルトパスが使える）
 # 例：プロジェクトを ~/Documents/ に作るなら dev-standards も ~/Documents/ にクローンする
-cd ~/Documents   # プロジェクトを置く場所と同じ親ディレクトリ
+# 別の場所でも可：セットアップ時に DEV_STANDARDS_PATH で絶対パスを指定すれば問題ない
+cd ~/Documents   # プロジェクトを置く場所と同じ親ディレクトリ（推奨）
 git clone https://github.com/[あなたのユーザー名]/dev-standards.git
 ```
 
@@ -125,13 +130,13 @@ git clone https://github.com/[あなたのユーザー名]/dev-standards.git
 ### Step 1：新プロジェクトのフォルダを作る
 
 ```bash
-# dev-standards の隣にプロジェクトフォルダを作成する（必須）
+# dev-standards と同じ親ディレクトリにプロジェクトフォルダを作成する（推奨）
 cd ~/Documents
 mkdir my-new-project
 cd my-new-project
 ```
 
-**必須配置（dev-standardsとプロジェクトは必ず同じ親ディレクトリに置く）：**
+**推奨配置（デフォルトパスが使えるため、同じ親ディレクトリが便利）：**
 ```
 Documents/
   dev-standards/       ← 複数プロジェクトで共有する（ここには触らない）
@@ -139,7 +144,12 @@ Documents/
   my-project-b/
 ```
 
-⚠️ **dev-standardsとプロジェクトが別の場所にある場合**（例：dev-standardsは `~/Documents/`、プロジェクトは `~/repos/`）、`../dev-standards` というデフォルトパスが機能しない。その場合は以下のように絶対パスで指定する：
+**dev-standardsとプロジェクトが別の場所にある場合**（例：dev-standardsは `~/Documents/`、プロジェクトは `~/repos/`）、`../dev-standards` というデフォルトパスが機能しないため絶対パスで指定する：
+
+> **セットアップ後は dev-standards への依存はゼロになります。**
+> セットアップ（`setup-harness.sh` の実行）時だけ dev-standards にアクセスできれば、
+> その後はどこに置いてあっても問題ありません。
+> 参照ファイルはすべて `.claude/standards/` にコピーされています。
 
 ```bash
 DEV_STANDARDS_PATH=/Users/yourname/Documents/dev-standards \
@@ -156,6 +166,26 @@ DEV_STANDARDS_PATH=../dev-standards bash ../dev-standards/setup-harness.sh
 
 実行するとハーネスのファイル構造が展開される（骨格のみ）。
 
+**再セットアップについて**：セットアップ済みのプロジェクトに再度スクリプトを実行しても安全です。
+`AGENTS.md`・`ARCHITECTURE.md`・`DESIGN.md`・`.claude/coding-conventions.md`・
+`.claude/agents/`・`.claude/hooks/`・`.claude/usage/` など、プロジェクト固有ファイルは
+上書きされません（上書き保護）。
+`.claude/standards/`・`.claude/skills/`・`.git/hooks/pre-commit` は
+常に最新の dev-standards に更新されます。
+
+以下のファイルも自動生成されます（上書き保護あり）：
+- `.env.example`：環境変数のテンプレート（値は空・必ずコミットする）
+- `.editorconfig`：エディタ間のコードスタイル統一設定
+- `tsconfig.base.json`：TypeScript 基本設定（TS プロジェクトで使用）
+
+`.gitignore` について：スクリプトが自動で以下を設定します：
+- `.gitignore` が存在しない場合は `.gitignore.template` を元に自動作成します
+- `.claude/handoff-artifact.md`（セッション固有）→ 自動で gitignore 追加
+- `.claude/standards/`（dev-standards のコピー）→ 自動で gitignore 追加
+  （内部の相互参照パスもコピー時に自動修正されます）
+- `.claude/usage/`（スキル使用ログ）→ 個人開発 or チーム開発に応じて対話式で選択
+- チームで `.claude/standards/` を共有したい場合のみ `.gitignore` から手動で外してください
+
 ### Step 3：AIと対話しながら4つのファイルを作成する
 
 **スクリプト実行直後は骨格だけが存在する状態。以下の順番でAIと対話しながら記入する。**
@@ -164,7 +194,7 @@ DEV_STANDARDS_PATH=../dev-standards bash ../dev-standards/setup-harness.sh
 
 ```
 セットアップスクリプトが雛形を自動作成している。
-dev-standards/principles/project-definition.md にある対話プロンプトをAIに渡す。
+.claude/standards/principles/project-definition.md にある対話プロンプトをAIに渡す。
 AIが質問を1つずつ投げかけるので答えていく。
 AIが docs/project-definition.md に記入してくれる。
 ```
@@ -227,13 +257,18 @@ playwright-cli install --skills
 
 `.playwright-cli/` はセッション固有のデータも含むため `.gitignore` への追加を推奨する。
 
+**コミット保護について**：`setup-harness.sh` は `.git/hooks/pre-commit` を自動作成します。
+これにより `.env` ファイルや機密情報パターンが含まれるコミットを、
+AIと人間の両方に対してブロックします（`.git/` 内のため git 管理外ですが、
+再セットアップのたびに再作成されます）。
+
 ### Step 5：AIとの最初のセッションで dev-standards のパスを伝える
 
 ```
 以下のファイルを参照しながら作業してください：
 - AGENTS.md（このプロジェクトの作業指示）
 - ARCHITECTURE.md（設計の詳細）
-- dev-standardsの原則ファイル（パス：../dev-standards/principles/）
+- dev-standardsの原則ファイル（パス：.claude/standards/principles/）
 ```
 
 ---
@@ -245,8 +280,8 @@ playwright-cli install --skills
 ```
 以下のファイルを確認して、ハーネスの健全性を報告してください：
 
-1. AGENTS.md・ARCHITECTURE.md・.claude/coding-conventions.md に
-   [DEV_STANDARDS_PATH] などのプレースホルダーが残っていないか
+1. .claude/standards/principles/ と .claude/standards/architectures/ が
+   存在するか（セットアップ後に自動コピーされているはず）
 
 2. .claude/project-context.md の「現在のタスク」が最新の状態か
    （「取り組んでいる機能」が完了済みのままになっていないか）
@@ -267,12 +302,12 @@ playwright-cli install --skills
 ## 開発フローとファイルの対応
 
 ```
-プロジェクト定義              → principles/project-definition.md
+プロジェクト定義              → .claude/standards/principles/project-definition.md
                                ★ セキュリティ要件・リスク評価セクションを必ず記入
-                               ★ 商用の場合は principles/commercial-operations.md を参照
+                               ★ 商用の場合は .claude/standards/principles/commercial-operations.md を参照
 技術選定                      → snippets/tech-decision.md.template → decisions/
-アーキテクチャ決定            → architectures/_how-to-choose.md で種別を選ぶ
-                               → 該当の architectures/*.md を通読する
+アーキテクチャ決定            → .claude/standards/architectures/_how-to-choose.md で種別を選ぶ
+                               → 該当の .claude/standards/architectures/*.md を通読する
                                → ARCHITECTURE.md を記入する
                                ★ セキュリティ・コード品質・依存関係リスクセクションも記入
 ハーネスセットアップ          → setup-harness.sh を実行
@@ -285,17 +320,20 @@ playwright-cli install --skills
                                   → FAIL で修正しスプリントをやり直す
                                → subagents.md を参照
 
-実装（TDD）                   → principles/tdd-with-ai.md
+環境変数の管理               → `.env` に実際の値を記入（絶対にコミットしない）
+                               → 新しい変数を追加したら `.env.example` にキー名も追記する
+                               → `.env.example` は必ずコミットする
+実装（TDD）                   → .claude/standards/principles/tdd-with-ai.md
                                → 認証・機密データを扱う実装は
-                                 principles/security-implementation.md を参照
+                                 .claude/standards/principles/security-implementation.md を参照
                                .claude/rules/（同じ指摘を2回したら追加）
                                .claude/skills/（3回以上繰り返したら追加）
-コードレビュー                → @code-reviewer / principles/code-review.md
+コードレビュー                → @code-reviewer / .claude/standards/principles/code-review.md
                                ★ @security-auditor（認証・機密データ実装後は必須）
 本番リリース準備              → .claude/skills/release-prep/ が自動参照される
                                （「本番に出したい」「リリースしたい」と伝えるだけ）
-                               principles/production-deployment.md
-                               principles/production-readiness.md（9カテゴリ確認）
+                               .claude/standards/principles/production-deployment.md
+                               .claude/standards/principles/production-readiness.md（9カテゴリ確認）
 本番稼働中の変更              → .claude/skills/live-operation/ が自動参照される
 月次GC                        → 「月次診断して」と依頼するだけ
                                .claude/skills/live-operation/ のMonthly Checklistが実行される
@@ -346,14 +384,15 @@ Month 1：「月次診断して」とAIに依頼する。
 以降   ：月次で診断・定期的に削除。問題にぶつかるたびにrules/skills/を追加。
 ```
 
-詳細は `principles/harness-engineering.md` を参照。
+詳細は `.claude/standards/principles/harness-engineering.md` を参照。
 
 ---
 
 ## 更新ルール
 
-- `principles/` の原則を変更する場合は理由を `decisions/` に記録する
-- `architectures/` はプロジェクト経験に基づいて随時更新する
+- dev-standards の `principles/` を変更した場合は各プロジェクトの `.claude/standards/` を再コピーする
+  （`cp $DEV_STANDARDS_PATH/principles/*.md プロジェクト/.claude/standards/principles/`）
+- dev-standards の `architectures/` はプロジェクト経験に基づいて随時更新する
 - `decisions/` は削除しない
 - `snippets/` の設定ファイルは動作確認したものだけを入れる
 - `decisions/skill-candidates.md` はスキル化候補を記録する（記録のタイミングは同ファイル参照）

@@ -130,12 +130,16 @@ src/ 以下のコードベースを対象に品質診断を実施してくださ
   ① 各スプリント開始前（Sprint Contract レビュー・承認）
   ② 各スプリント完了後（QA評価・Feature List の passes フィールド更新）
 
+**【スプリント開始前】Sprint Contract レビュー：**
+
 ```
-# スプリント開始前（Sprint Contract レビュー）
 @evaluator
 Sprint [番号] の Contract を docs/spec.md で確認して承認してください。
+```
 
-# スプリント完了後（QA評価 + Feature List 更新）
+**【スプリント完了後】QA評価 + Feature List 更新：**
+
+```
 @evaluator
 Sprint [番号] の評価をしてください。
 仕様は docs/spec.md を参照してください。

@@ -35,6 +35,10 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
     project-context.md   プロジェクト文脈・現在のフェーズ（AIがセッション開始時に参照）
     handoff-artifact.md  Context Reset 時の引き継ぎ（スナップショット・毎回上書き）
     persona.md           エージェントの性格定義（任意）
+    standards/           dev-standards の参照ドキュメント（setup-harness.sh が自動コピー）
+      principles/        開発原則集（tdd-with-ai / security-implementation 等）
+      architectures/     アーキテクチャパターン集
+      tech-decision.md.template  技術選定記録のテンプレート
 
 # ~/.claude/skills/ にインストールされるスキル（グローバルスコープ・全プロジェクト共通）
   find-skills            外部スキルの検索・インストール（vercel-labs/skills）

@@ -50,7 +50,7 @@ max_turns: 20
 
 ### ビジュアルデザイン方針
 [UIの雰囲気・カラートーン・参考にするデザインパターン]
-[dev-standards/snippets/.claude/skills/frontend-design/SKILL.md が存在すれば参照する]
+[~/.claude/skills/frontend-design/SKILL.md が存在すれば参照する（グローバルスキル。なければスキップ）]
 
 ### 機能一覧
 [機能を論理的なグループに分けて列挙する]
@@ -65,9 +65,7 @@ max_turns: 20
 #### Sprint 1：[テーマ]
 実装する機能：[機能リスト]
 完了の定義：[ユーザーが実際に操作できる状態の記述]
-
-##### Sprint 1 Contract
-（フォーマットは下記「出力形式 > Sprint N Contract」に従う）
+Sprint Contract：（出力形式 > Sprint N Contract のフォーマットを使い、このセクション内に記述する）
 
 #### Sprint 2：[テーマ]
 ...

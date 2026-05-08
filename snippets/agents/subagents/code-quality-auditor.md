@@ -21,8 +21,8 @@ max_turns: 25
 個別のバグ・セキュリティ問題ではなく、品質の劣化トレンドを評価します。
 コードの変更は行いません。診断と報告のみ行います。
 
-診断基準は `principles/code-quality.md` の6軸（可読性・保守性・テスト可能性・複雑性・一貫性・依存関係の健全性）に従う。
-診断前に `principles/code-quality.md` を読み、品質の定義と劣化サインを確認してから実施する。
+診断基準は `.claude/standards/principles/code-quality.md` の6軸（可読性・保守性・テスト可能性・複雑性・一貫性・依存関係の健全性）に従う。
+診断前に `.claude/standards/principles/code-quality.md` を読み、品質の定義と劣化サインを確認してから実施する。
 
 ## 診断する項目
 
@@ -47,7 +47,7 @@ grep_search で同じパターンが複数箇所にないか確認：
 
 ### 4. 命名の品質
 
-principles/naming-conventions.md を参照して確認：
+`.claude/standards/principles/naming-conventions.md` を参照して確認：
 - 動詞始まりではない関数名がないか（getData 等は許容、process・handle等は要確認）
 - Boolean変数に is/has/can prefix がないものがないか
 - 1〜2文字の変数名がループ変数以外で使われていないか

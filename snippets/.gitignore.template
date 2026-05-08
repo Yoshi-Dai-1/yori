@@ -16,7 +16,35 @@ out/
 .env
 .env.local
 .env.*.local
-# .env.example はコミットする（SSOTとして機能するため）
+# .env.example はコミットする（変数名だけ記載・値は空）
+
+# === 秘密鍵・証明書（絶対にコミットしない）===
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+id_rsa
+id_ed25519
+id_dsa
+id_ecdsa
+.ssh/
+
+# === 認証情報ファイル ===
+credentials.json
+service-account*.json
+*service-account*.json
+.netrc
+
+# === データベースファイル ===
+*.sqlite
+*.sqlite3
+*.db
+
+# === Docker（本番シークレットを含む場合）===
+docker-compose.override.yml
 
 # === OS生成ファイル ===
 .DS_Store

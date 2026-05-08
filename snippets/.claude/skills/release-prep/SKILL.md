@@ -32,16 +32,16 @@ status: active
 「機能が動く」と「本番で安全に動かせる」は別のことである。
 
 1. **未対応項目の列挙**
-   `[DEV_STANDARDS_PATH]/principles/production-readiness.md` を読んで
+   `.claude/standards/principles/production-readiness.md` を読んで
    未対応の必須項目をすべて列挙する。人間に報告して優先順位を確認する。
 
 2. **セキュリティ対応**（必須・省略不可）
-   `[DEV_STANDARDS_PATH]/principles/security-implementation.md` を使って
+   `.claude/standards/principles/security-implementation.md` を使って
    認証・認可・入力バリデーション・エラーハンドリングを確認・実装する。
    完了後 `@security-auditor` を呼び出す。
 
 3. **The Twelve-Factor App 適用**
-   `[DEV_STANDARDS_PATH]/principles/production-deployment.md` を参照する。
+   `.claude/standards/principles/production-deployment.md` を参照する。
 
 4. **docs/operations.md の作成**
    デプロイ方法・ロールバック手順・障害対応手順をAIと対話しながら記入する。
@@ -52,7 +52,7 @@ status: active
 
 ## 優先判断
 
-迷ったとき：`[DEV_STANDARDS_PATH]/principles/risk-based-approach.md` のリスク4象限を参照する。
+迷ったとき：`.claude/standards/principles/risk-based-approach.md` のリスク4象限を参照する。
 「即死系」（セキュリティ・法的要件）は妥協しない。
 
 ## Output Format
