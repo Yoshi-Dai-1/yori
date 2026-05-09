@@ -55,13 +55,43 @@ status: active
 **スキル化候補**：このセッション中に同じ種類の作業が3回以上発生した場合、
 `decisions/skill-candidates.md` に記録して人間に報告する。
 
-## Monthly Checklist（月次・「月次診断して」と依頼されたときのみ実行）
+## 品質診断の戦略選択
+
+品質診断の方式はプロジェクトの開発スタイルに合わせて選択する。
+どの方式を使うかは `ARCHITECTURE.md` または `docs/project-definition.md` に記録しておく。
+
+| 戦略 | 想定する開発スタイル | トリガー |
+|------|-------------------|---------|
+| **Reactive**（デフォルト） | 個人・スポット開発・週数回 | 人間が「月次診断して」と依頼したとき |
+| **Scheduled** | チーム開発・毎日コードが動く・CI/CDあり | cron または CI パイプライン（週次・日次） |
+| **Continuous** | バックグラウンドエージェント常時稼働・並列開発 | PR 作成ごと・コミットごと |
+
+**どの戦略を選ぶかの判断基準**：
+- コードが変更される頻度が週に数回以下 → Reactive
+- 複数人・複数エージェントが毎日コードを書く → Scheduled
+- エージェントが非同期・並列で常時PRを生成する → Continuous
+
+Scheduled・Continuous の設定例は `.claude/hooks/README.md` を参照。
+戦略は `ARCHITECTURE.md` の「品質診断戦略」フィールドを read_file で確認する。
+未記入の場合は Reactive として動作する。変更が必要な場合は `ARCHITECTURE.md` を更新する。
+
+---
+
+## Monthly Checklist（Reactive 戦略・「月次診断して」と依頼されたときのみ実行）
 
 以下のサブエージェントを順番に呼び出す：
 ```
 @resilience-checker
 @code-quality-auditor
 ```
+
+`@code-quality-auditor` 完了後、診断結果を `docs/quality-scorecard.md` に記録する：
+1. `docs/quality-scorecard.md` を read_file で読み込む
+2. 「品質スコア履歴」テーブルの当月列を追加・更新する
+3. 「月次診断サマリー」セクションに当月ブロックを先頭に追加する
+4. write_file で保存する
+（ファイルが存在しない場合は、`quality-scorecard.md` を新規作成する。
+ フォーマットは setup-harness.sh を再実行することでテンプレートから生成できる）
 
 商用プロジェクトの場合は追加で：
 `.claude/standards/principles/commercial-operations.md` の月次確認項目を実施する。

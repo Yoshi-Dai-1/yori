@@ -179,5 +179,5 @@ logger.info(f"銘柄 {stock.code} の処理完了: {elapsed:.2f}秒")
 - テストコードは実装コードより先に書く
 - AIが実装を書く際、テストコードは変更しない
 - テストが通らない実装は提出しない（エラーとともに修正を継続する）
-- 確認順序：tsc → ESLint → ユニットテスト → @code-reviewer → 人間レビュー
+- 確認順序：型チェック → lint → ユニットテスト → @code-reviewer → 人間レビュー
   （詳細は `.claude/standards/principles/tdd-with-ai.md` を参照）

@@ -133,7 +133,13 @@ project-root/
 
 ---
 
-## ESLint設定（循環依存検出）
+## アーキテクチャ違反の機械的検出（ESLint）
+
+このアーキテクチャは JavaScript / TypeScript を前提としている。
+`eslint-plugin-boundaries` でFSD層ルールを機械的に強制し、
+エラーメッセージに修正方法を記載することでAIが修正先を推測なしで判断できる。
+`on-post-tool-use.lint-and-typecheck.sh` Hook と組み合わせると、ファイル編集のたびに
+自動実行され、FSD違反が即座にAIに通知される（Hook の設定方法は `.claude/hooks/README.md` 参照）。
 
 ```json
 {
@@ -144,17 +150,38 @@ project-root/
       {
         "default": "disallow",
         "rules": [
-          { "from": "pages", "allow": ["widgets", "features", "entities", "shared"] },
-          { "from": "widgets", "allow": ["features", "entities", "shared"] },
-          { "from": "features", "allow": ["entities", "shared"] },
-          { "from": "entities", "allow": ["shared"] },
-          { "from": "shared", "allow": [] }
+          {
+            "from": "pages",
+            "allow": ["widgets", "features", "entities", "shared"],
+            "message": "[FSD違反] pages/ から直接 ${file.type} を import しています。pages は widgets/・features/・entities/・shared/ にのみ依存できます。"
+          },
+          {
+            "from": "widgets",
+            "allow": ["features", "entities", "shared"],
+            "message": "[FSD違反] widgets/ から ${file.type} を import しています。widgets は features/・entities/・shared/ にのみ依存できます。pages/ への依存はアーキテクチャ違反です。"
+          },
+          {
+            "from": "features",
+            "allow": ["entities", "shared"],
+            "message": "[FSD違反] features/ から ${file.type} を import しています。features は entities/・shared/ にのみ依存できます。他の features/ への依存は shared/ 経由に変更してください。"
+          },
+          {
+            "from": "entities",
+            "allow": ["shared"],
+            "message": "[FSD違反] entities/ から ${file.type} を import しています。entities は shared/ にのみ依存できます。上位層への依存を削除してください。"
+          },
+          {
+            "from": "shared",
+            "allow": [],
+            "message": "[FSD違反] shared/ がドメイン知識を持つ ${file.type} を import しています。shared はドメイン非依存を維持します。ドメインロジックは entities/ か features/ に移動してください。"
+          }
         ]
       }
     ]
   }
 }
 ```
+
 
 ---
 

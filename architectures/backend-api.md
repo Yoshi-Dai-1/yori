@@ -145,3 +145,52 @@ tests/
   fixtures/                    テストデータ
     stock.fixture.ts
 ```
+
+---
+
+## アーキテクチャ違反の機械的検出（リンター設定）
+
+依存ルールを ARCHITECTURE.md に書くだけでなく、リンターで機械的に強制する。
+エラーメッセージに修正方法を記載することで、AIが修正先を推測なしで判断できる。
+`on-post-tool-use.lint-and-typecheck.sh` Hook と組み合わせると、ファイル編集のたびに
+自動実行され、違反が即座にAIに通知される。
+
+**設定ファイルは ARCHITECTURE.md の層定義が確定した時点で自動生成される。**
+ARCHITECTURE.md の対話プロンプト（Step 5-B2）が各層名・ディレクトリパスを読んで
+プロジェクト固有の設定を生成する。以下は生成される設定の構造例。
+
+### JavaScript / TypeScript の場合（ESLint）
+
+```json
+// eslint.config.mjs — ARCHITECTURE.md の層定義から自動生成される
+{
+  "rules": {
+    "import/no-cycle": "error",
+    "no-restricted-imports": ["error", {
+      "patterns": [
+        {
+          "group": ["**/[下位層ディレクトリ]/**", "..."],
+          "message": "[アーキテクチャ違反] [上位層]/ から [下位層]/ を直接 import しています。[正しい依存経路] 経由に変更してください。"
+        }
+      ]
+    }]
+  }
+}
+```
+
+各 `message` には「どの層に移動すれば正しいか」をインラインで記載する。
+AIが修正方法を推測なしで実行できるようになる。
+
+### Python の場合（Ruff）
+
+```toml
+# pyproject.toml の [tool.ruff.lint] に追記 — ARCHITECTURE.md の層定義から自動生成される
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"[上位層から禁止するモジュールパス]" = { msg = "[アーキテクチャ違反] 〜 [正しい依存経路] 経由に変更してください。" }
+```
+
+### Go / Rust / Ruby の場合
+
+import 方向の機械的強制が困難なため、以下の組み合わせで対応する：
+- ディレクトリ構造そのものが依存方向を示すようにレイアウトする
+- `@code-quality-auditor` が月次診断で import / use 文を静的解析して違反を報告する

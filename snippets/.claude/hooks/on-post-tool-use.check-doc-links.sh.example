@@ -1,0 +1,93 @@
+#!/bin/bash
+# on-post-tool-use.check-doc-links.sh.example
+# PostToolUseイベント：ドキュメントファイル編集後にローカルリンクの整合性を検証するHook
+#
+# 検出する問題：
+#   - AGENTS.md・ARCHITECTURE.md・decisions/*.md 内のローカルファイル参照切れ
+#   - 参照先ファイルが移動・削除された後に更新されていないリンク
+#
+# セットアップ：
+#   1. このファイルを on-post-tool-use.check-doc-links.sh にコピー
+#      cp on-post-tool-use.check-doc-links.sh.example \
+#         on-post-tool-use.check-doc-links.sh
+#   2. chmod +x on-post-tool-use.check-doc-links.sh
+#   3. .claude/settings.json の hooks に登録する（README.md 参照）
+#
+# 有効化の判断：
+#   このフックを常時有効にするかどうかはAIと相談して決める。
+#   月次GCでの手動確認で十分なプロジェクトも多い。
+#   有効化が向いているケース：
+#     - ドキュメントが頻繁に構造変更されるチーム開発
+#     - decisions/ や architectures/ に多くの相互参照があるプロジェクト
+#
+# 終了コード：
+#   0 = 正常終了（リンク切れなし、またはドキュメントファイル以外の編集）
+#   2 = リンク切れ検出（stderrの内容をClaude Codeがエージェントにフィードバック）
+
+INPUT=$(cat)
+
+# 編集されたファイルのパスを取得
+if command -v python3 &>/dev/null; then
+  FILE_PATH=$(echo "$INPUT" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    inp = d.get('tool_input', {})
+    print(inp.get('file_path') or inp.get('path') or '')
+except Exception:
+    print('')
+" 2>/dev/null)
+fi
+
+# ファイルパスが空の場合はスキップ
+if [ -z "$FILE_PATH" ] || [ ! -f "$FILE_PATH" ]; then
+  exit 0
+fi
+
+# チェック対象のドキュメントファイルのみ処理する
+# （ソースコードの編集では発火させない）
+IS_TARGET=false
+case "$FILE_PATH" in
+  *AGENTS.md|*ARCHITECTURE.md|decisions/*.md|decisions/*)
+    IS_TARGET=true
+    ;;
+  *.claude/rules/*.md|*.claude/skills/*/SKILL.md)
+    IS_TARGET=true
+    ;;
+esac
+
+if [ "$IS_TARGET" = false ]; then
+  exit 0
+fi
+
+# プロジェクトルートを特定する（.git ディレクトリを探す）
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+BROKEN_LINKS=""
+
+# Markdown のローカルリンク [text](path) を抽出して存在確認
+# http / https / # アンカーリンクは除外する
+while IFS= read -r LINK; do
+  # リンクパスの先頭の / を除去（ルート相対パス対応）
+  LINK="${LINK#/}"
+
+  # アンカー部分（#以降）を除去
+  LINK="${LINK%%#*}"
+
+  # 空になったらスキップ（純粋なアンカーリンク）
+  [ -z "$LINK" ] && continue
+
+  # 絶対パスまたはプロジェクトルートからの相対パスで存在確認
+  if [ ! -f "$PROJECT_ROOT/$LINK" ] && [ ! -f "$(dirname "$FILE_PATH")/$LINK" ]; then
+    BROKEN_LINKS="${BROKEN_LINKS}\n  - ${FILE_PATH} → ${LINK}"
+  fi
+done < <(grep -oP '\]\(\K[^)]+(?=\))' "$FILE_PATH" 2>/dev/null \
+         | grep -v '^https\?://' \
+         | grep -v '^#')
+
+if [ -n "$BROKEN_LINKS" ]; then
+  echo -e "[ドキュメントリンク切れ] 以下のリンク先ファイルが存在しません：${BROKEN_LINKS}\n\n参照先ファイルが移動・削除・名前変更された可能性があります。\nリンクを正しいパスに更新してください。" >&2
+  exit 2
+fi
+
+exit 0

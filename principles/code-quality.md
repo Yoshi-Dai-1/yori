@@ -98,7 +98,7 @@ if が 10個 → 事実上テスト不可能
 読むたびに脳が再適応するコストを払う。
 
 一貫性はリンター・フォーマッターで機械的に担保する（人間が守ろうとしない）。
-→ `coding-conventions.md` と ESLint / Prettier の設定が一貫性の実装。
+→ `coding-conventions.md` と言語固有のリンター・フォーマッター設定が一貫性の実装（JS/TS: ESLint + Prettier、Python: Ruff、Rust: clippy + rustfmt 等）。
 
 ### 軸6：依存関係の健全性（Dependency Health）
 
@@ -114,7 +114,7 @@ UI層 → ビジネスロジック層 → データアクセス層
 変更が局所化される
 ```
 
-循環依存は設計崩壊のサイン。ESLintの `import/no-cycle` ルールで自動検出する。
+循環依存は設計崩壊のサイン。言語固有のリンターで自動検出する（JS/TS: ESLintの `import/no-cycle`、Python: Ruff の `TCH` / pylint、Go: `go vet` 等）。
 
 ---
 
@@ -237,7 +237,7 @@ function calculateLegacyScore(value: number): number {
 
 ### 品質チェックの確認順序（毎実装後）
 
-実装完了後の確認順序（tsc → ESLint → テスト → @code-reviewer → 人間レビュー）は
+実装完了後の確認順序（型チェック → lint → テスト → @code-reviewer → 人間レビュー）は
 `principles/tdd-with-ai.md` の「TDDと他のツールの組み合わせ」セクションに定義している。
 このファイルでは重複して定義しない。
 

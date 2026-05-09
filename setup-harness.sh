@@ -8,10 +8,11 @@
 #   3. ./setup-harness.sh を実行する
 #
 # 実行後に必要な作業（人間が行う）：
-#   1. AGENTS.md にプロジェクト固有の情報を記入する
-#   2. ARCHITECTURE.md に設計情報を記入する
-#   3. .claude/hooks/ の on-[イベント名].[目的].sh.example から
-#      使いたいHookの .example を外してプロジェクトに合わせて修正する
+#   1. docs/project-definition.md をAIと対話しながら記入する
+#   2. ARCHITECTURE.md をAIと対話しながら記入する
+#   3. AGENTS.md をAIと対話しながら記入する
+#
+# Hooks と settings.json はこのスクリプトが自動設定します。
 
 set -e
 
@@ -168,7 +169,7 @@ echo "✅ .claude/standards/ をコピーしました"
 echo "   （principles/ 全ファイル・architectures/ 全ファイル・tech-decision テンプレート）"
 echo "   ℹ️  チームで共有する場合のみ .gitignore から .claude/standards/ を外してください"
 
-# Hooks サンプルをコピー
+# Hooks サンプルをコピー・有効化
 for HOOK_FILE in "$SNIPPETS/.claude/hooks/"*; do
   HOOK_NAME=$(basename "$HOOK_FILE")
   if [ ! -f ".claude/hooks/$HOOK_NAME" ]; then
@@ -176,6 +177,195 @@ for HOOK_FILE in "$SNIPPETS/.claude/hooks/"*; do
   fi
 done
 echo "✅ .claude/hooks/ にHooksサンプルをコピーしました（既存ファイルは保護）"
+
+# ===== Hooks の自動有効化 =====
+# .example を外して実行権限を付与する（既に有効化済みのものはスキップ）
+echo ""
+echo "🔧 Claude Code Hooks を有効化しています..."
+
+HOOKS_ACTIVATED=0
+for EXAMPLE_HOOK in .claude/hooks/*.sh.example; do
+  [ -f "$EXAMPLE_HOOK" ] || continue
+  ACTIVE_HOOK="${EXAMPLE_HOOK%.example}"
+  if [ ! -f "$ACTIVE_HOOK" ]; then
+    cp "$EXAMPLE_HOOK" "$ACTIVE_HOOK"
+    chmod +x "$ACTIVE_HOOK"
+    HOOKS_ACTIVATED=$((HOOKS_ACTIVATED + 1))
+    echo "   ✅ $(basename "$ACTIVE_HOOK") を有効化しました"
+  fi
+done
+
+if [ $HOOKS_ACTIVATED -eq 0 ]; then
+  echo "   ℹ️  すべての Hook はすでに有効化されています"
+fi
+
+# ===== settings.json の自動生成・マージ =====
+# .claude/settings.json に hooks の登録を自動で行う
+# 既存の settings.json がある場合は hooks エントリのみ安全にマージする
+
+SETTINGS_FILE=".claude/settings.json"
+
+# 登録するフック定義（JSONで書く）
+HOOK_ENTRIES=$(cat << 'HOOKS_JSON'
+{
+  "PostToolUse": [
+    {
+      "matcher": "Write|Edit|MultiEdit",
+      "hooks": [{ "type": "command", "command": ".claude/hooks/on-post-tool-use.lint-and-typecheck.sh" }]
+    },
+    {
+      "matcher": "Write|Edit|MultiEdit",
+      "hooks": [{ "type": "command", "command": ".claude/hooks/on-post-tool-use.check-doc-links.sh" }]
+    },
+    {
+      "matcher": "Write|Edit|MultiEdit",
+      "hooks": [{ "type": "command", "command": ".claude/hooks/on-post-tool-use.architecture-skill-check.sh" }]
+    },
+    {
+      "matcher": "Skill",
+      "hooks": [{ "type": "command", "command": ".claude/hooks/on-post-tool-use.record-skill-usage.sh" }]
+    }
+  ],
+  "PreToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [{ "type": "command", "command": ".claude/hooks/on-pre-tool-use.check-secrets.sh" }]
+    }
+  ],
+  "Stop": [
+    {
+      "hooks": [{ "type": "command", "command": ".claude/hooks/on-stop.generate-handoff.sh" }]
+    }
+  ]
+}
+HOOKS_JSON
+)
+
+echo ""
+echo "⚙️  Claude Code の自動実行設定（.claude/settings.json）について"
+echo ""
+echo "   Hookを有効にすると、ファイルを保存するたびに以下が自動で動きます："
+echo "   ✅ コードの書き方チェック（lint・フォーマット）"
+echo "   ✅ 機密情報の誤コミット防止"
+echo "   ✅ セッション終了時の引き継ぎファイル自動生成"
+echo "   ✅ ドキュメントのリンク切れ検出"
+echo ""
+echo "   設定ファイル（.claude/settings.json）にこれらの登録を自動で書き込みます。"
+echo "   既存の設定がある場合は、そちらを保持したまま追記します。"
+echo ""
+read -r -p "   自動設定を行いますか？ [Y/n]: " SETTINGS_AUTO
+SETTINGS_AUTO="${SETTINGS_AUTO:-Y}"
+
+if [[ "$SETTINGS_AUTO" =~ ^[Yy]$ ]]; then
+  DO_SETTINGS=true
+  echo "   → 自動設定を行います"
+else
+  DO_SETTINGS=false
+  echo "   → スキップしました。後から設定する場合は .claude/hooks/README.md を参照してください"
+fi
+echo ""
+
+if [ "$DO_SETTINGS" = true ] && command -v python3 &>/dev/null; then
+  python3 << PYEOF
+import json, os
+
+settings_file = "$SETTINGS_FILE"
+hook_entries_str = r"""$HOOK_ENTRIES"""
+
+new_hooks = json.loads(hook_entries_str)
+
+# 既存の settings.json を読み込む（存在しない場合は空オブジェクト）
+if os.path.exists(settings_file):
+    try:
+        with open(settings_file, 'r', encoding='utf-8') as f:
+            existing = json.load(f)
+    except (json.JSONDecodeError, IOError):
+        existing = {}
+else:
+    existing = {}
+
+# hooks キーが存在しない場合は新規作成
+if 'hooks' not in existing:
+    existing['hooks'] = {}
+
+# 各イベントタイプ（PostToolUse / PreToolUse / Stop）を安全にマージ
+# 既存の hooks リストに同じコマンドが存在しない場合のみ追加する
+for event_type, new_event_hooks in new_hooks.items():
+    if event_type not in existing['hooks']:
+        existing['hooks'][event_type] = []
+
+    for new_entry in new_event_hooks:
+        # コマンドパスを取り出す
+        new_cmd = new_entry.get('hooks', [{}])[0].get('command', '') if event_type != 'Stop' else                   new_entry.get('hooks', [{}])[0].get('command', '')
+
+        # 既存エントリと重複しないか確認
+        already_exists = any(
+            existing_entry.get('hooks', [{}])[0].get('command', '') == new_cmd
+            for existing_entry in existing['hooks'][event_type]
+        )
+
+        if not already_exists:
+            existing['hooks'][event_type].append(new_entry)
+
+with open(settings_file, 'w', encoding='utf-8') as f:
+    json.dump(existing, f, ensure_ascii=False, indent=2)
+    f.write('
+')
+
+print("OK")
+PYEOF
+
+  if [ $? -eq 0 ]; then
+    echo "✅ .claude/settings.json に Hooks を登録しました（既存設定は保持）"
+  else
+    echo "⚠️  settings.json の自動生成に失敗しました"
+    echo "   後から設定する場合は .claude/hooks/README.md を参照してください"
+  fi
+elif [ "$DO_SETTINGS" = true ]; then
+  echo "⚠️  python3 が見つかりません。settings.json の自動生成をスキップしました"
+  echo "   後から設定する場合は .claude/hooks/README.md を参照してください"
+fi
+
+# ===== 品質診断戦略の選択 =====
+echo ""
+echo "📊 品質診断の方式を選択してください："
+echo ""
+echo "   [1] Reactive（推奨・デフォルト）"
+echo "       「月次診断して」と依頼したときだけ診断します。"
+echo "       向いているケース：個人開発・週数回のプログラミング"
+echo ""
+echo "   [2] Scheduled（スケジュール）"
+echo "       CI/CD で週次・日次に自動診断します（GitHub Actions 等の設定が別途必要）。"
+echo "       向いているケース：チーム開発・毎日コードを書くプロジェクト"
+echo ""
+echo "   [3] Continuous（継続的）"
+echo "       PR 作成・コミットのたびに自動チェックします（CI/CD 設定が別途必要）。"
+echo "       向いているケース：バックグラウンドエージェント・並列開発"
+echo ""
+echo "   迷う場合は 1 を選んでください。後から ARCHITECTURE.md で変更できます。"
+echo ""
+read -r -p "選択 [1/2/3] (デフォルト: 1): " QUALITY_STRATEGY_CHOICE
+QUALITY_STRATEGY_CHOICE="${QUALITY_STRATEGY_CHOICE:-1}"
+
+case "$QUALITY_STRATEGY_CHOICE" in
+  2) QUALITY_STRATEGY="Scheduled" ;;
+  3) QUALITY_STRATEGY="Continuous" ;;
+  *) QUALITY_STRATEGY="Reactive" ;;
+esac
+
+echo "✅ 品質診断戦略：$QUALITY_STRATEGY を選択しました"
+
+# ARCHITECTURE.md に品質診断戦略を記録する（プレースホルダーを置換）
+if [ -f "ARCHITECTURE.md" ]; then
+  if grep -q "\[Reactive / Scheduled / Continuous\]" ARCHITECTURE.md; then
+    if sed --version 2>/dev/null | grep -q "GNU"; then
+      sed -i "s|\[Reactive / Scheduled / Continuous\]|$QUALITY_STRATEGY|g" ARCHITECTURE.md
+    else
+      sed -i "" "s|\[Reactive / Scheduled / Continuous\]|$QUALITY_STRATEGY|g" ARCHITECTURE.md
+    fi
+    echo "   → ARCHITECTURE.md に記録しました"
+  fi
+fi
 
 # 使用履歴ファイルをコピー
 for USAGE_FILE in "$SNIPPETS/.claude/usage/"*; do
@@ -340,6 +530,11 @@ if [ ! -f "docs/operations.md" ]; then
 - [ ] モニタリング・アラートが正常に動作しているか確認
 OPSEOF
   echo "✅ docs/operations.md の雛形を作成しました"
+fi
+
+if [ ! -f "docs/quality-scorecard.md" ]; then
+  cp "$SNIPPETS/docs/quality-scorecard.md.template" docs/quality-scorecard.md
+  echo "✅ docs/quality-scorecard.md の雛形を作成しました（月次診断後に @code-quality-auditor の結果を転記する）"
 fi
 
 # .gitignore に追加
@@ -551,10 +746,10 @@ echo "  Step 3：AGENTS.md を記入する（AIと対話）"
 echo "    → AGENTS.md の Project Overview のコメント内にある対話プロンプトを使う"
 echo "    → ARCHITECTURE.md の内容をもとにAIが一緒に埋めてくれる"
 echo ""
-echo "  Step 4：（任意）Hooksを有効にする"
-echo "    → .claude/hooks/ の on-[イベント名].[目的].sh.example を参照"
-echo "    → 使いたいHookの .example を外してプロジェクトに合わせて修正"
-echo "    → chmod +x .claude/hooks/on-*.sh"
+echo "  Step 4：Hooks・settings.json は setup-harness.sh で自動設定済みです"
+echo "    → lint・フォーマット・secrets チェック・handoff 生成が有効になっています"
+echo "    → 設定の確認・調整は .claude/hooks/README.md を参照してください"
+echo "    → 品質診断戦略は ARCHITECTURE.md の「コード品質」セクションに記録済みです"
 echo ""
 echo "  Step 4.5：（任意）playwright-cli を設定する（@evaluator を使う場合）"
 echo "    → CLIとブラウザ（全プロジェクト共有・マシンに1回のみ）："

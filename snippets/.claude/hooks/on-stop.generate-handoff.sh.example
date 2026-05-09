@@ -15,7 +15,7 @@ HANDOFF_FILE=".claude/handoff-artifact.md"
 # Note: このHookはテンプレートを生成する。
 #       AIがセッション中に handoff スキルを使った場合は内容が記入済みになる。
 #       handoff スキルを使わなかった場合はこのテンプレートが残るため、
-#       次のセッション開始時に「handoff-artifact.mdを更新して」と依頼する。
+#       次のセッションで handoff スキルを呼び出して内容を記入する。
 # handoff SKILL が記入済みかどうかを「HANDOFF_FILLED」マーカーで判定する
 # handoff SKILL は記入完了時に HANDOFF_FILLED を埋め込む（handoff/SKILL.md 参照）
 if [ ! -f "$HANDOFF_FILE" ] || ! grep -q "HANDOFF_FILLED" "$HANDOFF_FILE" 2>/dev/null; then
@@ -23,7 +23,7 @@ if [ ! -f "$HANDOFF_FILE" ] || ! grep -q "HANDOFF_FILLED" "$HANDOFF_FILE" 2>/dev
 # Handoff Artifact
 # 更新日時: $DATETIME
 # このファイルは次のセッション開始時にコンテキストとして渡す
-# 内容が空欄の場合は次のセッション開始時に「handoff-artifact.mdを更新して」と依頼する
+# 内容が空欄の場合は次のセッション開始時に handoff スキルを使って内容を記入する
 
 ## 前のセッションの状態
 
@@ -60,5 +60,6 @@ printf "| %s | （更新待ち） | - |\n" "$DATE" >> "$BUILD_LOG"
 echo "📋 Build Log に行を追記しました: $BUILD_LOG"
 
 echo ""
-echo "   次のセッション開始時にこのファイルをAIに渡してください: $HANDOFF_FILE"
+echo "   ✅ $HANDOFF_FILE を更新しました"
+echo "   次のセッション開始時に AGENTS.md の Session Protocol が自動で読み込みます"
 echo "   handoff スキルを使った場合は build-log.md の最終行が実際の内容に更新されます"
