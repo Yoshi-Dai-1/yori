@@ -24,14 +24,16 @@
 ## Commands
 
 <!-- エージェントが実行すべきコマンドを完全な形で書く -->
-- Install: `pnpm install`
-- Dev: `pnpm dev`
-- Build: `pnpm build`
-- Type check: `pnpm typecheck`
-- Lint: `pnpm lint`
-- Test: `pnpm test`
-- Test (single file): `pnpm test -- [ファイルパス]`
-- Deploy: [デプロイコマンド。未定の場合は空欄]
+<!-- 言語・ツールに合わせて書き換える（ARCHITECTURE.md 記入後に stack-setup.md が補完する） -->
+- Install: `[例: pnpm install / pip install -r requirements.txt / go mod download]`
+- Dev: `[例: pnpm dev / python main.py / go run ./cmd/...]`
+- Build: `[例: pnpm build / go build ./... / cargo build]`
+- Type check: `[例: pnpm typecheck / mypy . / 型チェックがない言語は省略]`
+- Lint: `[例: pnpm lint / ruff check . / cargo clippy / go vet ./...]`
+- Format: `[例: pnpm prettier --write . / ruff format . / rustfmt / gofmt -w .]`
+- Test: `[例: pnpm test / pytest / go test ./... / cargo test]`
+- Test (single): `[例: pnpm test -- [ファイル] / pytest [ファイル] / go test ./[パッケージ]]`
+- Deploy: `[デプロイコマンド。未定の場合は空欄]`
 
 ## Architecture
 
@@ -43,11 +45,12 @@ UIデザイン仕様は `DESIGN.md` を参照。（UIなしプロジェクトは
 ## Code Style
 
 詳細は `.claude/coding-conventions.md` を参照。
-
-- ディレクトリ名：kebab-case
-- コンポーネント：PascalCase.tsx
-- hooks：camelCase.ts（use prefix必須）
-- 定数：UPPER_SNAKE_CASE（constants/に定義）
+<!-- 言語・フレームワークに合わせて書き換える。不要な行は削除する -->
+- ディレクトリ名：[例: kebab-case / snake_case]
+- クラス・型名：[例: PascalCase]
+- 関数・変数名：[例: camelCase（JS/TS）/ snake_case（Python/Go/Rust）]
+- 定数：[例: UPPER_SNAKE_CASE]
+- ファイル名：[例: kebab-case.ts / snake_case.py / PascalCase.tsx]
 
 ## Boundaries（禁止事項）
 
