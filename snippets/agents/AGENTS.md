@@ -71,6 +71,17 @@ UIデザイン仕様は `DESIGN.md` を参照。（UIなしプロジェクトは
 - テストが通らない変更を本番に適用しない
 - 1コミットに複数の目的の変更を混ぜない
 
+## Security Boundaries
+
+<!-- 判断基準：.claude/standards/principles/security-requirements.md / 常駐ルール：.claude/rules/security.md -->
+
+- 認証・決済・個人情報・外部APIの実装依頼を受けたとき → 実装前に `@security-auditor` を呼び出す
+- 認証・認可・機密データ・入力バリデーションを実装したとき → 完了後に `@security-auditor` を呼び出す
+- 外部入力を受け取るエンドポイントを実装したとき → バックエンドバリデーションを確認する
+- 環境変数を追加したとき → `.env.example` に反映しシークレットスキャンを実行する
+- package.json / requirements.txt / requirements-dev.txt / pyproject.toml / go.mod / Cargo.toml / pom.xml / build.gradle / build.gradle.kts / Gemfile / composer.json / pubspec.yaml / *.csproj / packages.config を編集したとき → rules/security.md の言語別コマンド対応表に従いauditを実行する。対応表にない言語の場合は人間に確認を促す
+<!-- このプロジェクト固有の制約（@security-auditor が自動追記）-->
+
 ## TDD Cycle
 
 詳細は `.claude/standards/principles/tdd-with-ai.md` を参照。
@@ -98,11 +109,6 @@ UIデザイン仕様は `DESIGN.md` を参照。（UIなしプロジェクトは
 
 **調査が必要なとき**（影響範囲・原因調査）：
 → `@codebase-investigator` を呼び出す（メインのコンテキストを汚さない）
-
-
-**認証・認可・機密データ・入力バリデーションを実装したとき**：
-→ Report Format の後に必ず `@security-auditor` を呼び出す
-
 **本番環境が稼働中のコードを変更するとき**：
 → 変更前に `.claude/skills/live-operation/` の Pre-Change Checklist を実行する
 
@@ -117,6 +123,7 @@ UIデザイン仕様は `DESIGN.md` を参照。（UIなしプロジェクトは
 
 **セッション開始時**：
 1. `.claude/handoff-artifact.md` が存在する場合 → 読んで前のセッションの文脈を復元する
+   `## Security Status` セクションを確認し、未対応のセキュリティ要件がある場合は最初に報告する
    存在しない場合 → `AGENTS.md` と `ARCHITECTURE.md` を読み、Current Task を確認する
 2. `docs/features.json` が存在する場合、未完了フィーチャー（`"passes": false`）を確認する
 3. **Smoke Test**：Dev コマンドが定義されており実装が存在する場合のみ実行する

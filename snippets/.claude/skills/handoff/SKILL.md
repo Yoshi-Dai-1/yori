@@ -51,9 +51,24 @@ status: active
 
    [バグ・疑問点・要確認事項。なければ「なし」]
 
-   ## 変更したファイル
+   ## Security Status
 
-   [主要な変更ファイルのリスト]
+   対応レベル: [Lv.1 / Lv.2 / Lv.3 / Lv.4]（security-requirements.md の判断基準）
+
+   適用される規制・標準:
+   - [個人情報保護法 / GDPR / PCI DSS / HIPAA / ISMAP / なし]
+
+   未対応のセキュリティ要件:
+   - [ ] [要件名]：[理由・対応方法・担当スプリント]
+   （なければ「なし」）
+
+   完了したセキュリティ実装:
+   - [x] [実装内容]：decisions/[連番]-[slug].md に記録済み
+   （なければ「なし」）
+
+   依存ライブラリの脆弱性状態:
+   - 最終スキャン：[YYYY-MM-DD] / 結果：[クリーン / HIGH N件 / CRITICAL N件]
+   - 自動監視：[Dependabot設定済み / CI組み込み済み / 未設定]
 
    <!-- HANDOFF_FILLED -->
    ```
@@ -74,6 +89,13 @@ status: active
 
 3. **Current Taskを更新する**
    次のセッションで最初に取り組むタスクを AGENTS.md の Current Task（Next 欄）に記録する。
+
+4. **Security Status を確認・引き継ぐ（自律実行）**
+   handoff-artifact.md の `## Security Status` を読み、以下を自律的に実行する：
+   - 未対応のセキュリティ要件がある場合 → セッション開始直後に人間に報告する
+   - 依存ライブラリの最終スキャンが7日以上前の場合 → `npm audit` / `pip-audit` を実行して結果を報告する
+   - 自動監視が「未設定」の場合 → Dependabot / CI組み込みの設定を提案する
+   人間からの指示を待たずに実行する。
 
 ## Output Format（会話への出力）
 

@@ -83,6 +83,7 @@ Scheduled・Continuous の設定例は `.claude/hooks/README.md` を参照。
 ```
 @resilience-checker
 @code-quality-auditor
+@security-auditor
 ```
 
 `@code-quality-auditor` 完了後、診断結果を `docs/quality-scorecard.md` に記録する：
@@ -91,6 +92,11 @@ Scheduled・Continuous の設定例は `.claude/hooks/README.md` を参照。
 3. 「月次診断サマリー」セクションに当月ブロックを先頭に追加する
 4. write_file で保存する
 （ファイルが存在しない場合は、`quality-scorecard.md` を新規作成する。
+
+`@security-auditor`（監査モード）完了後、結果を `handoff-artifact.md` の `## Security Status` に記録する：
+- 検出された問題は深刻度（CRITICAL/HIGH/MEDIUM/LOW）とともに「未対応のセキュリティ要件」に追記する
+- 依存ライブラリの脆弱性スキャン結果（`npm audit` / `pip-audit`）を「依存ライブラリの脆弱性状態」に更新する
+- 問題がなければ「最終スキャン：[日付] / 結果：クリーン」に更新する
  フォーマットは setup-harness.sh を再実行することでテンプレートから生成できる）
 
 商用プロジェクトの場合は追加で：

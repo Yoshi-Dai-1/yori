@@ -152,6 +152,12 @@ cp "$DEV_STANDARDS_PATH/principles/"*.md .claude/standards/principles/
 cp "$DEV_STANDARDS_PATH/architectures/"*.md .claude/standards/architectures/
 cp "$DEV_STANDARDS_PATH/snippets/tech-decision.md.template" .claude/standards/tech-decision.md.template
 
+# security-requirements.md の存在を明示確認（principles/ 全ファイルコピー済みだが重要なので検証）
+if [ ! -f ".claude/standards/principles/security-requirements.md" ]; then
+  echo "❌ security-requirements.md のコピーに失敗しました"
+  VALIDATION_FAILED=1
+fi
+
 # コピーしたファイル内の相互参照パスを .claude/standards/ 用に書き換える
 # （コピー元の principles/ や architectures/ はプロジェクト内に存在しないため）
 if sed --version 2>/dev/null | grep -q "GNU"; then
@@ -763,8 +769,17 @@ echo "    → Claude Code を起動してプロジェクトフォルダを開く
 echo "    → AGENTS.md の Session Protocol に従い自動的に作業が始まります"
 echo "       （AGENTS.md は Claude Code がプロジェクト開始時に自動で読み込みます）"
 echo ""
+echo "  ★ セキュリティ要件は自動で設定されます"
+echo "    → ARCHITECTURE.md の Step 3（非機能要件の定義）で AI が自律的に実行します："
+echo "       - プロジェクト性質から対応レベル（Lv.1〜4）を判定"
+echo "       - 適用される法令・標準（GDPR / PCI DSS 等）を特定"
+echo "       - AGENTS.md の Security Boundaries を自動更新"
+echo "       - 依存ライブラリの自動監視設定ファイルの作成を提案"
+echo "    → 人間がAIに別途指示する必要はありません"
+echo ""
 echo "参考ドキュメント（プロジェクト内 .claude/standards/ に配置済み）："
 echo "  .claude/standards/principles/harness-engineering.md"
+echo "  .claude/standards/principles/security-requirements.md    ← セキュリティ対応レベルの自律判断"
 echo "  .claude/standards/principles/security-implementation.md  ← 認証・セキュリティ実装時"
 echo "  .claude/standards/principles/code-quality.md             ← コード品質基準"
 echo "  .claude/standards/principles/risk-based-approach.md      ← 投資優先度の判断"
