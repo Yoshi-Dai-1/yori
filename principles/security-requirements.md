@@ -74,7 +74,7 @@ AIがプロジェクト定義を読んで「何のセキュリティ対応が必
 
 **Lv.1（最小）**：HTTPS・パスワードハッシュ化・.env管理・入力バリデーション
 - 準拠基準：OWASP Top 10（全プロジェクト共通の最低ライン）
-- 詳細チェックリスト：`.claude/standards/principles/security-implementation.md`
+- 実装ガイド（構築の指針・情報源・例外対応）：`.claude/standards/principles/security-implementation.md`
 
 **Lv.2（標準）**：↑ + RBAC・JWT適切運用・依存関係スキャンのCI組み込み
 - 準拠基準：OWASP Top 10 + OWASP ASVS Level 1〜2
@@ -88,7 +88,8 @@ AIがプロジェクト定義を読んで「何のセキュリティ対応が必
 **言語別の追加基準**（Lv.に関係なく、使用言語に応じて追加）：
 - C / C++ → CERT C/C++ Coding Standards（バッファオーバーフロー・メモリ安全性）
 - モバイル → OWASP Mobile Top 10（ローカル暗号化・証明書ピンニング）
-- Web全般 → 各フレームワーク公式セキュリティガイド（Next.js / Django / Spring 等）
+- Web全般 → 使用フレームワーク（ARCHITECTURE.mdに記録）の公式セキュリティガイドを検索する
+  （検索クエリ：[使用フレームワーク名] official security documentation [現在年]）
 - 詳細な言語別チェックリストは `.claude/rules/security.md` を参照
 
 ### Step 3：適用される法令・標準の特定
