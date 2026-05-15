@@ -79,8 +79,10 @@ AIがプロジェクト定義を読んで「何のセキュリティ対応が必
 **Lv.2（標準）**：↑ + RBAC・JWT適切運用・依存関係スキャンのCI組み込み
 - 準拠基準：OWASP Top 10 + OWASP ASVS Level 1〜2
 
-**Lv.3（商用）**：↑ + 脅威モデリング・DevSecOps・ペネトレーションテスト計画
-- 準拠基準：OWASP ASVS Level 2〜3 + 脅威モデリング（STRIDEモデル）
+**Lv.3（商用）**：↑ + 専門ファイルに従い脅威モデリング・DevSecOps・ペネトレーションテストを実施する
+- 準拠基準：OWASP ASVS Level 2〜3
+- 詳細：`.claude/standards/principles/threat-modeling.md`（脅威モデリング）
+         `.claude/standards/principles/security-implementation.md`（DevSecOps）
 
 **Lv.4（規制対象）**：↑ + 業界固有規制の準拠（PCI DSS / GDPR / ISMAP等）
 - 準拠基準：業界標準 + NIST SP 800-53（政府向け）
@@ -247,10 +249,20 @@ Lv.1の全項目に加えて：
 
 ```
 Lv.2の全項目に加えて：
-[ ] 脅威モデリング実施（STRIDEモデル）→ decisions/に記録
-[ ] DevSecOps：SAST（SonarQube/Semgrep）をCIパイプラインに組み込み
-[ ] シークレットスキャン（GitGuardian または truffleHog）をCIに組み込み
-[ ] ペネトレーションテストの計画を docs/operations.md に記録
+[ ] 脅威モデリング実施（STRIDEモデル）→ `.claude/standards/principles/threat-modeling.md` の手順に従い実施・decisions/に記録
+[ ] DevSecOps：SAST/DAST/シークレットスキャンをCIパイプラインに組み込み → `.claude/standards/principles/security-implementation.md` の「DevSecOpsパイプライン」セクションの手順に従い実施
+[ ] ペネトレーションテスト → 以下を実施する：
+    実施前に以下を検索して最新の手法・ツールを確認する：
+    「OWASP penetration testing [現在年]」
+    「AI penetration testing tools [現在年]」
+    「automated penetration testing [現在年]」
+    検索結果は📋フォーマットで人間に通知する。
+    信頼できる情報源：
+      OWASP Testing Guide（owasp.org）→ ペネトレーションテストの包括的な公式ガイド
+      PTES（pentest-standard.org）→ ペネトレーションテスト実施標準
+    AIツールは「既知の脆弱性パターンの自動検出」に有効。
+    商用・Lv.4プロジェクトでは AIツールに加えて専門家による実施を推奨する。
+    実施計画を docs/operations.md に記録する。
 [ ] DB：最小権限・ネットワーク分離（VPC/プライベートサブネット）
 [ ] WAF・レートリミットの設置
 ```

@@ -370,3 +370,83 @@ Step 3：人間が最終確認する（AIに任せない箇所）
 
 5. 判断した内容をdecisions/に記録することを提案する
 ```
+
+---
+
+## DevSecOpsパイプラインのセキュリティ設定（自律実行）
+
+### AIが自律的に実行するタイミング
+
+ARCHITECTURE.md に CIツールが記録されており、かつ
+security-requirements.md の対応レベルが Lv.3以上の場合、
+ARCHITECTURE.md Step3 完了後に以下を自律的に実行する。
+人間の指示を待たない。
+
+CIツールの確認方法：ARCHITECTURE.md の「CI/CD」欄を読む。
+記録されていない場合は人間に質問する：
+「セキュリティスキャンをCIに組み込みます。
+ 使用するCIツールを教えてください
+ （GitHub Actions / GitLab CI / CircleCI / Jenkins / その他）」
+
+### 実装前の必須Web検索
+
+SASTツール・DASTツール・シークレットスキャンは年々更新される。
+AIの学習データには鮮度の限界があるため、実装前に必ず検索してから設定する。
+
+```
+SAST（静的解析）の設定：
+  1. Semgrep [使用CIツール名] configuration [現在年]
+     （Semgrep：semgrep.dev → 多言語対応・無料枠あり）
+  2. [使用CIツール名] SAST security scanning [現在年]
+  3. OWASP DevSecOps Guideline SAST [現在年]
+
+DAST（動的解析）の設定：
+  1. OWASP ZAP [使用CIツール名] integration [現在年]
+     （OWASP ZAP：zaproxy.org → 無料・最も普及したDAST）
+  2. [使用CIツール名] DAST automation [現在年]
+  3. OWASP DevSecOps Guideline DAST [現在年]
+
+シークレットスキャンの設定：
+  1. [使用CIツール名] secret scanning [現在年]
+  2. truffleHog [使用CIツール名] [現在年]
+     （truffleHog：github.com/trufflesecurity/trufflehog → 無料・OSSで信頼性が高い）
+```
+
+検索結果は📋フォーマットで人間に必ず通知する。
+
+### 信頼できる情報源（観点別）
+
+URLは変更される可能性があるため組織名・ドメインで判断する。
+
+```
+DevSecOpsの総合ガイド：
+  OWASP DevSecOps Guideline（owasp.org）
+  → CIへのセキュリティ組み込み手順。CI種別の設定例を含む。随時更新される。
+
+SASTツール：
+  Semgrep（semgrep.dev）→ 多言語対応・GitHub Actions等に組み込み可能
+  SonarQube（sonarqube.org）→ 多言語対応・OSS版あり
+
+DASTツール：
+  OWASP ZAP（zaproxy.org）→ 最も普及したDAST。無料。
+
+シークレットスキャン：
+  truffleHog（github.com/trufflesecurity/trufflehog）→ OSS・無料
+  GitGuardian（gitguardian.com）→ 商用・無料枠あり
+```
+
+### 例外対応
+
+```
+設定手順がCIツールの公式ドキュメントで見つからない場合：
+  1. 「[CIツール名] security scanning setup [現在年]」を検索する
+  2. OWASP DevSecOps Guideline で該当するCIツールの例を探す
+  3. 見つからない場合は「AIの学習データに基づく設定」と明示し、
+     人間の確認を得てから設定する
+  4. 設定した内容をdecisions/に記録することを提案する
+
+Lv.2以下のプロジェクトでCIがない場合：
+  → DevSecOpsのCI設定をスキップする
+  → 代替として依存ライブラリスキャン（rules/security.mdの対応表）を
+    依存ファイル編集のたびに手動実行する設計を維持する
+```

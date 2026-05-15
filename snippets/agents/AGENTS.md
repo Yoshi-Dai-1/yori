@@ -105,7 +105,7 @@ UIデザイン仕様は `DESIGN.md` を参照。（UIなしプロジェクトは
   `passes` フィールドは **Evaluator のみ** が更新する
 
 **スプリント完了後**：
-→ `@evaluator` でQA評価。PASS → 次のスプリントへ。FAIL → 修正して再評価
+→ `@evaluator` でQA評価。PASS → 次のスプリントへ。FAIL → 修正して再評価。セキュリティ関連の実装が含まれる場合は rules/security.md のスプリント完了後トリガーに従う
 
 **調査が必要なとき**（影響範囲・原因調査）：
 → `@codebase-investigator` を呼び出す（メインのコンテキストを汚さない）
