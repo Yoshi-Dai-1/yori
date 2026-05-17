@@ -71,6 +71,16 @@ UIデザイン仕様は `DESIGN.md` を参照。（UIなしプロジェクトは
 - テストが通らない変更を本番に適用しない
 - 1コミットに複数の目的の変更を混ぜない
 
+## Network Boundaries（通信設計）
+
+<!-- 判断基準：.claude/standards/principles/network-resilience.md -->
+<!-- 常駐ルール：.claude/rules/network-resilience.md -->
+- 外部API・DB・内部サービスへの通信を実装するとき → 接続タイムアウトと読み取りタイムアウトの両方を設定する
+- タイムアウト値・リトライ回数などの設定値をコードに直書きしない（constants/ に定数として定義する）
+- 冪等でない操作（決済・メール送信・SMS送信・通知送信）にタイムアウト後のリトライを設定しない
+- 通信設計の採否（タイムアウト・リトライ・冪等性・サーキットブレーカー・プーリング）を ARCHITECTURE.md の「通信設計」セクションに記録する
+<!-- このプロジェクト固有の通信制約（@resilience-checker が自動追記） -->
+
 ## Security Boundaries
 
 <!-- 判断基準：.claude/standards/principles/security-requirements.md / 常駐ルール：.claude/rules/security.md -->

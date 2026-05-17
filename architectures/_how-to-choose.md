@@ -10,7 +10,8 @@
 ```
 Q1. 作るものは何か？
   ├── ブラウザで動くUI                          → Q2へ
-  ├── HTTPで呼ぶAPI・サーバー                   → backend-api.md
+  ├── iOS / Android アプリ                      → mobile.md
+  ├── HTTPで呼ぶAPI・サーバー                   → Q3へ
   ├── データ収集・分析・バッチ処理スクリプト    → data-pipeline.md
   ├── 研修教材・技術ドキュメント・仕様書集      → document-project.md
   └── フロント・バックを1リポジトリで管理したい → monorepo.md
@@ -18,6 +19,21 @@ Q1. 作るものは何か？
 Q2. UIの規模は？（「ブラウザで動くUI」と回答した場合）
   ├── 機能が10以下・個人開発・短期プロジェクト → web-frontend-small.md
   └── 機能が多い・長期運用・チーム開発         → web-frontend-large.md
+
+Q3. APIサーバーの形態は？（「HTTPで呼ぶAPI・サーバー」と回答した場合）
+  ├── 常時起動・WebSocket・長時間処理が必要    → Q4へ
+  └── イベント駆動・短時間処理・コスト最適化が目的 → serverless.md
+
+Q4. APIサーバーの分割方針は？
+  ├── 1つのサーバーで全機能を提供する          → backend-api.md
+  └── Q5へ（複数サービスへの分割を検討している場合）
+
+Q5. 以下の条件をすべて満たすか？
+    ・機能ごとに独立してデプロイしたい
+    ・複数チームが独立して開発する
+    ・運用チームにコンテナ・オーケストレーションの知識がある
+  ├── すべて満たす → microservices.md
+  └── 1つでも満たさない → backend-api.md から始める（後で分割可能）
 ```
 
 ---
@@ -31,6 +47,23 @@ Q2. UIの規模は？（「ブラウザで動くUI」と回答した場合）
 理由：小規模構成から始めて必要になったら移行する方が、最初からFSDを導入して
 持て余すより低コスト。移行タイミングは `web-frontend-small.md` の
 「FSDへの移行タイミング」セクションに明示されている。
+
+### 「モバイルアプリとAPIサーバーを両方作る」
+
+→ `mobile.md`（モバイル）と `backend-api.md`（APIサーバー）を別リポジトリで使う。
+→ 型定義を共有したい場合は `monorepo.md` も参照する。
+
+### 「サーバーレスにするかAPIサーバーにするか迷っている」
+
+→ 迷っている時点では `backend-api.md` を選ぶ。
+→ イベント駆動・コスト最適化・短時間処理の要件が確定してから `serverless.md` を参照する。
+→ WebSocket・長時間処理・ステートフルな要件がある場合は `backend-api.md` を選ぶ。
+
+### 「マイクロサービスにするかモノリスにするか迷っている」
+
+→ 迷っている時点では `backend-api.md` を選ぶ。
+→ 「将来スケールするかもしれない」だけの理由でマイクロサービスを選ばない。
+→ ボトルネックが実際に発生してから `microservices.md` を参照して分割する。
 
 ### 「フロントとバックを両方作る」
 
@@ -62,7 +95,7 @@ Q2. UIの規模は？（「ブラウザで動くUI」と回答した場合）
 ## Architecture
 
 詳細は `ARCHITECTURE.md` を参照。
-採用パターン：[web-frontend-small / web-frontend-large / backend-api / ...]
+採用パターン：[web-frontend-small / web-frontend-large / backend-api / mobile / microservices / serverless / data-pipeline / monorepo / document-project]
 依存の方向（変更禁止）：[層A] → [層B] → [層C]
 ```
 

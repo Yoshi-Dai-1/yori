@@ -98,6 +98,7 @@ fi
 
 # rules テンプレート
 # rules/ 以下の全ファイルをコピー（上書き保護あり）
+# 含まれるルール：security.md / stack-setup.md / network-resilience.md
 for RULE_FILE in "$SNIPPETS/.claude/rules/"*.md; do
   RULE_NAME=$(basename "$RULE_FILE")
   if [ ! -f ".claude/rules/$RULE_NAME" ]; then

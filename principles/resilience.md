@@ -24,6 +24,9 @@
 
 → セキュリティ（security-implementation.md）・TDD（tdd-with-ai.md）・
   コードレビュー（code-review.md）で対応済み。
+→ 外部通信の安定性設計（network-resilience.md）もこの層に属する。
+  タイムアウト・リトライ・冪等性の設計は「壊れにくくする」防御層の一部。
+  rules/network-resilience.md が通信コードの編集時に自律的に確認する。
 
 ### Layer 2：壊れたことに気づく（Detection）
 
@@ -237,7 +240,8 @@ router.get('/health', async (req, res) => {
 resilience.md の観点から設計を確認してください：
 
 - この機能が動かなくなった場合の最大の影響は何か
-- 外部APIへの依存があれば、タイムアウト・リトライ・フォールバックの設計を提案して
+- 外部APIへの依存があれば、network-resilience.md の判断手順で
+  タイムアウト・リトライ・冪等性・サーキットブレーカーの採否を判定して
 - この機能のバックアップ・復旧を考慮すべき点はあるか
 ```
 

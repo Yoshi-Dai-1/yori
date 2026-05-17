@@ -43,6 +43,7 @@ dev-standards/
     security-requirements.md  ★ セキュリティ対応レベルの自律判断（Lv.1〜4）
     threat-modeling.md         ★ 脅威モデリング実施ガイド（STRIDEモデル）
     resilience.md            ★ 壊れても死なない設計・バックアップ・多層防御
+    network-resilience.md   ★ 通信安定性設計（タイムアウト・リトライ・冪等性・自律実行）
     commercial-operations.md ★ 商用固有：SLA/SLO・ブランチ戦略・インシデント管理・監査ログ
     subagents.md                サブエージェントの設計と活用
     production-readiness.md     本番リリース前チェックリスト（9カテゴリ）
@@ -52,6 +53,9 @@ dev-standards/
     _how-to-choose.md           ★ 種別の選び方（フローチャート）← まずここを読む
     web-frontend-large.md / web-frontend-small.md
     backend-api.md / monorepo.md
+    mobile.md                   ★ iOS / Android / クロスプラットフォームアプリ
+    microservices.md            ★ マイクロサービスアーキテクチャ
+    serverless.md               ★ サーバーレス（Lambda / Workers / Edge Functions）
     data-pipeline.md / document-project.md
 
   decisions/                    判断の記録（ADR・技術選定）
@@ -80,6 +84,7 @@ dev-standards/
       rules/
         _template.md            ルールファイルの書き方テンプレート
         security.md           ★ セキュリティ常駐ルール（コードファイル編集時に自動リロード）
+        network-resilience.md ★ 通信設計常駐ルール（通信コード編集時に自動リロード）
         stack-setup.md          技術スタック設定ファイルの自動展開ルール
       skills/                   プロジェクトスコープのスキル（.claude/skills/に配置・gitで共有）
         release-prep/SKILL.md   ★ 本番リリース準備（「本番に出したい」で自動参照）
