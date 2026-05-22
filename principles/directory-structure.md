@@ -181,3 +181,86 @@ tests/
 6. 同じ情報が複数箇所にないか？                 → ssot-and-constants.md で確認
 7. 非機能要件（性能・セキュリティ）を満たすか？ → non-functional-requirements.md で確認
 ```
+
+---
+
+## 必須ファイルの調達ルール
+
+必須ファイルとは「そのツール・言語が正常に動作するために公式仕様として定められたファイル」である。
+命名・配置を変更すると該当ツールが動作しなくなるため、公式仕様に従う。
+
+**静的リストを持たない理由**：言語・フレームワーク・ツールのバージョンアップにより必須ファイルの仕様は変化する。
+静的リストは陳腐化する。AIが言語確定時に公式ドキュメントから都度調達する設計が正しい。
+
+### 必須ファイルの確認手順（`stack-setup.md` Step 3.5 ブロックBから呼び出される）
+
+このセクションは `stack-setup.md` の Step 3.5 ブロックBが呼び出したときのみ実行する。
+トリガーと実行タイミングは `stack-setup.md` が管理する。このファイルは手順のみを定義する。
+
+**Step 1：必須ファイルの仕様をWeb検索で確認する**
+
+以下の検索クエリを実行する。URLではなく組織名・ドメインで情報源を判断する。
+
+```
+[言語名] project required files [現在年]
+[フレームワーク名] project structure required files [現在年]
+[ビルドツール名] required configuration file [現在年]
+```
+
+**信頼できる情報源の優先順位**
+
+1. 言語・ツールの公式組織が管理するドキュメント（一次情報源）
+2. フレームワークの公式ドキュメント（一次情報源）
+3. パッケージマネージャーの公式仕様（下記テーブルの「信頼できるドメイン」列を参照）
+
+URLは変更される可能性があるため、ドメイン名・組織名で情報源を判断する。
+具体的なドメインの例：
+
+| 対象 | 信頼できるドメインの例 |
+|------|----------------------|
+| Node.js / npm | nodejs.org, docs.npmjs.com |
+| Python / pip | docs.python.org, packaging.python.org |
+| Go | go.dev |
+| Rust / Cargo | doc.rust-lang.org, crates.io |
+| Java / Maven | maven.apache.org |
+| Java / Gradle | docs.gradle.org |
+| Ruby / Bundler | bundler.io, rubygems.org |
+| Swift / SPM | swift.org |
+| PHP / Composer | getcomposer.org |
+
+**Step 2：プロジェクト種別・規模・クラウド・業種による構成の差異を確認する**
+
+ARCHITECTURE.md の以下のセクションが確定している場合、追加の検索を実行する。
+
+| 確定している情報 | 追加検索クエリ |
+|----------------|--------------|
+| クラウドプロバイダー（AWS / GCP / Azure、およびそれ以外のプロバイダー） | `[プロバイダー名] project structure best practices [現在年]` |
+| フレームワーク（Next.js / Django / Rails、およびそれ以外のフレームワーク） | `[フレームワーク名] recommended directory structure [現在年]` |
+| アーキテクチャ（マイクロサービス / サーバーレス、およびそれ以外のアーキテクチャ） | `[アーキテクチャ名] directory structure best practices [現在年]` |
+| 業種・ドメイン（金融 / 医療 / EC、およびそれ以外の業種） | `[業種名] software project structure compliance [現在年]` |
+
+**Step 3：検索結果を📋フォーマットで人間に通知する**
+
+```
+📋 プロジェクト構成の参照情報源
+  - [情報源名（組織名）]：[URL]（取得日：[YYYY-MM-DD]）
+  確認した必須ファイル・推奨構成：[1〜2行の要約]
+```
+
+Web検索で公式情報が確認できなかった場合：
+```
+📋 プロジェクト構成の参照情報源
+  - AIの学習データに基づく構成です（Web検索で公式情報が確認できませんでした）
+  - 確認を推奨する情報源：[言語名] / [フレームワーク名] の公式ドキュメント（[ドメイン名]）
+```
+
+**Step 4：確認した必須ファイルを ARCHITECTURE.md に記録する**
+
+ARCHITECTURE.md の「技術スタック」セクション末尾に以下を追記する。
+これが SSOT となり、以後このファイルを参照する。
+
+```markdown
+**確認済み必須ファイル**（[YYYY-MM-DD] 時点）
+- [ファイル名]：[役割]（出典：[情報源ドメイン]）
+- [ファイル名]：[役割]（出典：[情報源ドメイン]）
+```

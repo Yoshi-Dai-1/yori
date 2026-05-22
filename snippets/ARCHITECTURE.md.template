@@ -269,7 +269,10 @@ DESIGN.md が不要な場合、または後で作成する場合：
 | 言語 | [TypeScript / Python / etc.] |
 | スタイリング | [CSS Modules / Tailwind / etc.] |
 | テスト | [Vitest / Jest / pytest / etc.] |
-| データ取得 | [SWR / React Query / axios / etc.] |
+| データ取得 | [SWR / React Query / axios / REST / GraphQL / etc.] |
+| リアルタイム通信 | [WebSocket / Server-Sent Events / ポーリング / なし] |
+| DB / ORM | [PostgreSQL + Prisma / MySQL + SQLAlchemy / etc. / なし] |
+| マイグレーションツール | [Prisma Migrate / Alembic / Flyway / etc. / なし] |
 
 ---
 
@@ -297,7 +300,22 @@ DESIGN.md が不要な場合、または後で作成する場合：
 
 ## 命名規則
 
-`.claude/standards/principles/naming-conventions.md` に従う。
+<!-- stack-setup.md Step 3.5 ブロックAが言語確定時に以下の確定値を自動で記入する -->
+<!-- 「展開なし」モードの場合は以下を参考に手動で記入する -->
+
+ベースルール：`.claude/standards/principles/naming-conventions.md` に従う。
+
+| 対象 | 規則 |
+|------|------|
+| ディレクトリ名 | [ブロックAが記入] |
+| ファイル名 | [ブロックAが記入] |
+| クラス・型名 | [ブロックAが記入] |
+| 関数・変数名 | [ブロックAが記入] |
+| 定数 | [ブロックAが記入] |
+| フレームワーク固有の追加規則 | [ブロックAがWeb検索後に記入] |
+
+参照情報源：[ブロックAが📋フォーマットで記入]
+
 プロジェクト固有の追加ルール：
 
 - [プロジェクト固有のルールがあれば記載]
@@ -369,11 +387,32 @@ DESIGN.md が不要な場合、または後で作成する場合：
 - 品質診断戦略：[Reactive / Scheduled / Continuous]（言語確定時に stack-setup.md ルールが確認・記録）
 - 詳細は `.claude/standards/principles/code-quality.md` を参照
 
+### 国際化・ローカライゼーション（i18n）
+
+<!-- 詳細は non-functional-requirements.md「国際化」セクションを参照 -->
+- 対象言語・地域：[日本語のみ / 多言語展開あり（言語: ___）]
+- タイムゾーン保存：[UTC / Asia/Tokyo]
+- 文字コード：UTF-8統一
+
+### テスト戦略
+
+<!-- 詳細は non-functional-requirements.md「テスト戦略」セクションを参照 -->
+- テストフレームワーク：[言語確定時に stack-setup.md ルールが自動設定]
+- ユニットテスト対象：ビジネスロジック・純粋関数
+- インテグレーションテスト対象：APIエンドポイント・DB連携
+- E2Eテスト対象：[クリティカルなユーザーフローのみ / 対象外]
+- CIでのテスト実行：[PR時 / マージ時]
+
 ### 法的・コンプライアンス
 
+<!-- security-requirements.md の Step 3 に従い、Step 3.5 ブロックD・E が自律的に追記する -->
 - 個人情報収集：[あり / なし]
-- 業界規制：[金融商品取引法 / 医療情報 / なし]
+- 業界規制：[金融商品取引法 / 医療情報 / なし / 要確認]
 - 外部APIライセンス：[商用可確認済み / 個人利用のみ / 未確認]
+- 不正アクセス禁止法：[ペネトレーションテスト実施予定あり（管理者許可取得済み） / 予定なし]
+- 電気通信事業法：[外部送信あり（通知・公表対応済み） / 外部送信なし]
+- サイバーセキュリティ基本法：[政府・重要インフラ向け（ISMAP確認済み） / 対象外]
+- 著作権・ライセンス：[OSSライセンス確認済み / 未確認]
 
 ---
 
