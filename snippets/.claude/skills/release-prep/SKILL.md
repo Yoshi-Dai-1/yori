@@ -35,6 +35,72 @@ status: active
    `.claude/standards/principles/production-readiness.md` を読んで
    未対応の必須項目をすべて列挙する。人間に報告して優先順位を確認する。
 
+1.5 **バージョニングと CHANGELOG の準備**
+
+   ARCHITECTURE.md の「開発プロセス」セクションを read_file で読んで以下を実行する。
+   「開発プロセス」セクションが存在しない場合は Step 3.8 が未完了なので、
+   ARCHITECTURE.md の対話プロンプトに戻って Step 3.8 を完了させるよう人間に伝える。
+
+   **SemVer の適用判断：**
+
+   ARCHITECTURE.md の「バージョニング：SemVer 採用」を確認する。
+   - 「SemVer 採用」→ 以下のバージョン番号決定ロジックを実行する
+   - 「なし」または「管理しない」→ このステップを完全にスキップする
+
+   **バージョン番号の決定（SemVer 採用の場合のみ）：**
+   （仕様：semver.org。改訂確認は `Semantic Versioning specification [現在年]` で行う）
+
+   Step 1：過去のリリースタグを確認する
+   ```
+   git tag --sort=-version:refname | head -5
+   ```
+   タグが1件も存在しない（初回リリース）場合：
+   以下の1つの質問を人間に提示する：
+   ```
+   「今回のリリースは安定版（本番運用できる状態）ですか？
+    → はい：v1.0.0 からスタートします
+    → いいえ（まだ実験段階）：v0.1.0 からスタートします」
+   ```
+   人間が回答したら提示されたバージョン番号を採用する。
+
+   Step 2：前回タグ以降のコミットを確認する（初回以外）
+   ```
+   git log [前回タグ]..HEAD --oneline
+   ```
+   以下のルールを上から順に適用し、最初に該当したルールを使う：
+   - コミットメッセージに `BREAKING CHANGE:` または `!:` が含まれる → MAJOR を +1、MINOR と PATCH を 0 にリセット
+   - コミットメッセージに `feat:` が含まれる → MINOR を +1、PATCH を 0 にリセット
+   - それ以外（fix: / docs: / chore: 等のみ） → PATCH を +1
+   決定したバージョン番号を人間に提示して確認を取る。
+
+   **CHANGELOG の確認と更新（ARCHITECTURE.md に「CHANGELOG：管理する」の記載がある場合）：**
+
+   Step 1：プロジェクトルートに CHANGELOG.md が存在するか確認する
+   存在しない場合 → 以下の形式で新規作成する
+   （形式の根拠：keepachangelog.com。改訂確認は `Keep a Changelog [現在年]` で行う）：
+   ```markdown
+   # Changelog
+
+   すべての主要な変更はこのファイルに記録する。
+
+   ## [Unreleased]
+
+   ## [バージョン番号] - YYYY-MM-DD
+   ### Added
+   - [このリリースで追加した機能]
+   ### Fixed
+   - [このリリースで修正したバグ]
+   ### Security
+   - [セキュリティ関連の変更（ない場合はこの行ごと削除）]
+   ```
+
+   存在する場合 → read_file で読み込んで以下を実行する：
+   - `## [Unreleased]` セクションが空の場合：git log から Added / Fixed の内容を生成して記入する
+   - `## [Unreleased]` セクションに内容がある場合：その内容をそのまま使う
+   - `## [Unreleased]` を `## [バージョン番号] - YYYY-MM-DD` に書き換える
+   - 先頭に空の `## [Unreleased]` セクションを追加する（次のリリースに向けて）
+   - write_file で保存する
+
 2. **セキュリティ対応**（必須・省略不可）
    `.claude/standards/principles/security-implementation.md` を使って
    認証・認可・入力バリデーション・エラーハンドリングを確認・実装する。

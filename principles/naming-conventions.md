@@ -378,6 +378,9 @@ chore/update-dependencies  依存関係更新
 
 ## コミットメッセージ（Conventional Commits）
 
+仕様：conventionalcommits.org
+型の追加・変更は `Conventional Commits specification [現在年]` で確認する。
+
 ```
 feat: 株式スクリーナーの条件保存機能を追加
 fix: ログイン時のトークンリフレッシュエラーを修正
