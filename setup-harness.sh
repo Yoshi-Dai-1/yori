@@ -237,6 +237,10 @@ HOOK_ENTRIES=$(cat << 'HOOKS_JSON'
     {
       "matcher": "Bash",
       "hooks": [{ "type": "command", "command": ".claude/hooks/on-pre-tool-use.check-secrets.sh" }]
+    },
+    {
+      "matcher": "Write|Edit",
+      "hooks": [{ "type": "command", "command": ".claude/hooks/on-pre-tool-use.protect-features-json.sh" }]
     }
   ],
   "Stop": [
@@ -254,6 +258,7 @@ echo ""
 echo "   Hookを有効にすると、ファイルを保存するたびに以下が自動で動きます："
 echo "   ✅ コードの書き方チェック（lint・フォーマット）"
 echo "   ✅ 機密情報の誤コミット防止"
+echo "   ✅ features.json の不正更新防止（@evaluator のみ passes を更新可能）"
 echo "   ✅ セッション終了時の引き継ぎファイル自動生成"
 echo "   ✅ ドキュメントのリンク切れ検出"
 echo ""
@@ -417,6 +422,17 @@ if [ ! -f ".env.example" ]; then
   echo "✅ .env.example をコピーしました（チームで共有・値は .env に記入）"
 else
   echo "ℹ️  .env.example は既に存在します（上書き保護）"
+fi
+
+# .env を作成（.env.example が存在し .env が存在しない場合）
+# ※ 空ファイルのみ作成し、初期値の記入は AI（stack-setup.md の自動展開レベル）に委ねる
+#    これにより AI がプロジェクト性質に応じた初期値を記入できる
+if [ -f ".env.example" ] && [ ! -f ".env" ]; then
+  touch .env
+  echo "✅ .env を作成しました（AIが初期値を記入します）"
+  echo "⚠️  .env は絶対にコミットしないでください（.gitignoreで除外済み）"
+elif [ -f ".env" ]; then
+  echo "ℹ️  .env は既に存在します（上書き保護）"
 fi
 
 if [ ! -f ".editorconfig" ]; then

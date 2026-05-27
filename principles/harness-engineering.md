@@ -138,6 +138,17 @@ Planner がスプリント計画と同時に生成する機能追跡ファイル
 **Markdown ではなく JSON を使う理由**：エージェントが Markdown より JSON を
 誤って上書き・編集する可能性が低いため、状態が安定して追跡できる。
 
+#### passes フィールドの保護メカニズム
+
+`passes` フィールドは PreToolUse Hook（`on-pre-tool-use.protect-features-json.sh`）によって
+機械的に保護される。
+
+- **ブロック対象**: 実装エージェントが誤って `passes: true` を設定する操作
+- **許可条件**: `.claude/.evaluator-updating` マーカーファイルが存在する場合のみ
+- **評価エージェントの責務**: `PASS` 判定後、マーカー作成 → `passes` 更新 → マーカー削除の順に実行
+- **詳細**: `snippets/.claude/hooks/on-pre-tool-use.protect-features-json.sh.example` と
+  `snippets/agents/subagents/evaluator.md` の「PASS後の後処理」セクションを参照
+
 ### Sprint Contract（スプリント契約）
 
 スプリント開始前に Generator と Evaluator が「完了の定義」を合意する仕組み。
@@ -215,7 +226,7 @@ GCのもう一つの契機：**モデルのアップグレード時**。
 
 | 確認する問い | 削除を検討する条件 |
 |-------------|------------------|
-| このスプリント分割は必要か | 新モデルで長時間タスクを試したとき自律的に管理できていたなら不要 |
+| このスプリント分割は必要か | 新モデルで3回以上長時間タスク（3時間以上の実装）を試したとき、以下のすべてを満たしていれば不要: (1) Sprint Contractの差分が2回以下、(2) 不完全な完了宣言が0回、(3) Context Resetの必要性を人間が申告しなかった |
 | このContext Resetは必要か | Context Anxietyの兆候（不完全な完了宣言等）が観察されなくなったなら不要 |
 | このルールはAIが守れているか | 違反が長期間ゼロなら削除して様子を見る |
 | このサブエージェントは必要か | メインが同等の精度で処理できるなら統合を検討 |

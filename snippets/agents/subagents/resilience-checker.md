@@ -61,7 +61,8 @@ max_turns: 15
 
 ### コード品質（Code Quality）
 
-- 200行を超えているファイルが存在するか（list_directory で確認）
+- ファイルサイズが `.claude/standards/principles/file-size-and-cohesion.md` の閾値を超えていないか
+  → 超えているファイルがあれば「要対応」として報告する（ファイル名と行数を記載）
 - ARCHITECTURE.md のコード品質基準が記入されているか
 - coding-conventions.md にリンター設定が記載されているか
 

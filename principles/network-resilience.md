@@ -435,8 +435,29 @@ Heartbeat（KeepAlive）：
 ## GraphQL通信の設計原則
 
 GraphQLを使用するプロジェクトでのみ適用する（REST APIのみのプロジェクトはスキップ）。
-変化しない原則のみを定義する。ライブラリ固有の実装はブロックCが自律検索して補完する。
+セキュリティ対策（Introspection制御・クエリ深さ制限・認可・エラーメッセージ）の詳細は
+security-implementation.md の「GraphQLセキュリティ」セクションを参照。
 
+このファイルでは通信設計の観点のみを定義する:
+
+```
+N+1問題の防止:
+  GraphQLはネストしたクエリでN+1クエリが発生しやすい
+  DataLoader（またはそれに相当するバッチ処理）を使いDBへのクエリをまとめる
+  パフォーマンス問題が発生したら真っ先にN+1を疑う
+
+クエリの深さ制限:
+  ネストが深すぎるクエリはサーバーに過負荷をかける
+  クエリの深さ・フィールド数・複雑度に上限を設定する
+
+Introspectionの制御:
+  Introspection（スキーマ情報の取得）は開発環境のみ有効にする
+  本番環境ではIntrospectionを無効化してスキーマ情報を隠す
+  → security-implementation.md の「GraphQLセキュリティ」セクションも参照する
+
+Subscriptionのスケール:
+  GraphQL Subscriptionを使う場合はWebSocketと同じスケール設計が必要
+  → 上記のWebSocket設計原則を参照する
 ```
 N+1問題の防止：
   GraphQLはネストしたクエリでN+1クエリが発生しやすい

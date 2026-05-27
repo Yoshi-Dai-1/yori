@@ -141,6 +141,11 @@ git add -A && git commit -m "[生成したメッセージ]"
 **バグを修正するとき**：
 → 修正の前に、バグを再現するテストを先に書く。`@test-generator` を呼び出す
 
+**ソースファイルが編集され、同一セッションで対応するテストファイルが編集されない場合（テストドリフト検知）**：
+→ 編集されたソースファイルの公開関数/クラス一覧と対応テストファイルのカバレッジを比較する
+→ テストされていない変更点をリストアップし、`@test-generator` の呼び出しを提案する
+→ 除外条件: 編集がコメント・空白・型定義のみの変更、またはテストファイルが存在しないことが意図的（スクリプト・自動生成ファイル）の場合
+
 ## Subagents
 
 <!-- [プロジェクト名]・依存の方向・Taking on がプレースホルダーのままなら、このセクションを無視しARCHITECTURE.mdの記入を先に促す -->
@@ -160,6 +165,12 @@ git add -A && git commit -m "[生成したメッセージ]"
 **本番環境が稼働中のコードを変更するとき**：
 → 変更前に `.claude/skills/live-operation/` の Pre-Change Checklist を実行する
 
+**月次診断時**（または「診断して」と指示されたとき）：
+→ `@resilience-checker` でレジリエンス診断 + `@code-quality-auditor` でコード品質監査
+
+**本番リリース前**：
+→ `@resilience-checker` で最終確認
+
 ## Current Task
 
 <!-- 毎セッション開始時に更新する。.claude/project-context.md の「現在のタスク」も同じ内容に合わせて更新する -->
@@ -178,10 +189,21 @@ git add -A && git commit -m "[生成したメッセージ]"
    （コードなし・APIのみ・CLIはスキップ。代わりにテストコマンドを使う）
    → ビルドエラー・基本機能が壊れている場合は修復を優先する
 4. Current Task と `.claude/project-context.md` の「現在のタスク」を現在の状態に更新する
+5. **Hooks未設定チェック**：
+   `.claude/hooks/*.sh.example` が存在し、対応する `.sh` が存在しない場合
+   かつ AGENTS.md のプロジェクト名がプレースホルダー（`[プロジェクト名]`）でない場合
+   → 人間に Hook の有効化を提案する
+   （setup-harness.sh を再実行するか、.claude/hooks/README.md の手順に従う）
+6. **月次診断期限チェック**：
+   `docs/quality-scorecard.md` が存在する場合、最終診断日を確認する
+   → 前回の診断から30日以上経過している場合は、人間に月次診断の実施を提案する
+   → 提案内容：「前回診断から30日以上経過しています。@resilience-checker と @code-quality-auditor による月次診断を実行しますか？」
+   → quality-scorecard.md が存在しない場合は初回診断として提案する
 
 **セッション終了時**：`Stop` イベントのHook（`.claude/hooks/on-stop.generate-handoff.sh`）が
 `.claude/handoff-artifact.md` のテンプレートを自動生成し、`docs/build-log.md` に日付行を追記する。
 作業内容を確実に引き継ぐには handoff スキルを使う（`@handoff` または「今日はここまで」と伝える）。
+handoff スキルが実行済みの場合（`<!-- HANDOFF_FILLED -->` マーカーが存在する場合）、Hookは既存ファイルを上書きしない。
 
 ## Report Format
 

@@ -30,7 +30,9 @@ paths:
 
 ```
 種類1：言語別の自動展開
-  条件：言語が確定している + 対象ファイルがまだ存在しない
+  条件：言語が確定している（プレースホルダー`[TypeScript / Python / etc.]`の形式でなく、
+    「TypeScript」「JavaScript」「Python」「Go」「Ruby」「Rust」「Java」「Kotlin」「C」「C++」「C#」のいずれかが記載されている）
+    + 対象ファイルがまだ存在しない
   挙動：確認なしで自動作成する
   対象：tsconfig.json / pyproject.toml / .eslintrc 等
 
@@ -45,7 +47,7 @@ paths:
   対象：electron-builder.yml / tauri.conf.json / backend.tf / cdk.json 等
 ```
 
-**実行前に `.claude/project-context.md` の「設定ファイルの自動展開レベル」を確認する。**
+**実行前に `プロジェクトルート/.claude/project-context.md` の「設定ファイルの自動展開レベル」を確認する。ファイルが存在しない場合は「未設定」として扱う。**
 
 ```
 「自動展開」と記載されている    → 種類1は確認なしで実行する（デフォルト）
@@ -69,7 +71,7 @@ paths:
 #### TypeScript が含まれる場合
 
 ```
-tsconfig.base.json   → .claude/standards/ の雛形を参考に作成
+tsconfig.base.json   → 下記インラインテンプレートで作成
 .prettierrc          → 下記テンプレートで作成
 ```
 
@@ -213,6 +215,65 @@ strict = true
 > rustfmt と Clippy は `rustup component add rustfmt clippy` でインストールしてください。
 > lint・フォーマットを自動化するには `.claude/hooks/on-post-tool-use.lint-and-typecheck.sh.example`
 > の `.example` を外して有効化することを推奨します（`.claude/hooks/README.md` 参照）。
+
+---
+
+#### Java/Kotlin が含まれる場合
+
+プロジェクト固有の情報（グループID・アーティファクトID等）が必要なため自動作成しない。
+ユーザーに以下を案内する：
+> Mavenプロジェクト: `mvn archetype:generate` で対話的に作成してください。
+> Gradleプロジェクト: `gradle init` で作成してください。
+> lint・フォーマット: ktlint（Kotlin）、Checkstyle/SpotBugs（Java）を推奨します。
+> lint・フォーマットを自動化するには `.claude/hooks/on-post-tool-use.lint-and-typecheck.sh.example`
+> の `.example` を外して有効化することを推奨します（`.claude/hooks/README.md` 参照）。
+
+---
+
+#### C/C++ が含まれる場合
+
+ビルドシステム・コンパイラ設定がプロジェクト固有のため自動作成しない。
+ユーザーに以下を案内する：
+> CMakeLists.txt または Makefile をプロジェクトに合わせて作成してください。
+> フォーマット: clang-format、lint: clang-tidy を推奨します。
+> `clang-format --style=LLVM -i [ファイル]` でフォーマットできます。
+
+---
+
+#### C# が含まれる場合
+
+プロジェクト固有の情報が必要なため自動作成しない。
+ユーザーに以下を案内する：
+> `dotnet new [テンプレート名]` でプロジェクトを作成してください。
+> （例: `dotnet new webapi` / `dotnet new console` / `dotnet new classlib`）
+> lint・フォーマット: `dotnet format` を推奨します。
+
+---
+
+#### 環境変数（.env）の展開
+
+**実行前に `プロジェクトルート/.claude/project-context.md` の「設定ファイルの自動展開レベル」を確認する。**
+
+```
+「自動展開」と記載されている場合：
+  → .env が存在しない場合、.env.example を .env にコピーする
+  → .env が存在しても中身が空（またはコメントのみ）の場合、
+    プロジェクトの性質に応じて初期値を記入する（例：NODE_ENV=development、PORT=3000）
+  → 機密情報（JWT_SECRET・API_KEY等）は空欄のままにする
+  → .env が既に実値で記入されている場合は「既に設定済みのためスキップした」と報告する
+
+「確認付き展開」と記載されている場合：
+  → .env が存在しない、または空の場合、作成候補と記入予定値を提示し、承認後に作成・記入する
+  → 提示内容例：
+    「以下の環境変数を持つ .env ファイルを作成します。機密情報は空欄です。
+     NODE_ENV=development, PORT=3000, DATABASE_URL=（空欄）, JWT_SECRET=（空欄）
+     作成しますか？[Y/n]」
+  → .env が既に実値で記入されている場合はスキップする
+
+「展開なし」と記載されている場合：
+  → .env.example の存在と「cp .env.example .env」コマンドを案内するのみ
+  → 作成・記入はしない
+```
 
 ---
 
@@ -366,7 +427,8 @@ charts/
   - 「展開なし」：展開候補を提示のみ行い、作成はしない
   - 記載なし（初回）：展開レベルを人間に確認してから実行する
 - 展開したファイルは必ず一覧を報告する
-- 不明点がある場合（バージョン等）は適切なデフォルト値を使い、後で変更できると案内する
+- 不明点がある場合（バージョン等）は以下のデフォルト値を使い、後で変更できると案内する:
+    TypeScript → ES2022、Python → 3.12、Go → モジュール名のみの初期化、Node.js → LTS最新版、Ruby → 3.3
 
 ---
 
@@ -479,6 +541,30 @@ charts/
 ### このステップが終わるまで Step 4 に進まない
 
 実行対象となったすべてのブロック（A〜F）の完了・記録が完了してから Step 4 に進む。
+
+---
+
+## Step 3.6：アーキテクチャ固有ルールの適用
+
+ARCHITECTURE.md の「採用アーキテクチャ」セクションがプレースホルダーから具体的な値に更新されたとき、
+以下の**すべての条件**を満たす場合のみ実行する。1つでも満たさない場合はスキップする：
+
+**条件1**：「採用アーキテクチャ」に具体的なアーキテクチャ名が記載されている
+  （`[backend-api / web-frontend-small / microservices / etc.]` のプレースホルダー形式でない）
+**条件2**：前回のセッションから「採用アーキテクチャ」の値が変更された、または初回設定である
+**条件3**：対応する `architectures/[アーキテクチャ名].md` ファイルが存在する
+
+実行内容：
+1. `architectures/[アーキテクチャ名].md` を読む
+2. そのアーキテクチャ固有の「必須チェック項目」を特定する
+3. 必須チェック項目を AGENTS.md の `## Boundaries` セクションまたは `## Security Boundaries` セクションに追記する
+4. 該当アーキテクチャ固有のセキュリティ・レジリエンス制約がある場合、対応するルールファイルも参照する
+5. 適用したルールを人間に報告する
+
+除外条件：
+- 「採用アーキテクチャ」がまだプレースホルダーのまま
+- 前回の値から変更がない（既に適用済み）
+- `monorepo` のように複数パターンを併用する設定で、各パターンが個別に処理済み
 
 ---
 

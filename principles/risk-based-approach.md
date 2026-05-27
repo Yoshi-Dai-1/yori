@@ -55,6 +55,29 @@ AIへの指示を書く前に「何が本当に重要か」を決める羅針盤
 
 ---
 
+## 深刻度ラベルの体系と使い分け
+
+このリポジトリでは用途に応じて異なるラベル体系を使用する。
+以下の表がSSOTとなり、他ファイルはこの表を参照する。
+
+| ラベル体系 | 用途 | 参照元 |
+|-----------|------|--------|
+| CRITICAL/HIGH/MEDIUM/LOW | セキュリティ脆弱性・脅威モデリング | rules/security.md, principles/threat-modeling.md |
+| A/B/C/D（4象限） | リスク優先順位付け（影響度×確率） | このファイル |
+| GREEN/YELLOW/RED | システムレジリエンス診断 | agents/subagents/resilience-checker.md |
+| GOOD/CAUTION/ATTENTION | コード品質診断 | agents/subagents/code-quality-auditor.md |
+
+### 4象限とCRITICAL/HIGH/MEDIUM/LOWの紐付け
+
+```
+A領域（影響大・確率高）→ CRITICAL（即時対処）
+B領域（影響小・確率高）→ HIGH（このスプリント内）
+C領域（影響大・確率低）→ MEDIUM（次のスプリントで対処）
+D領域（影響小・確率低）→ LOW（記録して計画的に対処）
+```
+
+---
+
 ## プロジェクト種別ごとのリスクの重み付け
 
 規模・目的・対象によってリスクの重み付けは変わる。
@@ -148,18 +171,14 @@ AIへの指示を書く前に「何が本当に重要か」を決める羅針盤
 
 ### 多層防御（Defense in Depth）
 
+4層モデルの定義と各層のチェックリストは resilience.md の「4つの防御層」を参照。
+以下の概要は理解のための簡易版。詳細は resilience.md にある。
+
 ```
-Layer 1: 侵入を防ぐ
-  認証・ファイアウォール・入力検証
-
-Layer 2: 侵入を検知する
-  ログ・異常検知・アラート
-
-Layer 3: 侵入後の被害を限定する
-  最小権限・データ暗号化・セグメント分離
-
-Layer 4: 侵入後に回復する
-  バックアップ・インシデントレスポンス計画
+Layer 1: 壊れにくくする（Prevention）    → resilience.md Layer 1 参照
+Layer 2: 気づく（Detection）            → resilience.md Layer 2 参照
+Layer 3: 被害を限定する（Containment）  → resilience.md Layer 3 参照
+Layer 4: 回復する（Recovery）           → resilience.md Layer 4 参照
 ```
 
 どれか1層が破られても他の層が機能する設計。

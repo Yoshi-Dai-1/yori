@@ -265,7 +265,7 @@ API設計の原則：
   → SameSite Cookie属性を設定する
     サードパーティへの送信が不要な場合：Strict を設定する
     サードパーティへの送信が必要な場合：Lax を設定する
-    どちらか判断できない場合：security-auditor.md の設計モードで確認する
+    SameSite属性をStrictにするかLaxにするか判断できない場合：Strictをデフォルトとし、security-auditor.md の設計モードで確認する
   → 状態を変更するリクエスト（POST/PUT/PATCH/DELETE）にCSRFトークンを実装する
   → CSRF対策の具体的な実装方法は「[使用フレームワーク] CSRF protection [現在年]」で検索する
 

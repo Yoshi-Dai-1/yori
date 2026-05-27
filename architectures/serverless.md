@@ -81,6 +81,10 @@ src/
   ツリーシェイキングが有効なバンドラー設定を使う
 
 対策3：コールドスタートの許容時間をARCHITECTURE.mdの非機能要件に定義する
+  serverlessアーキテクチャが選択されている場合、stack-setup.md Step 3.5の実行時に
+  ARCHITECTURE.md の「非機能要件 → コールドスタート」セクションが記入済みか確認する。
+  未記入の場合は人間に以下の選択肢を提示する:
+  (1) 許容する（500ms以内）、(2) 許容しない（Provisioned Concurrencyを設定する）、(3) 後で決める
   ユーザー向けAPIで許容できないなら Provisioned Concurrency（AWS）等を検討する
   → 「[プラットフォーム名] cold start optimization [現在年]」で検索してから設定する
 ```

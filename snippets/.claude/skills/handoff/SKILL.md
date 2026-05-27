@@ -11,7 +11,7 @@ description: |
   Make sure to use this skill even when the user does not say "handoff"
   explicitly — any context reset, development pause, session end, or session resumption
   qualifies. Do NOT use for release preparation (use release-prep instead).
-version: 1.1.0
+version: 1.0.0
 status: active
 ---
 

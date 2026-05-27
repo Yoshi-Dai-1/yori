@@ -25,6 +25,9 @@ setup-harness.sh でテンプレートをコピーして、
 
 ```
 dev-standards/
+  AGENTS.md                    ★ このリポジトリの開発用（setup-harness.shでコピーされない）
+  .design-notes/               ★ 設計メモ（同様にコピーされない・他プロジェクトに混入しない）
+    session-context.md         ← セッション間の設計文脈復元用
   setup-harness.sh              ★ 新プロジェクト開始時に使うセットアップスクリプト
 
   principles/                   汎用原則（読む・参照する）
@@ -67,16 +70,20 @@ dev-standards/
   decisions/                    判断の記録（ADR・技術選定）
     skill-candidates.md         スキル化候補（AIが自動追記）
 
-  snippets/                     テンプレート集（コピーして使う）
-    ARCHITECTURE.md.template    ★ セキュリティ・品質・依存関係リスク・スケーラビリティ・開発プロセスセクション追加
-    tech-decision.md.template
-    .gitignore.template
-    .env.example.template
-    tsconfig.base.json
+    snippets/                       テンプレート集（コピーして使う）
+      ARCHITECTURE.md.template    ★ セキュリティ・品質・依存関係リスク・スケーラビリティ・開発プロセスセクション追加
+      DESIGN.md.template          UIデザイン仕様テンプレート
+      tech-decision.md.template   技術選定記録テンプレート
+      .gitignore.template         git除外設定テンプレート
+      .env.example                環境変数テンプレート（setup-harness.shが自動コピー）
+      .editorconfig               エディタ間コードスタイル統一設定
 
-    agents/                     AGENTS.mdテンプレート（単一・60〜100行）
-      AGENTS.md                 全プロジェクト共通（フェーズ問わず使う・コミット実行設定を含む）
-      subagents/                サブエージェント定義ファイル
+      docs/                       ドキュメント雛形
+        quality-scorecard.md.template  ★ 月次診断スコアカード雛形
+
+      agents/                     AGENTS.mdテンプレート（単一・60〜100行）
+        AGENTS.md                 全プロジェクト共通（フェーズ問わず使う・コミット実行設定を含む）
+        subagents/                サブエージェント定義ファイル
         planner.md              仕様策定（1〜4文→詳細仕様書）
         evaluator.md            品質評価（Build後のQA・スプリント契約との照合）
         code-reviewer.md
@@ -100,9 +107,11 @@ dev-standards/
         README.md                                                  Hooksの説明・命名規則・ツール対応状況
         on-stop.generate-handoff.sh.example                        Stopイベント：handoff生成
         on-pre-tool-use.check-secrets.sh.example                   PreToolUseイベント：機密情報チェック
+        on-pre-tool-use.protect-features-json.sh.example           PreToolUseイベント：features.json保護
         on-post-tool-use.lint-and-typecheck.sh.example             PostToolUseイベント：lint・型チェック
         on-post-tool-use.record-skill-usage.sh.example             PostToolUseイベント：スキル使用履歴記録
         on-post-tool-use.architecture-skill-check.sh.example       PostToolUseイベント：外部スキル診断
+        on-post-tool-use.check-doc-links.sh.example                PostToolUseイベント：ドキュメントリンク整合性チェック
       usage/
         skill-usage.md          スキル使用履歴（Hooksが自動追記）
         rule-hits.md            ルール参照履歴
@@ -214,8 +223,9 @@ DEV_STANDARDS_PATH=../dev-standards bash ../dev-standards/setup-harness.sh
 
 以下のファイルも自動生成されます（上書き保護あり）：
 - `.env.example`：環境変数のテンプレート（値は空・必ずコミットする）
+- `.env`：空ファイルで作成（AIが自動展開レベルに従い初期値を記入）
 - `.editorconfig`：エディタ間のコードスタイル統一設定
-- `tsconfig.base.json`：TypeScript 基本設定（TS プロジェクトで使用）
+- TypeScript設定：`stack-setup.md` のインラインテンプレートから展開（TS プロジェクトで使用）
 
 `.gitignore` について：スクリプトが自動で以下を設定します：
 - `.gitignore` が存在しない場合は `.gitignore.template` を元に自動作成します

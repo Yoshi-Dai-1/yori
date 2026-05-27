@@ -60,6 +60,7 @@ hooks/
   README.md
   on-stop.generate-handoff.sh.example                       ← Stopイベント：handoff生成
   on-pre-tool-use.check-secrets.sh.example                  ← PreToolUseイベント：機密情報チェック
+  on-pre-tool-use.protect-features-json.sh.example          ← PreToolUseイベント：features.json保護
   on-post-tool-use.lint-and-typecheck.sh.example            ← PostToolUseイベント：lint・型チェック
   on-post-tool-use.record-skill-usage.sh.example            ← PostToolUseイベント：スキル使用履歴記録
   on-post-tool-use.architecture-skill-check.sh.example      ← PostToolUseイベント：外部スキル診断
@@ -67,6 +68,13 @@ hooks/
 ```
 
 `.example` 拡張子を外してプロジェクト固有の設定に書き換えて使う。
+
+---
+
+## 自動セットアップ
+
+Hookの設定は `setup-harness.sh` 実行時に自動で行われる。
+個別に有効化・無効化したい場合は、以下の手動手順に従う。
 
 ---
 
@@ -118,6 +126,10 @@ matchers は大文字小文字を区別する。正確に記載すること。
       {
         "matcher": "Bash",
         "hooks": [{ "type": "command", "command": ".claude/hooks/on-pre-tool-use.check-secrets.sh" }]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [{ "type": "command", "command": ".claude/hooks/on-pre-tool-use.protect-features-json.sh" }]
       }
     ],
     "Stop": [
@@ -213,3 +225,46 @@ cp .claude/hooks/on-post-tool-use.check-doc-links.sh.example \
 chmod +x .claude/hooks/on-post-tool-use.check-doc-links.sh
 # settings.json の hooks に登録する（上記 settings.json 例を参照）
 ```
+
+---
+
+## features.json 保護フック
+
+`on-pre-tool-use.protect-features-json.sh.example` は `docs/features.json` の `passes` フィールド
+不正更新をブロックする。
+
+### 保護対象
+
+- `passes` フィールドの変更（`false` → `true` の偽通過防止）
+- 実装エージェントが誤って完了状態を設定するのを防ぐ
+
+### 動作原理
+
+1. Write/Edit ツール実行前に `docs/features.json` を対象に発火
+2. 既存ファイルと新内容の `passes` 値を比較（jq使用）
+3. 差分がある場合、`.claude/.evaluator-updating` マーカーファイルの有無を確認
+4. マーカーがない場合はブロック（終了コード2）
+5. マーカーがある場合は許可（@evaluator による正当な更新）
+
+### 有効化手順
+
+Hookの有効化は `setup-harness.sh` 実行時に自動で行われる。
+
+**個別に有効化する場合**
+```bash
+cp .claude/hooks/on-pre-tool-use.protect-features-json.sh.example \
+   .claude/hooks/on-pre-tool-use.protect-features-json.sh
+chmod +x .claude/hooks/on-pre-tool-use.protect-features-json.sh
+brew install jq  # macOS / apt install jq（Linux）/ winget install jqlang.jq（Windows）
+# settings.json の hooks に登録する（上記 settings.json 例を参照）
+```
+
+### jqフォールバック機能
+
+jqがインストールされていない場合でも、grepによる簡易比較で動作する。
+ただし複雑なJSON構造の変更は正確に検出できないため、可能であればjqのインストールを推奨。
+
+### 依存関係
+
+- `jq`（推奨）: 正確なJSON比較。ない場合はgrep簡易モードで動作（精度低下）
+- `@evaluator` が `PASS` 判定後に `.claude/.evaluator-updating` マーカーを作成する（evaluator.md 参照）
