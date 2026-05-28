@@ -1,0 +1,48 @@
+{
+  "components": [
+    {
+      "design_name": "Header",
+      "code_name": "Navigation/Header",
+      "tokens": ["semantic.color.background", "semantic.color.text-primary"],
+      "variants": ["default", "sticky"]
+    },
+    {
+      "design_name": "Button",
+      "code_name": "UI/Button",
+      "tokens": [
+        "component.button.background",
+        "component.button.text",
+        "component.button.border-radius",
+        "component.button.padding-x",
+        "component.button.padding-y",
+        "component.button.font-weight"
+      ],
+      "variants": ["primary", "secondary", "ghost", "danger"]
+    },
+    {
+      "design_name": "Card",
+      "code_name": "UI/Card",
+      "tokens": [
+        "component.card.background",
+        "component.card.border",
+        "component.card.border-radius",
+        "component.card.padding"
+      ],
+      "variants": ["default", "clickable", "highlighted"]
+    },
+    {
+      "design_name": "Input",
+      "code_name": "UI/Input",
+      "tokens": [
+        "component.input.background",
+        "component.input.border",
+        "component.input.border-radius",
+        "component.input.padding-x",
+        "component.input.padding-y",
+        "component.input.font-size",
+        "component.input.height"
+      ],
+      "variants": ["default", "error", "disabled"]
+    }
+  ]
+}

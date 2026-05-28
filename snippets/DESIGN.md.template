@@ -1,111 +1,68 @@
 # DESIGN.md
 
-<!-- このファイルはプロジェクトルートに置く。UIを実装するAIへ渡す最重要デザイン仕様書。 -->
-<!-- 各セクションの [] を実際の内容に書き換える。 -->
-<!-- セクションヘッダーは英語のまま残す（AIエージェントの可読性のため）。 -->
+<!-- このファイルはプロジェクトルートに置く。UI実装の入口。正本は token-ssot.json。 -->
+<!-- DESIGN.md は設計の索引であり、値を持たない。値はすべて design/token-ssot.json が正本。 -->
 
 ---
 
-## AIと対話しながら記入する方法
+## Read first
 
-<!-- このセクション（## AIと対話しながら記入する方法）は記入完了後に削除する -->
+UI実装前に以下の順で読む：
 
-このテンプレートを一人で埋めようとすると、フォントスタックの誤り・行間の不備・日本語固有仕様の漏れが生じやすい。
-以下のプロンプトをAIに渡すことで、対話しながら正確に埋めることができる。
+1. `design/token-ssot.json` — すべてのデザイン値の正本（primitive → semantic → component）
+2. `design/component-map.json` — デザイン上の部品名と実装コンポーネント名の対応関係
+3. `design/INTAKE.md` — デザインの初回収集手順（セットアップ時のみ。普段は読まなくてよい）
+4. `.claude/standards/principles/design-contract.md` — デザイン契約の3本柱と変更手順の詳細
 
-```
-以下のファイルを読んで、DESIGN.md を一緒に作ってください。
-
-## Step 1：プロジェクトの把握
-
-まず以下を読む：
-- docs/project-definition.md（対象ユーザー・使用環境・プロジェクトの目的）
-- ARCHITECTURE.md（技術スタック・スタイリング手法）
-
-読み終わったら、プロジェクトの概要と対象ユーザーを1〜2文で私に伝えてください。
-内容が正しければ「次へ」と答えます。
-
-## Step 2：デザイン方針の確認
-
-以下を1つずつ質問してください：
-1. デザインの雰囲気（例：業務系・クリーン / メディア系・リッチ / コンシューマー向け・カジュアル）
-2. ブランドカラーが決まっているか（決まっていれば色コードを教えてもらう）
-3. フォントへのこだわりがあるか（なければ標準的な推奨値を提案する）
-4. ダークモードへの対応が必要か
-
-## Step 3：日本語タイポグラフィの確認
-
-以下を確認してください：
-- 和文フォントの優先順位（游ゴシック / Noto Sans JP / ヒラギノ / システムフォント）
-- 本文の行間（line-height）の希望（なければ 1.7〜1.8 を推奨として提案する）
-- 禁則処理の厳格度（標準 / 厳格 / ブラウザデフォルト）
-
-## Step 4：DESIGN.md への記入
-
-各セクションを1つずつ確認しながら記入してください。
-すべて埋まったら、完成した DESIGN.md を出力してください。
-
-共通ルール：
-- 「どちらがよいか」と迷う場面では選択肢を提示して私に選ばせてください
-- 私が「分からない」と答えたときは、プロジェクトの規模・目的から推奨値を提案してください
-- 質問は1つずつ。私が答えるまで次に進まないでください
-
-## Step 5：次のステップへ案内する
-
-DESIGN.md の出力が完了したら、以下を案内する：
-
-「DESIGN.md が完成しました。次に AGENTS.md を記入します。
-AGENTS.md を開き、## Project Overview セクションの <!-- ... --> コメント内にある対話プロンプトをコピーしてください。」
-```
+検証手段はプロジェクトのデザインツールに依存する。CLIによる整合検証がある場合は、DESIGN.md編集後に必ず実行する。
 
 ---
-
 
 ## 1. Visual Theme & Atmosphere
 
-- **デザイン方針**: [例：クリーンで信頼感のある業務UI / 温かみのあるコンシューマー向け]
-- **密度**: [例：情報密度が高い業務アプリ / ゆったりとしたメディア型]
-- **キーワード**: [3〜5つの形容詞。例：信頼性・明快・効率的]
+デザイン方針・密度・キーワードは `design/token-ssot.json` の該当フィールドを参照。
 
 ---
 
 ## 2. Color Palette & Roles
 
+色の値は `design/token-ssot.json` の `primitive.color.*`（生の色）と `semantic.color.*`（役割）を参照。
+
 ### Primary（ブランドカラー）
 
-- **Primary** (`#______`): メインのブランドカラー。CTAボタン・アクティブ状態に使用
-- **Primary Dark** (`#______`): ホバー・プレス時
+- Primary：`semantic.color.primary`。CTAボタン・アクティブ状態に使用
+- Primary Dark：`semantic.color.primary-hover`。ホバー・プレス時
 
 ### Semantic（意味的な色）
 
-- **Danger** (`#______`): エラー・削除・危険な操作
-- **Warning** (`#______`): 警告・注意喚起
-- **Success** (`#______`): 成功・完了
+- Danger：`semantic.color.danger`。エラー・削除・危険な操作
+- Warning：`semantic.color.warning`。警告・注意喚起
+- Success：`semantic.color.success`。成功・完了
 
 ### Neutral（ニュートラル）
 
-- **Text Primary** (`#______`): 本文テキスト（純粋な #000000 は避ける）
-- **Text Secondary** (`#______`): 補足テキスト・ラベル
-- **Text Disabled** (`#______`): 無効状態のテキスト
-- **Border** (`#______`): 区切り線・入力欄の枠
-- **Background** (`#______`): ページ背景
-- **Surface** (`#______`): カード・モーダル等の面
+- Text Primary：`semantic.color.text-primary`。本文テキスト（#000000 は避ける）
+- Text Secondary：`semantic.color.text-secondary`。補足テキスト・ラベル
+- Text Disabled：`semantic.color.text-disabled`。無効状態のテキスト
+- Border：`semantic.color.border`。区切り線・入力欄の枠
+- Background：`semantic.color.background`。ページ背景
+- Surface：`semantic.color.surface`。カード・モーダル等の面
 
 ---
 
 ## 3. Typography Rules
 
-<!-- 日本語UIでは最も重要なセクション。AIへの指示精度に直結する。 -->
+フォントの値は `design/token-ssot.json` の `primitive.font.*` と `semantic.font.*`、サイズは `semantic.size.*` を参照。
 
 ### 3.1 和文フォント
 
-- **ゴシック体**: [例：游ゴシック（Yu Gothic / YuGothic）/ Noto Sans JP / ヒラギノ角ゴ ProN]
-- **明朝体**（使用する場合）: [例：游明朝 / Noto Serif JP / ヒラギノ明朝 ProN]
+- ゴシック体：`semantic.font.body`。游ゴシック / Noto Sans JP / ヒラギノ角ゴ ProN のいずれかを優先
+- 明朝体（使用する場合）：別途 `primitive.font.*` に設定
 
 ### 3.2 欧文フォント
 
-- **サンセリフ**: [例：Helvetica Neue / Inter / Arial]
-- **等幅**: [例：SFMono-Regular / Consolas / Menlo]
+- サンセリフ：`primitive.font.*` に設定
+- 等幅：`primitive.font.*` に設定
 
 ### 3.3 font-family 指定
 
@@ -124,31 +81,32 @@ font-family: [等幅フォント], monospace;
 
 ### 3.4 文字サイズ・ウェイト階層
 
-| Role | Size | Weight | Line Height | Letter Spacing | 備考 |
-|------|------|--------|-------------|----------------|------|
-| Display | —px | — | — | — | ページタイトル等 |
-| Heading 1 | —px | — | — | — | セクション見出し |
-| Heading 2 | —px | — | — | — | サブ見出し |
-| Body | —px | — | — | — | 本文 |
-| Caption | —px | — | — | — | 補足・注釈 |
-| Small | —px | — | — | — | 最小テキスト |
+各ロールのサイズは `semantic.size.*` を参照：
+
+| Role | Token | 備考 |
+|------|-------|------|
+| Display | `semantic.size.display` | ページタイトル等 |
+| Heading 1 | `semantic.size.h1` | セクション見出し |
+| Heading 2 | `semantic.size.h2` | サブ見出し |
+| Body | `semantic.size.body` | 本文 |
+| Caption | `semantic.size.caption` | 補足・注釈 |
+| Small | `semantic.size.small` | 最小テキスト |
 
 ### 3.5 行間・字間
 
-- **本文の行間 (line-height)**: [推奨：1.7〜1.8。日本語は欧文より広めが標準]
-- **見出しの行間**: [推奨：1.3〜1.5]
-- **本文の字間 (letter-spacing)**: [推奨：0.04em〜0.08em]
-- **見出しの字間**: [推奨：0〜0.05em]
+- 本文の line-height：1.7〜1.8（日本語は欧文より広めが標準）
+- 見出しの line-height：1.3〜1.5
+- 本文の letter-spacing：0.04em〜0.08em
+- 見出しの letter-spacing：0〜0.05em
 
 ### 3.6 禁則処理・改行ルール
 
 ```css
-/* 標準設定 */
 overflow-wrap: break-word;
 line-break: strict;
 ```
 
-禁則対象（ブラウザが自動処理するが、AIへの明示が品質を上げる）：
+禁則対象（ブラウザが自動処理するが、明示が品質を上げる）：
 - 行頭禁止：`）」』】、。，．・：；？！`
 - 行末禁止：`（「『【`
 
@@ -156,7 +114,7 @@ line-break: strict;
 
 ```css
 /* 見出し・ナビゲーションに適用 */
-font-feature-settings: "palt" 1;  /* プロポーショナル字詰め */
+font-feature-settings: "palt" 1;
 ```
 
 - `palt`：和文の字詰め。見出しや短いラベルに有効。本文への適用は可読性を下げる場合があるため慎重に
@@ -166,74 +124,58 @@ font-feature-settings: "palt" 1;  /* プロポーショナル字詰め */
 
 ## 4. Component Stylings
 
+各コンポーネントの値は `design/token-ssot.json` の `component.*` を参照。
+
 ### Buttons
 
-**Primary**
-- Background: `#______`
-- Text: `#______`
-- Padding: —px —px
-- Border Radius: —px
-- Font Weight: —
-
-**Secondary**
-- Background: `transparent`
-- Text: `#______`
-- Border: 1px solid `#______`
-- Padding: —px —px
-- Border Radius: —px
+**Primary**：`component.button.*`。CTA・主要操作に使用
+**Secondary**：背景 `transparent`、枠線と文字色は `semantic.color.primary`
 
 ### Inputs
 
-- Background: `#______`
-- Border: 1px solid `#______`
-- Border (focus): 1px solid `#______`
-- Border Radius: —px
-- Padding: —px —px
-- Font Size: —px
-- Height: —px
+`component.input.*` を参照。
 
 ### Cards
 
-- Background: `#______`
-- Border: 1px solid `#______`
-- Border Radius: —px
-- Padding: —px
+`component.card.*` を参照。
 
 ---
 
 ## 5. Layout Principles
 
+スペーシングの値は `design/token-ssot.json` の `semantic.spacing.*` を参照。
+
 ### Spacing Scale
 
-| Token | Value |
-|-------|-------|
-| XS | —px |
-| S | —px |
-| M | —px |
-| L | —px |
-| XL | —px |
-| XXL | —px |
+| Token | 用途 |
+|-------|------|
+| `semantic.spacing.xs` | 最小余白 |
+| `semantic.spacing.s` | 小余白 |
+| `semantic.spacing.m` | 標準余白 |
+| `semantic.spacing.l` | 大余白 |
+| `semantic.spacing.xl` | 特大余白 |
+| `semantic.spacing.xxl` | 最大余白 |
 
 ### Container
 
-- Max Width: —px
-- Padding (horizontal): —px
+コンテナの max-width と padding は `design/token-ssot.json` に定義。
 
 ### Grid
 
-- Columns: —
-- Gutter: —px
+カラム数・ガター幅は `design/token-ssot.json` に定義。
 
 ---
 
 ## 6. Depth & Elevation
 
-| Level | Shadow | 用途 |
-|-------|--------|------|
+シャドウの値は `design/token-ssot.json` の `semantic.shadow.*` を参照。
+
+| Level | Token | 用途 |
+|-------|-------|------|
 | 0 | none | フラットな要素 |
-| 1 | `0 1px 2px rgba(0,0,0,0.1)` | カード |
-| 2 | `0 4px 8px rgba(0,0,0,0.1)` | ドロップダウン・モーダル |
-| 3 | `0 8px 24px rgba(0,0,0,0.15)` | ダイアログ・フローティング要素 |
+| 1 | `semantic.shadow.card` | カード |
+| 2 | `semantic.shadow.dropdown` | ドロップダウン・モーダル |
+| 3 | `semantic.shadow.modal` | ダイアログ・フローティング要素 |
 
 ---
 
@@ -244,13 +186,14 @@ font-feature-settings: "palt" 1;  /* プロポーショナル字詰め */
 - font-family は必ずフォールバックチェーンを指定する
 - 日本語本文の line-height は 1.5 以上にする（1.7〜1.8 を推奨）
 - 色のコントラスト比は WCAG AA 以上を確保する（本文：4.5:1 以上）
-- コンポーネントの余白は Spacing Scale に従う
+- コンポーネントの余白は `semantic.spacing.*` に従う
 
 ### Don't（禁止）
 
 - font-family に和文フォント1つだけを指定しない（環境依存になる）
 - 日本語本文に line-height: 1.2 以下を使わない（可読性が著しく低下する）
 - テキストの色に純粋な #000000 を使わない（コントラストが強すぎる）
+- token-ssot.json にない色・サイズ・スペーシング値を CSS に直書きしない
 - [プロジェクト固有の禁止事項]
 
 ---
@@ -259,11 +202,7 @@ font-feature-settings: "palt" 1;  /* プロポーショナル字詰め */
 
 ### Breakpoints
 
-| Name | Width | 説明 |
-|------|-------|------|
-| Mobile | ≤ —px | モバイルレイアウト |
-| Tablet | ≤ —px | タブレットレイアウト |
-| Desktop | > —px | デスクトップレイアウト |
+ブレークポイントの値は `design/token-ssot.json` に定義。
 
 ### タッチターゲット
 
@@ -271,34 +210,47 @@ font-feature-settings: "palt" 1;  /* プロポーショナル字詰め */
 
 ### フォントサイズの調整
 
-- モバイル本文: [—px]（デスクトップの ——% 程度）
-- モバイル見出し: デスクトップの 70〜80% に縮小
+モバイルのフォントサイズはデスクトップの 70〜80% を基準に、`design/token-ssot.json` で調整する。
 
 ---
 
-## 9. Agent Prompt Guide
+## 9. Design Priorities
 
-<!-- AIにUIの実装を依頼するときにここをコピーして渡す -->
+すべての局面で同じ優先順位を取れるとは限らない。
+以下はプロジェクトのデフォルト値。局面に応じて人間が変更する：
 
-### クイックリファレンス
+| 優先順位 | 説明 | トレードオフ |
+|---------|------|------------|
+| 1. 可読性 | 本文・ラベルは常に読みやすく | 装飾より情報設計を優先 |
+| 2. 一貫性 | 同じ部品は同じ見た目・動作 | 部品ごとの最適化より全体統一 |
+| 3. 信頼感 | 操作結果が予測可能であること | アニメーションより即時応答 |
+| 4. ブランドらしさ | プロジェクト固有の表現 | 上記3つを崩さない範囲で |
 
-```
-Primary Color: #______
-Text Color: #______
-Background: #______
-Font: [font-family の完全指定]
-Body Size: __px
-Line Height: __
-Border Radius: __px
-```
+### 検証手段
 
-### プロンプト例
+- `@evaluator` による QA評価（各スプリント完了後） — 必須
+- CLI検証コマンドが存在する場合（例：Penpot→`pnpm penpot:verify`、Open Design→`pnpm tools-dev`）— DESIGN.md 編集後に必ず実行する。コマンド名はプロジェクトに応じてARCHITECTURE.md に記載する
 
-```
-DESIGN.md のデザインシステムに従って、[コンポーネント名] を実装してください。
-- フォント: [font-family]
-- 本文色: #______
-- 行間: line-height: __
-- ボーダー: 1px solid #______
-- 禁則処理: overflow-wrap: break-word; line-break: strict;
-```
+---
+
+## 10. Design Tool Integration（任意）
+
+このセクションはプロジェクトで使用するデザインツールに応じて記述する。
+
+### Open Design を使う場合
+
+[Open Design](https://github.com/nexu-io/open-design) はオープンソースのデザインツール。
+導入すると以下が利用できる：
+
+- 自然言語指示からの UI プロトタイプ生成（Skill × Design System）
+- `design/token-ssot.json` の外部ソースとして Design System ファイルを利用
+- CLI による整合検証
+
+セットアップ手順は `setup-harness.sh` の実行時に対話形式で案内される。
+インストール後の詳細は Open Design のドキュメントを参照。
+
+### Penpot を使う場合
+
+Penpot を使う場合、`pnpm penpot:verify` のようなプロジェクト固有のCLI検証コマンドを
+ARCHITECTURE.md に定義する。token の値は Penpot のデザインシステムから
+`design/token-ssot.json` に転記する。

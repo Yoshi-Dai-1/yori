@@ -34,6 +34,7 @@ dev-standards/
     harness-engineering.md      ハーネスの全体像・5つの原則・タスク規模別構成
     project-definition.md       プロジェクト開始時：目的・要件・制約・セキュリティ要件の定義
     directory-structure.md      ディレクトリ設計の根本思想・必須ファイルの自律調達ルール
+    design-contract.md           デザイン契約の3本柱（Token SSOT・Component Map・語彙正規化）
     naming-conventions.md       命名規則（基本・言語別・REST API・GraphQL・WebSocket・DB・セキュア命名・Conventional Commits・自律確定フロー）
     file-size-and-cohesion.md   行数指針・凝集度
     ssot-and-constants.md       SSOT管理
@@ -70,28 +71,32 @@ dev-standards/
   decisions/                    判断の記録（ADR・技術選定）
     skill-candidates.md         スキル化候補（AIが自動追記）
 
-    snippets/                       テンプレート集（コピーして使う）
-      ARCHITECTURE.md.template    ★ セキュリティ・品質・依存関係リスク・スケーラビリティ・開発プロセスセクション追加
-      DESIGN.md.template          UIデザイン仕様テンプレート
-      tech-decision.md.template   技術選定記録テンプレート
-      .gitignore.template         git除外設定テンプレート
-      .env.example                環境変数テンプレート（setup-harness.shが自動コピー）
-      .editorconfig               エディタ間コードスタイル統一設定
+  snippets/                       テンプレート集（コピーして使う）
+    ARCHITECTURE.md.template    ★ セキュリティ・品質・依存関係リスク・スケーラビリティ・開発プロセスセクション追加
+    DESIGN.md.template          UIデザイン入口テンプレート（索引。値は token-ssot.json が正本）
+    design/
+      token-ssot.json.template  デザイントークンSSOTテンプレート（W3C形式）
+      component-map.json.template  コンポーネントマッピングテンプレート
+      INTAKE.md.template       デザイン記入手順テンプレート（初回セットアップ時・再収集時に使用）
+    tech-decision.md.template   技術選定記録テンプレート
+    .gitignore.template         git除外設定テンプレート
+    .env.example                環境変数テンプレート（setup-harness.shが自動コピー）
+    .editorconfig               エディタ間コードスタイル統一設定
 
-      docs/                       ドキュメント雛形
-        quality-scorecard.md.template  ★ 月次診断スコアカード雛形
+    docs/                       ドキュメント雛形
+      quality-scorecard.md.template  ★ 月次診断スコアカード雛形
 
-      agents/                     AGENTS.mdテンプレート（単一・60〜100行）
-        AGENTS.md                 全プロジェクト共通（フェーズ問わず使う・コミット実行設定を含む）
-        subagents/                サブエージェント定義ファイル
-        planner.md              仕様策定（1〜4文→詳細仕様書）
-        evaluator.md            品質評価（Build後のQA・スプリント契約との照合）
-        code-reviewer.md
-        security-auditor.md
-        test-generator.md
-        codebase-investigator.md
-        resilience-checker.md   ★ レジリエンス診断（月次GC時に使用）
-        code-quality-auditor.md ★ コード品質診断（月次GC時に使用）
+    agents/                     AGENTS.mdテンプレート（単一・60〜100行）
+      AGENTS.md                 全プロジェクト共通（フェーズ問わず使う・コミット実行設定を含む）
+      subagents/                サブエージェント定義ファイル
+      planner.md              仕様策定（1〜4文→詳細仕様書）
+      evaluator.md            品質評価（Build後のQA・スプリント契約との照合）
+      code-reviewer.md
+      security-auditor.md
+      test-generator.md
+      codebase-investigator.md
+      resilience-checker.md   ★ レジリエンス診断（月次GC時に使用）
+      code-quality-auditor.md ★ コード品質診断（月次GC時に使用）
 
     .claude/                    ハーネス雛形（setup-harness.shがコピーする）
       rules/
@@ -99,6 +104,7 @@ dev-standards/
         security.md           ★ セキュリティ常駐ルール（コードファイル編集時に自動リロード）
         network-resilience.md ★ 通信設計常駐ルール（通信コード編集時に自動リロード）
         stack-setup.md          技術スタック設定ファイルの自動展開ルール
+        design-contract.md      デザイン契約常駐ルール（DESIGN.md・design JSON編集時に自動リロード）
       skills/                   プロジェクトスコープのスキル（.claude/skills/に配置・gitで共有）
         release-prep/SKILL.md   ★ 本番リリース準備（SemVer・CHANGELOG自動生成を含む）
         live-operation/SKILL.md ★ 本番稼働中の変更・月次診断・スケーリング診断
