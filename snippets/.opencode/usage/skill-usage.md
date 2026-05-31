@@ -20,7 +20,7 @@
 
 AIへの指示：
 ```
-.opencode/usage/skill-usage.md を読んで、以下を報告してください。
+本ファイル（.opencode/usage/skill-usage.md）の記録をもとに、以下を報告してください。
 「削除候補」の判断は .opencode/skills/ に存在するスキルのみを対象にする。
 find-skills・skill-creator はグローバルスキルのため削除候補から除外する。
 

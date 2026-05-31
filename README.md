@@ -99,12 +99,21 @@ dev-standards/
       code-quality-auditor.md ★ コード品質診断（月次GC時に使用）
 
     .opencode/                    ハーネス雛形（setup-harness.shがコピーする）
-      rules/
-        _template.md            ルールファイルの書き方テンプレート
-        security.md           ★ セキュリティ常駐ルール（コードファイル編集時に自動リロード）
-        network-resilience.md ★ 通信設計常駐ルール（通信コード編集時に自動リロード）
-        stack-setup.md          技術スタック設定ファイルの自動展開ルール
-        design-contract.md      デザイン契約常駐ルール（DESIGN.md・design JSON編集時に自動リロード）
+      rules/                       常駐ルール（条件一致時に自動リロード、サブファイルはオンデマンド読込）
+        _shared/                   ルール間で共有されるSSoT（_shared/内のファイルは条件によらず常に利用可能）
+          _info-source-format.md ★ 情報源通知フォーマット
+        security.md               ★ セキュリティ常駐ルール
+          security/                 トリガー別手順（_trigger-project-definition / _trigger-first-code / 他6）
+        network-resilience.md     ★ 通信設計常駐ルール
+          network-resilience/       トリガー別手順（_trigger-arch / _trigger-implementation-phase / _ws-graphql）
+        stack-setup.md              技術スタック設定ファイルの自動展開ルール
+          stack-setup/              言語別設定（_typescript / _python / _go / 他12）
+        design-contract.md          デザイン契約常駐ルール（DESIGN.md・design JSON編集時に自動リロード）
+        code-quality.md           ★ コード品質常駐ルール
+        code-review.md              コードレビュー常駐ルール（@code-reviewer 呼出前に自動適用）
+        directory-structure.md      ディレクトリ構成常駐ルール
+        naming-conventions.md       命名規則常駐ルール
+        production.md             ★ 本番リリース常駐ルール
       skills/                   プロジェクトスコープのスキル（.opencode/skills/に配置・gitで共有）
         release-prep/SKILL.md   ★ 本番リリース準備（SemVer・CHANGELOG自動生成を含む）
         live-operation/SKILL.md ★ 本番稼働中の変更・月次診断・スケーリング診断

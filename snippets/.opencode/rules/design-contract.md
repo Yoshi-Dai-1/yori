@@ -31,7 +31,7 @@ paths:
 2. `design/token-ssot.json` を新しい値で上書きする
 3. グローバルCSS（globals.css / variables.css 等）を新しい値に追従させる
 4. `design/component-map.json` の token 参照を新しい値に更新する
-5. 影響を受ける全コンポーネントを確認し、必要に応じて更新する
+5. 影響を受ける全コンポーネントを確認し、token 参照が新しい値に合致しないコンポーネントを更新する
 
 ### UI コンポーネントを新規作成するとき
 

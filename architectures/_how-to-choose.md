@@ -110,7 +110,7 @@ Q5. 以下の条件をすべて満たすか？
 
 ```
 docs/project-definition.md を読んだ上で、
-dev-standards の architectures/_how-to-choose.md のフローチャートに従って
+`.opencode/standards/architectures/_how-to-choose.md` のフローチャートに従って
 このプロジェクトに適したアーキテクチャパターンを1つ提案してください。
 
 提案理由と、選ばなかったパターンの却下理由もあわせて教えてください。

@@ -175,7 +175,7 @@ OpenCode の場合（`.opencode/agents/` に配置）：
   resilience-checker.md       ← 月次レジリエンス診断
 ```
 
-テンプレートは `dev-standards/snippets/agents/subagents/` にある。
+テンプレートは `.opencode/agents/subagents/` にある。
 `setup-harness.sh` 実行時に自動でコピーされる。
 
 ---

@@ -132,15 +132,18 @@ else
 fi
 
 # rules テンプレート
-# rules/ 以下の全ファイルをコピー（上書き保護あり）
-# 含まれるルール：security.md / stack-setup.md / network-resilience.md
-for RULE_FILE in "$SNIPPETS/.opencode/rules/"*.md; do
-  RULE_NAME=$(basename "$RULE_FILE")
-  if [ ! -f ".opencode/rules/$RULE_NAME" ]; then
-    cp "$RULE_FILE" ".opencode/rules/$RULE_NAME"
-    echo "✅ .opencode/rules/$RULE_NAME をコピーしました"
+# rules/ 以下の全ファイルを再帰的にコピー（上書き保護あり）
+# 含まれるルール：security.md / security/*.md / stack-setup.md / stack-setup/*.md / network-resilience.md / network-resilience/*.md / _shared/*.md
+while IFS= read -r -d '' RULE_FILE; do
+  REL_PATH="${RULE_FILE#$SNIPPETS/.opencode/rules/}"
+  REL_PATH="${REL_PATH#/}"
+  TARGET=".opencode/rules/$REL_PATH"
+  if [ ! -f "$TARGET" ]; then
+    mkdir -p "$(dirname "$TARGET")"
+    cp "$RULE_FILE" "$TARGET"
+    echo "✅ .opencode/rules/$REL_PATH をコピーしました"
   fi
-done
+done < <(find "$SNIPPETS/.opencode/rules/" -name "*.md" -type f -print0)
 
 # 全Skillsを外部から取得（release-prep / live-operation / handoff / find-skills / skill-creator）
 for SKILL_DIR in "$SNIPPETS/.opencode/skills/"/*/; do
