@@ -12,7 +12,7 @@ UI実装前に以下の順で読む：
 1. `design/token-ssot.json` — すべてのデザイン値の正本（primitive → semantic → component）
 2. `design/component-map.json` — デザイン上の部品名と実装コンポーネント名の対応関係
 3. `design/INTAKE.md` — デザインの初回収集手順（セットアップ時のみ。普段は読まなくてよい）
-4. `.claude/standards/principles/design-contract.md` — デザイン契約の3本柱と変更手順の詳細
+4. `.opencode/standards/principles/design-contract.md` — デザイン契約の3本柱と変更手順の詳細
 
 検証手段はプロジェクトのデザインツールに依存する。CLIによる整合検証がある場合は、DESIGN.md編集後に必ず実行する。
 

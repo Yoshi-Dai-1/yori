@@ -22,12 +22,12 @@
 
 ```
 dev-standards/
-  principles/          ← 汎用原則（読む・参照する。setup-harness.sh が .claude/standards/principles/ にコピー）
-  architectures/       ← プロジェクト種別ごとの構成パターン（setup-harness.sh が .claude/standards/architectures/ にコピー）
+  principles/          ← 汎用原則（読む・参照する。setup-harness.sh が .opencode/standards/principles/ にコピー）
+  architectures/       ← プロジェクト種別ごとの構成パターン（setup-harness.sh が .opencode/standards/architectures/ にコピー）
   decisions/           ← 判断の記録（setup-harness.sh が decisions/ 配下をコピー）
   snippets/            ← テンプレート集（コピーして使う）
     agents/            ← AGENTS.md テンプレート
-    .claude/           ← ハーネス雛形（rules/ skills/ hooks/）
+    .opencode/         ← ハーネス雛形（rules/ skills/ plugins/）
     docs/              ← ドキュメント雛形
   setup-harness.sh     ← セットアップスクリプト（新プロジェクト開始時に実行）
   AGENTS.md            ← このファイル（dev-standards固有・コピーされない）
@@ -43,7 +43,7 @@ rules/（常駐ルール・コンテキスト消失後も自動リロード）
   ↓ 参照
 principles/（詳細ドキュメント・必要時に読む）
 
-hooks/（コードによるガードレール・AIの意思に関わらず自動実行）
+plugins/（コードによるガードレール・AIの意思に関わらず自動実行）
   ↑ 独立（rules/ と併用）
 ```
 
@@ -51,7 +51,8 @@ hooks/（コードによるガードレール・AIの意思に関わらず自動
 
 - ファイル名: kebab-case.md
 - ディレクトリ名: kebab-case
-- ルールファイル: `on-[イベント].[目的].sh.example`（hooks/）
+- Plugin ファイル: `{purpose}.ts`（plugins/）
+- ルールファイル: `{トピック}.md`（rules/）
 
 ## Boundaries（禁止事項）
 

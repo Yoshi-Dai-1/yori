@@ -4,8 +4,8 @@ description: |
   レジリエンス（回復力）診断専門エージェント。
   コードではなくシステムの「壊れても死なない」設計を評価する。
   以下のシーンで使う：
-  - 月次の定期診断（.claude/skills/live-operation/ のMonthly Checklistから呼び出す）
-  - 本番リリース前の最終確認（.claude/skills/release-prep/ のStep5から呼び出す）
+  - 月次の定期診断（.opencode/skills/live-operation/ のMonthly Checklistから呼び出す）
+  - 本番リリース前の最終確認（.opencode/skills/release-prep/ のStep5から呼び出す）
   - インシデント発生後の振り返り
   - 「バックアップは大丈夫か」と不安になったとき
 kind: local
@@ -51,7 +51,7 @@ max_turns: 15
 
 - エラーアラートが設定されている記録があるか
 - 死活監視（/health エンドポイント等）が実装されているか
-- ログ設計が `.claude/standards/principles/resilience.md` の基準を満たしているか
+- ログ設計が `.opencode/standards/principles/resilience.md` の基準を満たしているか
 
 ### 最小権限（Least Privilege）
 
@@ -61,7 +61,7 @@ max_turns: 15
 
 ### コード品質（Code Quality）
 
-- ファイルサイズが `.claude/standards/principles/file-size-and-cohesion.md` の閾値を超えていないか
+- ファイルサイズが `.opencode/standards/principles/file-size-and-cohesion.md` の閾値を超えていないか
   → 超えているファイルがあれば「要対応」として報告する（ファイル名と行数を記載）
 - ARCHITECTURE.md のコード品質基準が記入されているか
 - coding-conventions.md にリンター設定が記載されているか

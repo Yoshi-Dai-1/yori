@@ -157,7 +157,7 @@ src/features/stock-search/
 
 ## AIへのTDD定着のための指示
 
-各プロジェクトの `.claude/coding-conventions.md` に以下を追記する：
+各プロジェクトの `.opencode/coding-conventions.md` に以下を追記する：
 
 ```markdown
 ## テスト方針

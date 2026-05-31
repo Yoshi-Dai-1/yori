@@ -152,7 +152,7 @@ tests/
 
 依存ルールを ARCHITECTURE.md に書くだけでなく、リンターで機械的に強制する。
 エラーメッセージに修正方法を記載することで、AIが修正先を推測なしで判断できる。
-`on-post-tool-use.lint-and-typecheck.sh` Hook と組み合わせると、ファイル編集のたびに
+`lint-and-typecheck.ts` Plugin と組み合わせると、ファイル編集のたびに
 自動実行され、違反が即座にAIに通知される。
 
 **設定ファイルは ARCHITECTURE.md の層定義が確定した時点で自動生成される。**

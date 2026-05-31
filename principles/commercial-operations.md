@@ -106,7 +106,7 @@ fix/yyy      → 即日マージ推奨
 
 ブランチプロテクション：設定任意。CI が通ったことを確認してから自分でマージする。
 
-コミットメッセージ規約：`.claude/standards/principles/naming-conventions.md` の
+コミットメッセージ規約：`.opencode/standards/principles/naming-conventions.md` の
 「コミットメッセージ（Conventional Commits）」セクションを参照する。
 型を使う理由：CHANGELOG 自動生成と SemVer の自動判定が可能になる。
 

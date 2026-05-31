@@ -5,7 +5,7 @@
 月次品質診断（`@code-quality-auditor`）の結果を時系列で蓄積し、
 ドメイン別の品質トレンドを追跡するためのファイル。
 
-更新タイミング：月次診断の完了後、`.claude/skills/live-operation/` の
+更新タイミング：月次診断の完了後、`.opencode/skills/live-operation/` の
 Monthly Checklist に従って @code-quality-auditor の結果を本ファイルに転記する。
 
 **更新ルール：**

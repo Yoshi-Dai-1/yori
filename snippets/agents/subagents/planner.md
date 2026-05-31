@@ -50,7 +50,7 @@ max_turns: 20
 
 ### ビジュアルデザイン方針
 [UIの雰囲気・カラートーン・参考にするデザインパターン]
-[~/.claude/skills/frontend-design/SKILL.md が存在すれば参照する（グローバルスキル。なければスキップ）]
+[.opencode/skills/frontend-design/SKILL.md が存在すれば参照する（プロジェクトローカルスキル。なければスキップ）]
 
 ### 機能一覧
 [機能を論理的なグループに分けて列挙する]

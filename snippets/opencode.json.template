@@ -1,0 +1,18 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // instructions: セッション開始時に自動で読み込まれるファイル群
+  // glob パターンが使えるため .opencode/rules/*.md で全ルール自動ロード
+  "instructions": [
+    "AGENTS.md",
+    ".opencode/rules/*.md",
+    ".opencode/coding-conventions.md"
+  ]
+  // model: プロジェクト側の opencode.json かグローバル設定で指定する
+  // このテンプレートでは指定しない（ユーザー選択に委ねる）
+  //
+  // command: TUI のスラッシュコマンド（/test 等）は
+  // AGENTS.md の Commands セクションと合わせてプロジェクトごとに定義する
+  //
+  // plugin: .opencode/plugins/ に .ts ファイルを配置するだけで自動有効化
+  // 設定は不要（auto-loading）。opencode.json への登録は npm パッケージの場合のみ
+}

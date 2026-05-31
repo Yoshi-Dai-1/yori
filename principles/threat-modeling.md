@@ -100,7 +100,7 @@ ARCHITECTURE.md と docs/project-definition.md を読んで以下を特定する
 
 ### Step 3：リスク評価
 
-発見した脅威を `.claude/standards/principles/risk-based-approach.md` の
+発見した脅威を `.opencode/standards/principles/risk-based-approach.md` の
 4象限（影響度×発生確率）で分類する。
 
 ```

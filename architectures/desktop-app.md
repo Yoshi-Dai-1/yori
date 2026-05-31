@@ -7,8 +7,8 @@
 
 ## このファイルの使い方
 
-具体的なフレームワークが確定したら、`stack-setup.md` の Step 3.5 ブロックC が
-フレームワーク公式ドキュメントから固有の必須ファイル・ディレクトリ構成を自律検索して補完する。
+具体的なフレームワークが確定したら、`stack-setup.md` の Step 3.5 ブロックB（必須ファイルの確認・記録）が
+必須ファイルを、ブロックC（フレームワーク固有設計の深掘り）がディレクトリ構成を自律検索して補完する。
 このファイルは「共通の設計思想」を提供し、フレームワーク固有の詳細は自律検索で調達する。
 
 ---
@@ -29,7 +29,7 @@
 
 **Linux専用デスクトップアプリの技術選定について：**
 Linux専用の技術（GTK / Qt等）はエコシステムの変化が速く、ウィンドウマネージャー（GNOME / KDE等）への対応状況も変わる。
-ブロックCが以下のクエリで最新情報を自律検索して補完する：
+ブロックC（フレームワーク固有設計の深掘り）が以下のクエリで最新情報を自律検索して補完する：
 `Linux desktop app [選択ツール名] best practices [現在年]`
 
 選択後、以下を検索してフレームワーク固有の必須ファイルと構成を確認する：
@@ -143,12 +143,12 @@ IPC（プロセス間通信）を経由してのみ通信する。
 | `.env.example` | 環境変数テンプレート | |
 | `.gitignore` | dist/ release/ を除外 | |
 
-フレームワーク固有の必須ファイルは `stack-setup.md` の Step 3.5 ブロックB が自律検索して記録する。
+フレームワーク固有の必須ファイルは `stack-setup.md` の Step 3.5 ブロックB（必須ファイルの確認・記録）が自律検索して記録する。
 
 ---
 
 ## 参照ドキュメント
 
-- `.claude/standards/principles/security-requirements.md`（セキュリティ対応レベル）
-- `.claude/standards/principles/non-functional-requirements.md`（パフォーマンス・UX要件）
-- `.claude/standards/principles/production-readiness.md`（リリース前チェックリスト）
+- `.opencode/standards/principles/security-requirements.md`（セキュリティ対応レベル）
+- `.opencode/standards/principles/non-functional-requirements.md`（パフォーマンス・UX要件）
+- `.opencode/standards/principles/production-readiness.md`（リリース前チェックリスト）

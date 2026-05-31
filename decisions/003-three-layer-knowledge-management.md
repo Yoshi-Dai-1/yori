@@ -25,7 +25,7 @@ Layer 1: dev-standards（このリポジトリ）
 Layer 2: GitHubテンプレートリポジトリ（種別ごと）
          動作検証済みの雛形コード
 
-Layer 3: 各プロジェクトの .claude/ ディレクトリ
+Layer 3: 各プロジェクトの .opencode/ ディレクトリ
          プロジェクト固有の文脈をAIに渡すファイル群
 ```
 
@@ -50,7 +50,7 @@ Layer 3: 各プロジェクトの .claude/ ディレクトリ
 新プロジェクト開始時：
   1. dev-standards を参照して構成を決定
   2. 最も近いテンプレートリポジトリから新リポジトリを作成
-  3. .claude/project-context.md を書く
+  3. .opencode/project-context.md を書く
   4. 開発中の判断を decisions/ にフィードバック
 ```
 

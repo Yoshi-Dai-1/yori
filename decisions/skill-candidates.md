@@ -5,8 +5,8 @@
 同じ作業が3回以上繰り返されたとき、スキル化を検討するための記録場所。
 
 記録されるタイミング：
-- AIがセッション中に同じ種類の作業を3回以上実施したとき（.claude/skills/live-operation/ のPeriodic Diagnosisから）
-- HooksのPostToolUseで自動記録されている場合（on-post-tool-use.record-skill-usage.sh.exampleを参照）
+- AIがセッション中に同じ種類の作業を3回以上実施したとき（.opencode/skills/live-operation/ のPeriodic Diagnosisから）
+- Plugin（skill-tracker.ts）の tool.execute.after（Skill）で自動記録されている場合
 - 人間が「これスキル化できそう」と気づいたとき（手動追記）
 
 スキル化の判断基準：
@@ -26,12 +26,12 @@
 
 ## スキル化の手順（人間が決定したとき）
 
-1. `/skill-creator` を起動する（`skill-creator` スキルが `~/.claude/skills/` にインストール済みの場合）
+1. `/skill-creator` を起動する（`skill-creator` スキルが利用可能な場合）
    またはAIに「[作業の概要]をスキルとして作成して」と依頼する
-2. 作成されたスキルをプロジェクトの `.claude/skills/` に保存する
+2. 作成されたスキルをプロジェクトの `.opencode/skills/` に保存する
 3. このファイルのステータスを「スキル化済み」に更新する
 
 保存後は `/スキル名` コマンドで呼び出せる状態になる。AGENTS.md への追記は不要。
 
-> **skill-creator について**：`setup-harness.sh` 実行時に `~/.claude/skills/` にインストールされる。
+> **skill-creator について**：`setup-harness.sh` 実行時に `.opencode/skills/` にダウンロードされる。
 > スキルの新規作成・改善・eval・descriptionの最適化まで一貫して対応する。

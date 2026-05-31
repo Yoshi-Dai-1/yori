@@ -3,7 +3,7 @@
 ## このファイルの目的
 
 「本番に出したい」と決めた瞬間から使うチェックリストと判断基準。
-`.claude/skills/release-prep/` のWorkflowと合わせて使う。このファイルをAIに渡して対話する。
+`.opencode/skills/release-prep/` のWorkflowと合わせて使う。このファイルをAIに渡して対話する。
 
 AIへの指示例：
 ```
@@ -236,7 +236,7 @@ AIが「症状1に該当します。ValueObjectを適用することを提案し
 
 ### live-operation Skill への組み込み
 
-運用フェーズでは `.claude/skills/live-operation/` のPeriodic Diagnosisとして、
+運用フェーズでは `.opencode/skills/live-operation/` のPeriodic Diagnosisとして、
 以下を定期的にAIに実行させることができる：
 
 ```
