@@ -7,7 +7,7 @@ export const HandoffPlugin: Plugin = async ({ $ }) => ({
 
     const handoffPath = ".opencode/handoff-artifact.md"
 
-    const gitResult = await $`git status --porcelain`.nothrow()
+    const gitResult = await $`git status --porcelain`.nothrow().quiet()
     const isGitRepo = gitResult.exitCode === 0
     const gitDisplay = isGitRepo
       ? (gitResult.text.trim()

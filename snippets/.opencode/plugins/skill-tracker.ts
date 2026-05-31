@@ -11,7 +11,7 @@ export const SkillTrackerPlugin: Plugin = async ({ $, client }) => ({
 
     const date = new Date().toISOString().split("T")[0]
 
-    const mkdirResult = await $`mkdir -p .opencode/usage`.nothrow()
+    const mkdirResult = await $`mkdir -p .opencode/usage`.nothrow().quiet()
     if (mkdirResult.exitCode !== 0) {
       await client.app.log({
         body: { service: "skill-tracker", level: "error", message: "mkdir failed for .opencode/usage" },
@@ -19,7 +19,7 @@ export const SkillTrackerPlugin: Plugin = async ({ $, client }) => ({
       return
     }
 
-    const writeResult = await $`printf -- "- %s: %s\n" ${date} ${name} >> .opencode/usage/skill-usage.md`.nothrow()
+    const writeResult = await $`printf -- "- %s: %s\n" ${date} ${name} >> .opencode/usage/skill-usage.md`.nothrow().quiet()
     if (writeResult.exitCode !== 0) {
       await client.app.log({
         body: { service: "skill-tracker", level: "error", message: "failed to write skill-usage.md" },

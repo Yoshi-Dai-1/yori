@@ -12,6 +12,9 @@ paths:
   - "**/*.rb"
   - "**/*.swift"
   - "**/*.php"
+  - "**/*.c"
+  - "**/*.cpp"
+  - "**/*.cs"
 ---
 
 # コード品質常駐ルール（Code Quality Rules）

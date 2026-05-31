@@ -12,6 +12,9 @@ paths:
   - "**/*.rb"
   - "**/*.swift"
   - "**/*.php"
+  - "**/*.c"
+  - "**/*.cpp"
+  - "**/*.cs"
 ---
 
 # ディレクトリ構成常駐ルール（Directory Structure Rules）

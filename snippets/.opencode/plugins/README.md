@@ -41,9 +41,53 @@ cd .opencode
 bun install
 ```
 
-## 設定変更
+## `lint-and-typecheck.ts` 詳細
 
-各 Plugin の先頭にある設定オブジェクト（`LintConfig` 等）を編集する。
+### カバレッジ
+
+| 言語 | フォーマッター | リンター | 型チェッカー |
+|------|--------------|---------|------------|
+| TypeScript / JavaScript | `prettier --write` | `(pm) run lint` | `(pm) run typecheck` |
+| Python | `ruff format` | `ruff check` | `mypy .` |
+| Go | `gofmt -w` | `go vet` | — (go vet が統合) |
+| Rust | `rustfmt` | `cargo clippy --quiet` | — (cargo が統合) |
+| Ruby | `rubocop --autocorrect-all` | `rubocop` | — (rubocop が統合) |
+| Kotlin | `ktlint -F` | `ktlint` | — |
+| Swift | `swift-format --in-place` | `swiftlint` | — |
+| C/C++ | `clang-format -i` | — (clang-tidy は CI で) | — |
+| C# | `dotnet format` | `dotnet format --verify` | — (dotnet build が統合) |
+| Java | — (スキップ) | — (スキップ) | — (スキップ) |
+| PHP | — (スキップ) | — (スキップ) | — (スキップ) |
+
+**Java/PHP をスキップする理由：**
+Java/PHP には lint-and-typecheck の全言語に共通して採用している「`which` で検出して即座に実行できる高速CLIツール」が標準化されていない。代わりにビルドツール（Maven/Gradle/Composer）経由の品質チェックが必要なため、Plugin 層ではなく `stack-setup.md` 層でプロジェクト固有対応として案内する。
+
+### 動作の流れ
+
+1. ファイル編集後、拡張子で言語を判定
+2. 各ツールを `which` で自動検出（インストール有無を確認）
+3. 見つかったツールだけを実行する（見つからないツールはサイレントスキップ）
+4. 結果に応じて Toast 通知：
+   - 🟢 `all checks passed` — すべてのツールが正常終了
+   - 🟡 `no tools found for [lang]` — 1つもツールが見つからなかった（インストールが必要）
+   - 🔴 `${N} check(s) failed` — エラーあり（AI に自動通知して修正させる）
+
+### 責任境界
+
+**`lint-and-typecheck.ts`（Plugin 層）はツールのインストールを行わない。**
+インストールは `stack-setup.md`（ルール層）が担当し、auto-deploy level に従って
+自動実行・確認付き実行・提案のみを切り替える。
+
+- Plugin 層：ツールが既に存在することを前提に `which` 検出 → 実行 → 結果通知
+- ルール層（stack-setup.md）：言語検出時に必要なツールを OS 別にインストール
+
+### 設定変更
+
+カスタマイズしたいときは「`lint-and-typecheck.ts` の lint コマンドを変更して」とAIに指示する。AIが該当 `.ts` ファイルを編集する。
+`lint-and-typecheck.ts` は使用可能なツールを自動検出する（デフォルトで設定変更の必要なし）。
+変更箇所の候補：
+- `exists()` の引数（ツール名）を変更する
+- 該当言語ブロック内のコマンド文字列（`formatFile` / `lintFile` / `typecheck` の第1引数）を変更する
 設定を変更した場合は `bun install` の再実行は不要（TypeScript は実行時コンパイルされる）。
 
 ## 無効化

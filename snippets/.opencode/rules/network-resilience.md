@@ -3,6 +3,7 @@ paths:
   - "**/*.ts"
   - "**/*.tsx"
   - "**/*.js"
+  - "**/*.jsx"
   - "**/*.py"
   - "**/*.go"
   - "**/*.rs"
@@ -12,6 +13,8 @@ paths:
   - "**/*.cpp"
   - "**/*.cs"
   - "**/*.rb"
+  - "**/*.swift"
+  - "**/*.php"
   - "ARCHITECTURE.md"
   - "docs/project-definition.md"
 ---

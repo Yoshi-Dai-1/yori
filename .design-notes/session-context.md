@@ -102,8 +102,53 @@
 
 README の全473行を確認。残る `project-definition.md` 参照はすべて `docs/project-definition.md`（プロジェクト設定ファイル）への正しい参照のみ。
 
+### 第5部 — 未カバー言語の追加・Plugin 全自動化・stack-setup.md インストール層
+
+#### 背景
+前回までの調査で未カバー6言語（Kotlin / Swift / C / C++ / C# / Java / PHP）の存在が判明していたが、対応が保留になっていた。また `LintConfig` + `enableXxx` フラグが Plugin に残っており、人間の設定変更が必要な設計だった。
+
+#### 実施した修正
+
+| 操作 | ファイル | 内容 |
+|------|---------|------|
+| 修正 | `lint-and-typecheck.ts` | `LintConfig` + `enableXxx` 全削除 → 全言語ブロック `which` 自動検出に変更 |
+| 修正 | `lint-and-typecheck.ts` | 全 `$` コマンドに `.nothrow().quiet()` 追加（TUI崩れ防止） |
+| 修正 | `lint-and-typecheck.ts` | 成功時 `showToast(success)` / 失敗時 `showToast(error)` + `session.prompt(noReply)` |
+| 追加 | `lint-and-typecheck.ts` | Kotlin（ktlint -F / ktlint）、Swift（swift-format / swiftlint）、C/C++（clang-format -i）、C#（dotnet format）ブロック |
+| 追加 | `lint-and-typecheck.ts` | JS/TS: npm/yarn/bun フォールバック |
+| 追加 | `lint-and-typecheck.ts` | Python: mypy 検出 |
+| 追加 | `lint-and-typecheck.ts` | Java/PHP: スキップコメント（理由も明記） |
+| 修正 | `plugins/README.md` | `LintConfig` 残骸削除 → auto-detect 説明に書き換え |
+| 修正 | `rules/code-quality.md` | `paths` に `c` `cpp` `cs` 追加（不足解消） |
+| 修正 | `rules/naming-conventions.md` | `paths` に `c` `cpp` `cs` 追加（不足解消） |
+| 修正 | `rules/directory-structure.md` | `paths` に `c` `cpp` `cs` 追加（不足解消） |
+| 修正 | `rules/security.md` | `paths` に `jsx` `swift` `php` 追加（不足解消） |
+| 修正 | `rules/network-resilience.md` | `paths` に `jsx` `swift` `php` 追加（不足解消） |
+| 修正 | `rules/stack-setup.md` | 全言語に「ツールインストールの自動化ルール」＋インストールブロック追加 |
+| 追加 | `rules/stack-setup.md` | Swift 言語セクション新規追加（未定義だった） |
+| 分割 | `rules/stack-setup.md` | Java/Kotlin 混在セクション → Java・Kotlin 個別セクションに分割 |
+| 追加 | `rules/stack-setup.md` | PHP 言語セクション新規追加（未定義だった） |
+| 修正 | 5ルールファイル | `paths` リストのインデント統一（3/4space → 2space） |
+
+#### インストール責任境界（確定）
+
+```
+stack-setup.md（インストール命令を持つ → auto-deploy level に従う）
+  ↓ 参照
+lint-and-typecheck.ts Plugin（インストールは行わない。which で検出 → あれば実行）
+```
+
+- Plugin 層 → インストールを行わない。`which` で検出したツールを `.nothrow().quiet()` で実行し、結果を Toast 通知
+- stack-setup.md 層 → 言語検出時に必要なツールを auto-deploy level（自動展開/確認付き/展開なし）に従ってインストール
+- Java/PHP → Plugin 層ではスキップ。stack-setup.md でプロジェクト固有対応を案内
+
+#### 最終検証
+
+- `LintConfig` / `enableXxx` 残骸: 0件
+- 全5ルールの `paths`: 2-space 統一、過不足なし
+- Plugin カバレッジ: 11/11 言語（9言語実装 + 2言語スキップ明記）
+
 ## 残タスク
 
 1. **setup-harness.sh 実機テスト**: 継続保留
 2. **session.deleted 実機テスト**: 継続保留
-3. **Plugin 設定ドキュメント充実化**: 継続保留（優先度低）
