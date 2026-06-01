@@ -88,7 +88,7 @@ AIは `docs/project-definition.md` のチーム規模を読んで以下を適用
 | 2〜5人 | Trunk-Based Development（以下参照） |
 | 6人以上 または リリースサイクルが月1回以下 | GitFlow（以下参照） |
 
-project-definition.md にチーム規模の記載がない場合は人間に確認する。
+docs/project-definition.md にチーム規模の記載がない場合は人間に確認する。
 
 ### 個人開発：シンプル戦略
 
@@ -437,7 +437,7 @@ await auditLogger.log({
 ```
 このプロジェクトは商用サービスです。
 principles/commercial-operations.md を読んで、
-project-definition.md の内容をもとに以下を評価してください：
+docs/project-definition.md の内容をもとに以下を評価してください：
 
 1. SLA / SLO / SLI の定義が必要か（どの水準が妥当か）
 2. ブランチ戦略として Trunk-Based と GitFlow のどちらが適切か

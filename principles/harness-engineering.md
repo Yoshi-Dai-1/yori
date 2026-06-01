@@ -116,7 +116,7 @@ Planner（サブエージェント）
   役割：1〜4文のプロンプトを詳細な仕様書（docs/spec.md）と
         Feature List（docs/features.json）に変換する
   使うタイミング：中規模以上のタスク開始時
-  書く場所：agents/planner.md
+  書く場所：`.opencode/agents/subagents/planner.md`
 
 Generator（メインエージェント・Build）
   役割：仕様書から実装する。各スプリント開始前に Evaluator へ
@@ -128,7 +128,7 @@ Evaluator（サブエージェント）
   役割：① Sprint Contract のレビュー（スプリント開始前・合意）
         ② ビルド完了後の品質評価（playwright-cli で実機確認）
   使うタイミング：フルアプリ構築・主観的品質が重要なとき
-  書く場所：agents/evaluator.md
+  書く場所：`.opencode/agents/subagents/evaluator.md`
 ```
 
 ### Feature List（docs/features.json）
@@ -146,8 +146,8 @@ Planner がスプリント計画と同時に生成する機能追跡ファイル
 - **ブロック対象**: 実装エージェントが誤って `passes: true` を設定する操作
 - **許可条件**: `.opencode/.evaluator-updating` マーカーファイルが存在する場合のみ
 - **評価エージェントの責務**: `PASS` 判定後、マーカー作成 → `passes` 更新 → マーカー削除の順に実行
-- **詳細**: `snippets/.opencode/plugins/features-guard.ts` と
-  `snippets/agents/subagents/evaluator.md` の「PASS後の後処理」セクションを参照
+- **詳細**: `.opencode/plugins/features-guard.ts` と
+  `.opencode/agents/subagents/evaluator.md` の「PASS後の後処理」セクションを参照
 
 ### Sprint Contract（スプリント契約）
 
@@ -156,7 +156,7 @@ Sprint Contract の枠組みは Planner が spec.md 生成時に作成する。
 Generator は各スプリント開始前に @evaluator を呼び出してレビューを依頼し、
 Evaluator が承認してから実装に入る。
 「実装者の解釈」と「評価者の期待」のずれを事前に防ぐ。
-詳細フォーマットは agents/planner.md と agents/evaluator.md を参照。
+詳細フォーマットは `.opencode/agents/subagents/planner.md` と `.opencode/agents/subagents/evaluator.md` を参照。
 
 タスク規模別の推奨構成：
 
@@ -308,15 +308,16 @@ setup-harness.sh でテンプレートをコピーして、
 
 **ハーネス健全性の評価（定期実行）**：
 
-```
-principles/harness-engineering.md を読んで、
-現在の .opencode/ ディレクトリの構成を評価してください。
-以下を確認してください：
-1. AGENTS.mdが60〜100行以内か
-2. rules/ に使われていないファイルがないか
-3. skills/ に使われていないスキルがないか
-4. usage/ の履歴から削除候補を特定する
-```
+   ```
+   principles/harness-engineering.md と principles/subagents.md を読んで、
+   現在の .opencode/ ディレクトリの構成を評価してください。
+   以下を確認してください：
+   1. AGENTS.mdが60〜100行以内か
+   2. rules/ に使われていないファイルがないか
+   3. skills/ に使われていないスキルがないか
+   4. usage/ の履歴から削除候補を特定する
+   5. agents/ のサブエージェント定義が principles/subagents.md の設計基準に従っているか
+   ```
 
 ドキュメントリンクの自動検証・品質診断の自動化（Scheduled/Continuous）を
 導入したい場合は `.opencode/plugins/README.md` を参照して、AIと相談しながら判断する。

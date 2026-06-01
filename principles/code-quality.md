@@ -45,7 +45,7 @@ const calculateDepreciatedValue = (
 開発者が変更を避けるようになると、機能追加もバグ修正も停滞する。
 
 低保守性のサイン：
-- 1つのファイルがfile-size-and-cohesion.md の閾値を超えている（単一責任の原則違反のサイン）
+- 1つのファイルがprinciples/file-size-and-cohesion.md の閾値を超えている（単一責任の原則違反のサイン）
 - 同じロジックが複数箇所にコピーされている（DRY原則違反）
 - マジックナンバーが散在している（意味不明な `0.08` や `1440` など）
 - 変数名が `a`、`b`、`tmp`、`data2` など
@@ -98,7 +98,7 @@ if が 10個 → 事実上テスト不可能
 読むたびに脳が再適応するコストを払う。
 
 一貫性はリンター・フォーマッターで機械的に担保する（人間が守ろうとしない）。
-→ `coding-conventions.md` と言語固有のリンター・フォーマッター設定が一貫性の実装（JS/TS: ESLint + Prettier、Python: Ruff、Rust: clippy + rustfmt 等）。
+→ `.opencode/coding-conventions.md` と言語固有のリンター・フォーマッター設定が一貫性の実装（JS/TS: ESLint + Prettier、Python: Ruff、Rust: clippy + rustfmt 等）。
 
 ### 軸6：依存関係の健全性（Dependency Health）
 
@@ -232,7 +232,7 @@ function calculateLegacyScore(value: number): number {
                   対処：「定数はすべて constants/ に移して」と指示する
 
 複雑性の蓄積    → 動けばいいコードが積み上がる
-                  対処：file-size-and-cohesion.md の閾値に従い分割を指示する
+                   対処：principles/file-size-and-cohesion.md の閾値に従い分割を指示する
 ```
 
 ### 品質チェックの確認順序（毎実装後）
@@ -241,40 +241,4 @@ function calculateLegacyScore(value: number): number {
 `principles/tdd-with-ai.md` の「TDDと他のツールの組み合わせ」セクションに定義している。
 このファイルでは重複して定義しない。
 
-### 品質の劣化を察知する問い
 
-月次または「何か変だ」と感じたときにAIへ：
-
-```
-現在のコードベースを読んで、以下の品質問題が発生していないか診断してください：
-
-1. 300行を超えているファイルがあるか（file-size-and-cohesion.md の閾値。ファイル名と行数を列挙）
-2. 同じロジックが複数箇所に重複していないか
-3. 関数名から責務が読み取れないものがあるか
-4. マジックナンバーが定数化されずに残っているものがあるか
-5. テストが書かれていないビジネスロジックがあるか
-
-問題があれば、該当箇所と優先度（HIGH/MEDIUM/LOW）をセットで報告してください。
-```
-
----
-
-## AIへの指示テンプレート（品質を維持しながら実装する）
-
-```
-以下の機能を実装してください。
-
-要件：[機能の説明]
-
-品質要件（必ず守ること）：
-- 1ファイルは1つの責務のみ（file-size-and-cohesion.md の閾値に従う）
-- マジックナンバーは constants/ に定義する
-- エラーハンドリングを省略しない
-- 既存のコードスタイル・命名規則に合わせる（coding-conventions.md参照）
-- 実装前に「この実装で依存の方向に問題はないか」を確認する
-
-実装後に報告すること：
-- 変更ファイルと各ファイルの責務
-- テスト結果
-- 品質上の懸念点（あれば）
-```

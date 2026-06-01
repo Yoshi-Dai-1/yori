@@ -60,4 +60,4 @@ strict = true
 展開後、ユーザーに以下を案内する：
 > Python プロジェクト用の設定ファイルを作成しました。
 > lint・フォーマットの自動チェックには `.opencode/plugins/lint-and-typecheck.ts` が有効です（`.opencode/plugins/README.md` 参照）。
-> `pyproject.toml` に追加設定が必要な場合は「pyproject.toml を編集して」と伝えてください。
+> `pyproject.toml` に追加設定が必要な場合は指示してください。

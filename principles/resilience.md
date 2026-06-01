@@ -22,11 +22,11 @@
 
 ### Layer 1：壊れにくくする（Prevention）
 
-→ セキュリティ（security-implementation.md）・TDD（tdd-with-ai.md）・
-  コードレビュー（code-review.md）で対応済み。
-→ 外部通信の安定性設計（network-resilience.md）もこの層に属する。
+→ セキュリティ（principles/security-implementation.md）・TDD（principles/tdd-with-ai.md）・
+   コードレビュー（principles/code-review.md）で対応済み。
+→ 外部通信の安定性設計（principles/network-resilience.md）もこの層に属する。
   タイムアウト・リトライ・冪等性の設計は「壊れにくくする」防御層の一部。
-  rules/network-resilience.md が通信コードの編集時に自律的に確認する。
+  `.opencode/rules/network-resilience.md` が通信コードの編集時に自律的に確認する。
 
 ### Layer 2：壊れたことに気づく（Detection）
 

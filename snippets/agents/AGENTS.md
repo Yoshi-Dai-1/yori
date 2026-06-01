@@ -124,7 +124,7 @@ git add -A && git commit -m "[生成したメッセージ]"
 - 認証・認可・機密データ・入力バリデーションを実装したとき → 完了後に `@security-auditor（監査モード）` を呼び出す
 - 外部入力を受け取るエンドポイントを実装したとき → バックエンドバリデーションを確認する
 - 環境変数を追加したとき → `.env.example` に反映しシークレットスキャンを実行する
-- package.json / requirements.txt / requirements-dev.txt / pyproject.toml / go.mod / Cargo.toml / pom.xml / build.gradle / build.gradle.kts / Gemfile / composer.json / pubspec.yaml / *.csproj / packages.config を編集したとき → rules/security.md の言語別コマンド対応表に従いauditを実行する。対応表にない言語の場合は人間に確認を促す
+- package.json / requirements.txt / requirements-dev.txt / pyproject.toml / go.mod / Cargo.toml / pom.xml / build.gradle / build.gradle.kts / Gemfile / composer.json / pubspec.yaml / *.csproj / packages.config を編集したとき → `.opencode/rules/security.md` の言語別コマンド対応表に従いauditを実行する。対応表にない言語の場合は人間に確認を促す
 <!-- このプロジェクト固有の制約（@security-auditor が自動追記）-->
 
 ## TDD Cycle
@@ -155,7 +155,7 @@ git add -A && git commit -m "[生成したメッセージ]"
   `passes` フィールドは **Evaluator のみ** が更新する
 
 **スプリント完了後**：
-→ `@evaluator` でQA評価。PASS → 次のスプリントへ。FAIL → 修正して再評価。セキュリティ関連の実装が含まれる場合は rules/security.md のスプリント完了後トリガーに従う
+→ `@evaluator` でQA評価。PASS → 次のスプリントへ。FAIL → 修正して再評価。セキュリティ関連の実装が含まれる場合は `.opencode/rules/security.md` のスプリント完了後トリガーに従う
 
 **調査が必要なとき**（影響範囲・原因調査）：
 → `@codebase-investigator` を呼び出す（メインのコンテキストを汚さない）

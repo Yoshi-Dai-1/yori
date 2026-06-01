@@ -84,34 +84,4 @@ Q5. 以下の条件をすべて満たすか？
 補助的に参照したファイルを記載する。完全に一致するパターンがなくても問題ない。
 パターンは「出発点」であり「縛り」ではない。
 
----
 
-## 選んだ後にやること
-
-1. 該当の `architectures/*.md` を通読する
-2. `snippets/ARCHITECTURE.md.template` をプロジェクトルートに `ARCHITECTURE.md` としてコピーする
-3. 通読した内容をもとに `ARCHITECTURE.md` の各セクションを記入する
-4. 記入した `ARCHITECTURE.md` を `AGENTS.md` の `## Architecture` セクションから参照させる
-
-```
-# AGENTS.md の Architecture セクションの書き方
-## Architecture
-
-詳細は `ARCHITECTURE.md` を参照。
-採用パターン：[web-frontend-small / web-frontend-large / backend-api / mobile / microservices / serverless / data-pipeline / monorepo / document-project]
-依存の方向（変更禁止）：[層A] → [層B] → [層C]
-```
-
----
-
-## AIを使ってアーキテクチャを選ぶ
-
-迷いが解消しない場合は、以下のプロンプトでAIに判断を委ねる。
-
-```
-docs/project-definition.md を読んだ上で、
-`.opencode/standards/architectures/_how-to-choose.md` のフローチャートに従って
-このプロジェクトに適したアーキテクチャパターンを1つ提案してください。
-
-提案理由と、選ばなかったパターンの却下理由もあわせて教えてください。
-```

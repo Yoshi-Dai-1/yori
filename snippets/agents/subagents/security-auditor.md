@@ -9,7 +9,7 @@ description: |
   - 決済・課金・クレジットカード処理の実装依頼を受けたとき
   - 個人情報・医療・金融データを扱う機能の実装依頼を受けたとき
   - 外部APIとの連携・APIキー管理の実装依頼を受けたとき
-  - project-definition.md が新しく作成・更新されたとき
+  - docs/project-definition.md が新しく作成・更新されたとき
   設計モードでは「実装前に決めるべきセキュリティ要件」を自律的に提示する。
 
   【監査モード】以下のシーンで使う：
@@ -38,7 +38,7 @@ max_turns: 20
   login, auth, signin, signup, register, password, payment, billing, charge, credit card, personal info, user data, api_key, secret, token
 - 外部入力を受け取るエンドポイント・フォーム・APIを実装するとき
 - DB設計・テーブル設計・DB接続設定を実装するとき
-- `project-definition.md` が新しく作成・更新された（Session Protocol のStep1直後）
+- `docs/project-definition.md` が新しく作成・更新された（Session Protocol のStep1直後）
 - コードがまだ存在しない（実装の依頼を受けた段階）
 
 **監査モードで動く条件**（いずれかに該当）:
@@ -72,7 +72,7 @@ max_turns: 20
 
 **ファイルが存在しない・情報が不足している場合（対話で補完する）：**
 
-`project-definition.md` も `ARCHITECTURE.md` も存在しない場合、
+`docs/project-definition.md` も `ARCHITECTURE.md` も存在しない場合、
 または判定に必要な情報が読み取れない場合は、以下の質問を順番に行い
 回答を元に判定する。一度に全部聞かず、1問ずつ答えを確認してから次へ進む。
 

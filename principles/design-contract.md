@@ -125,7 +125,7 @@ DESIGN.md の編集は不要。DESIGN.md は値を直接持たず token-ssot.jso
 4. `design/component-map.json` を更新する（token 参照・variants）
 5. 影響を受ける全テンプレート・ページを確認する
 6. 派生アセット（OG画像・manifest 等）に影響があれば更新する
-7. デザイン契約ルール（rules/design-contract.md）に違反していないか最終確認する
+7. デザイン契約ルール（`.opencode/rules/design-contract.md`）に違反していないか最終確認する
 
 判断基準：「複数の正本ファイルを同時に変更するか」。
 1ファイルのみの変更であれば通常の「Token 値の変更」「コンポーネントの変更」手順で十分。

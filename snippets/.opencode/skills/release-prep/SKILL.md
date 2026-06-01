@@ -114,7 +114,7 @@ status: active
    本番リリース前までに完成させる。
 
 5. **最終確認**
-   production-readiness.mdの必須項目がすべて完了したら `@resilience-checker` を呼び出す。
+   `.opencode/standards/principles/production-readiness.md` の必須項目がすべて完了したら `@resilience-checker` を呼び出す。
 
 ## 優先判断
 

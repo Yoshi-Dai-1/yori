@@ -44,7 +44,7 @@ max_turns: 15
   リトライ対象から除外されているか
   → 除外されていない場合は CRITICAL として即座に報告する
 - 冪等でない操作に冪等性の確保が実装されているか
-  → project-definition.md の機能要件に決済・通知が含まれる場合は必ず確認する
+  → docs/project-definition.md の機能要件に決済・通知が含まれる場合は必ず確認する
 - 採用した対策の設定値がすべて constants/ に定義されているか
 
 ### 検知能力（Detection）

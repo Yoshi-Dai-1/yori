@@ -62,10 +62,10 @@ AIへの指示を書く前に「何が本当に重要か」を決める羅針盤
 
 | ラベル体系 | 用途 | 参照元 |
 |-----------|------|--------|
-| CRITICAL/HIGH/MEDIUM/LOW | セキュリティ脆弱性・脅威モデリング | rules/security.md, principles/threat-modeling.md |
+| CRITICAL/HIGH/MEDIUM/LOW | セキュリティ脆弱性・脅威モデリング | `.opencode/rules/security.md`, principles/threat-modeling.md |
 | A/B/C/D（4象限） | リスク優先順位付け（影響度×確率） | このファイル |
-| GREEN/YELLOW/RED | システムレジリエンス診断 | agents/subagents/resilience-checker.md |
-| GOOD/CAUTION/ATTENTION | コード品質診断 | agents/subagents/code-quality-auditor.md |
+| GREEN/YELLOW/RED | システムレジリエンス診断 | `.opencode/agents/subagents/resilience-checker.md` |
+| GOOD/CAUTION/ATTENTION | コード品質診断 | `.opencode/agents/subagents/code-quality-auditor.md` |
 
 ### 4象限とCRITICAL/HIGH/MEDIUM/LOWの紐付け
 
@@ -171,14 +171,14 @@ D領域（影響小・確率低）→ LOW（記録して計画的に対処）
 
 ### 多層防御（Defense in Depth）
 
-4層モデルの定義と各層のチェックリストは resilience.md の「4つの防御層」を参照。
-以下の概要は理解のための簡易版。詳細は resilience.md にある。
+4層モデルの定義と各層のチェックリストは principles/resilience.md の「4つの防御層」を参照。
+以下の概要は理解のための簡易版。詳細は principles/resilience.md にある。
 
 ```
-Layer 1: 壊れにくくする（Prevention）    → resilience.md Layer 1 参照
-Layer 2: 気づく（Detection）            → resilience.md Layer 2 参照
-Layer 3: 被害を限定する（Containment）  → resilience.md Layer 3 参照
-Layer 4: 回復する（Recovery）           → resilience.md Layer 4 参照
+Layer 1: 壊れにくくする（Prevention）    → principles/resilience.md Layer 1 参照
+Layer 2: 気づく（Detection）            → principles/resilience.md Layer 2 参照
+Layer 3: 被害を限定する（Containment）  → principles/resilience.md Layer 3 参照
+Layer 4: 回復する（Recovery）           → principles/resilience.md Layer 4 参照
 ```
 
 どれか1層が破られても他の層が機能する設計。
@@ -226,46 +226,37 @@ pip-audit          # Python
 
 ---
 
-## AIとの協働でリスク判断をする
+## リスク判断の自律実行手順
 
-### プロジェクト定義時
+### プロジェクト定義完了時
 
-```
-以下のプロジェクト概要（project-definition.md）を読んで、
-リスクベースアプローチの観点から以下を評価してください：
+プロジェクト定義完了後、AIは以下を評価する：
 
-1. 最も影響が大きいリスク（即死系）を3つ挙げてください
-2. 緩慢死系で見落とされやすいリスクを2つ挙げてください
-3. 「やりすぎ」になりやすい投資領域はどこか教えてください
-
-評価後、ARCHITECTURE.md の非機能要件セクションに
-反映すべき項目を優先度付きで提案してください。
-```
+1. docs/project-definition.md を読み、リスクベースアプローチの観点から以下を評価する：
+   - 最も影響が大きいリスク（即死系）を3つ
+   - 緩慢死系で見落とされやすいリスクを2つ
+   - 「やりすぎ」になりやすい投資領域
+2. 評価結果を ARCHITECTURE.md の非機能要件セクションに優先度付きで反映する
 
 ### 実装判断時
 
-```
-この機能（[機能名]）を実装するにあたり、
-リスクベースアプローチで判断してください：
+機能実装の判断時、AIは以下を評価する：
 
-- この機能が失敗したときの最大の影響は何か
+- この機能が失敗したときの最大の影響
 - どの部分のテストを厚くすべきか
-- セキュリティ上の懸念はあるか
+- セキュリティ上の懸念
 - 今実装すべきか・後回しにできるか
 
-判断理由とともに教えてください。
-```
+判断理由とともに報告する。
 
 ### 月次の定期診断
 
-```
-現在のプロジェクト状態（ARCHITECTURE.md・decisions/・usage/参照）を踏まえて、
-リスクの4象限で現状を評価してください：
+月次診断時、AIは以下を評価する：
 
-- A領域（即座に対処）：___
-- B領域（監視する）：___
-- C領域（計画的に対処）：___
-- D領域（許容する）：___
-
-最も対処が急ぎな項目を1つ選び、具体的なアクションを提案してください。
-```
+1. 現在のプロジェクト状態（ARCHITECTURE.md・decisions/・usage/参照）を踏まえる
+2. リスクの4象限で現状を評価し、各領域に該当する項目を列挙する：
+   - A領域（即座に対処）：
+   - B領域（監視する）：
+   - C領域（計画的に対処）：
+   - D領域（許容する）：
+3. 最も対処が急ぎな項目を1つ選び、具体的なアクションを提案する

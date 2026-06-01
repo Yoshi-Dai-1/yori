@@ -27,7 +27,9 @@ setup-harness.sh でテンプレートをコピーして、
 dev-standards/
   AGENTS.md                    ★ このリポジトリの開発用（setup-harness.shでコピーされない）
   .design-notes/               ★ 設計メモ（同様にコピーされない・他プロジェクトに混入しない）
-    session-context.md         ← セッション間の設計文脈復元用
+    session-context.md           セッション間の設計文脈復元用（各セッション終了時に上書き）
+    session-context-protocol.md  Session Context 更新プロトコル（追記防止設計・検証計画）
+    plugin-events.md             Plugin イベント設計判断の記録（session.deleted代替案）
   setup-harness.sh              ★ 新プロジェクト開始時に使うセットアップスクリプト
 
   principles/                   汎用原則（読む・参照する）
@@ -69,7 +71,10 @@ dev-standards/
     iac.md                      IaC（Terraform / OpenTofu / AWS CDK / Pulumi / Ansible / Helm）
 
   decisions/                    判断の記録（ADR・技術選定）
-    skill-candidates.md         スキル化候補（AIが自動追記）
+    001-no-numbering-in-src.md    ADR: プロダクションコードのディレクトリにナンバリングを使わない
+    002-kebab-case-for-dirs.md    ADR: ディレクトリ名に kebab-case を使う
+    003-three-layer-knowledge-management.md  ADR: 知識・雛形の管理を三層構造にする
+    skill-candidates.md          スキル化候補（AIが自動追記）
 
   snippets/                       テンプレート集（コピーして使う）
     ARCHITECTURE.md.template    ★ セキュリティ・品質・依存関係リスク・スケーラビリティ・開発プロセスセクション追加
@@ -113,7 +118,6 @@ dev-standards/
         code-review.md              コードレビュー常駐ルール（@code-reviewer 呼出前に自動適用）
         directory-structure.md      ディレクトリ構成常駐ルール
         naming-conventions.md       命名規則常駐ルール
-        production.md             ★ 本番リリース常駐ルール
       skills/                   プロジェクトスコープのスキル（.opencode/skills/に配置・gitで共有）
         release-prep/SKILL.md   ★ 本番リリース準備（SemVer・CHANGELOG自動生成を含む）
         live-operation/SKILL.md ★ 本番稼働中の変更・月次診断・スケーリング診断
@@ -127,6 +131,9 @@ dev-standards/
         arch-diag.ts                                              tool.execute.after：アーキテクチャ変更検知
         skill-tracker.ts                                          tool.execute.after（Skill）：使用履歴記録
         handoff.ts                                                session.deleted：引き継ぎファイル生成
+      usage/                       スキル・ルールの使用履歴（git管理はsetup時の選択による）
+        skill-usage.md              スキル使用履歴
+        rule-hits.md                ルール参照履歴
       project-context.md.template
       coding-conventions.md.template
       package.json                                              Plugin 依存関係（@opencode-ai/plugin 型定義）
