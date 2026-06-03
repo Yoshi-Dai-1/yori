@@ -88,7 +88,7 @@ AIは自分が書いたコードを同一コンテキスト内でレビューす
 src/ 以下のコードベースを対象に品質診断を実施してください。
 ```
 
-→ 詳細は `principles/code-quality.md` を参照。
+→ 詳細は `.opencode/standards/principles/code-quality.md` を参照。
 
 ### 6. レジリエンス診断
 **使うサブエージェント**：`resilience-checker`
@@ -102,7 +102,7 @@ src/ 以下のコードベースを対象に品質診断を実施してくださ
 レジリエンスを診断してください。
 ```
 
-→ 詳細は `principles/resilience.md` を参照。
+→ 詳細は `.opencode/standards/principles/resilience.md` を参照。
 
 ### 7. 仕様策定
 **使うサブエージェント**：`planner`
@@ -118,7 +118,7 @@ src/ 以下のコードベースを対象に品質診断を実施してくださ
 [1〜4文でやりたいことを書く]
 ```
 
-→ 詳細は `principles/harness-engineering.md` の Planner・Generator・Evaluator の 3 段階構成を参照。
+→ 詳細は `.opencode/standards/principles/harness-engineering.md` の Planner・Generator・Evaluator の 3 段階構成を参照。
 
 ### 8. スプリントQA評価 および Sprint Contract レビュー
 **使うサブエージェント**：`evaluator`
@@ -146,7 +146,7 @@ Sprint [番号] の評価をしてください。
 PASSの場合は docs/features.json の該当スプリントの passes を true に更新してください。
 ```
 
-→ 詳細は `principles/harness-engineering.md` の Planner・Generator・Evaluator の 3 段階構成を参照。
+→ 詳細は `.opencode/standards/principles/harness-engineering.md` の Planner・Generator・Evaluator の 3 段階構成を参照。
 
 ---
 

@@ -5,7 +5,7 @@
 AIがプロジェクト定義を読んで「何のセキュリティ対応が必要か」を
 人間に聞かずに自律判断するための判断基準。
 
-- `principles/security-implementation.md` が「どう実装するか（How）」
+- `.opencode/standards/principles/security-implementation.md` が「どう実装するか（How）」
 - このファイルは「何が必要かをどう判断するか（What & Why）」
 
 ---
@@ -72,7 +72,7 @@ AIがプロジェクト定義を読んで「何のセキュリティ対応が必
 中規模以上（6人以上）│  Lv.3   │  Lv.4   │  Lv.4+
 
 プロジェクト規模の定義: 個人=開発者1人、小規模=2〜5人、中規模以上=6人以上
-（principles/commercial-operations.mdのチーム規模定義と統一）
+（.opencode/standards/principles/commercial-operations.mdのチーム規模定義と統一）
 データ感度の定義: 機密なし=公開情報のみ、個人情報=氏名・メール・住所等、決済・医療=クレジットカード・医療記録・要配慮個人情報
 チーム規模が境界の場合（例: 2人と3人の間）は、データ感度が高い方のレベルを採用する
 ```

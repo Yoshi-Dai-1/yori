@@ -143,7 +143,7 @@ Won't（今回はやらない）：
 ### プロジェクト種別（商用要件の有無を決定する）
 - プロジェクト種別：[個人・社内ツール / 商用サービス（ユーザーへのSLA・収益あり）]
 - チーム規模：[個人 / 2〜5人 / 6人以上]
-- 商用の場合は `principles/commercial-operations.md` を参照して追加要件を定義する
+- 商用の場合は `.opencode/standards/principles/commercial-operations.md` を参照して追加要件を定義する
 
 ### 守るべき資産
 - ユーザーデータ：[個人情報あり / なし / 匿名のみ]
@@ -166,7 +166,7 @@ Won't（今回はやらない）：
 
 ## リスク評価（Risk Assessment）
 
-<!-- 詳細は principles/risk-based-approach.md を参照 -->
+<!-- 詳細は .opencode/standards/principles/risk-based-approach.md を参照 -->
 <!-- 「今は小さいから関係ない」が最も危険な思い込み -->
 
 ### 即死系リスク（発生したらプロジェクトが止まる）

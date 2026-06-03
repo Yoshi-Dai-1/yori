@@ -124,13 +124,17 @@ dev-standards/
         handoff/SKILL.md        ★ 引き継ぎ・長期停止・再開・初回リリース後フィードバック設定・EOL
       plugins/
         README.md                                                  Pluginsの説明・一覧・セットアップ手順
-        secrets-guard.ts                                          tool.execute.before：機密ファイル・パターン保護
+        secrets-guard.ts                                          tool.execute.before：機密ファイル・パターン保護（P1-1：SSoT 化）
         features-guard.ts                                         tool.execute.before：features.json passes 保護
-        lint-and-typecheck.ts                                     tool.execute.after：lint・format・typecheck
-        doc-links.ts                                              tool.execute.after：ドキュメントリンク整合性
-        arch-diag.ts                                              tool.execute.after：アーキテクチャ変更検知
+        lint-and-typecheck.ts                                     tool.execute.after：lint・format・typecheck（P1-2：性能改善）
+        doc-links.ts                                              tool.execute.after：ドキュメントリンク整合性（P1-3：AI 通知パターン）
+        arch-diag.ts                                              tool.execute.after：アーキテクチャ変更検知（P1-3：AI 通知パターン）
         skill-tracker.ts                                          tool.execute.after（Skill）：使用履歴記録
         handoff.ts                                                session.deleted：引き継ぎファイル生成
+        harness-health.ts                                         tool.execute.after/session.idle：Context Anxiety 検知（P0-3 per-session sliding window + TTL）
+      config/                       SSoT ファイル群
+        secret-patterns.json                                     機密パターン定義（P1-1：secrets-guard と pre-commit の単一情報源）
+        skills.lock.yaml                                         外部スキルのコミットハッシュ固定（P1-4：再現性保証）
       usage/                       スキル・ルールの使用履歴（git管理はsetup時の選択による）
         skill-usage.md              スキル使用履歴
         rule-hits.md                ルール参照履歴

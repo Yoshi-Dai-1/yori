@@ -102,13 +102,13 @@ AIがコードを出力
   → E2Eテスト（必要な場合）
 ```
 
-この順序は `principles/code-quality.md` でも参照される唯一の定義（SSOT）。
+この順序は `.opencode/standards/principles/code-quality.md` でも参照される唯一の定義（SSOT）。
 
 ---
 
 ## テストファイルの配置
 
-→ 詳細は `principles/file-size-and-cohesion.md` を参照。
+→ 詳細は `.opencode/standards/principles/file-size-and-cohesion.md` を参照。
 
 推奨はコロケーション型（ソースの隣に置く）。
 

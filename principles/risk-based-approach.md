@@ -62,7 +62,7 @@ AIへの指示を書く前に「何が本当に重要か」を決める羅針盤
 
 | ラベル体系 | 用途 | 参照元 |
 |-----------|------|--------|
-| CRITICAL/HIGH/MEDIUM/LOW | セキュリティ脆弱性・脅威モデリング | `.opencode/rules/security.md`, principles/threat-modeling.md |
+| CRITICAL/HIGH/MEDIUM/LOW | セキュリティ脆弱性・脅威モデリング | `.opencode/rules/security.md`, .opencode/standards/principles/threat-modeling.md |
 | A/B/C/D（4象限） | リスク優先順位付け（影響度×確率） | このファイル |
 | GREEN/YELLOW/RED | システムレジリエンス診断 | `.opencode/agents/subagents/resilience-checker.md` |
 | GOOD/CAUTION/ATTENTION | コード品質診断 | `.opencode/agents/subagents/code-quality-auditor.md` |
@@ -171,14 +171,14 @@ D領域（影響小・確率低）→ LOW（記録して計画的に対処）
 
 ### 多層防御（Defense in Depth）
 
-4層モデルの定義と各層のチェックリストは principles/resilience.md の「4つの防御層」を参照。
-以下の概要は理解のための簡易版。詳細は principles/resilience.md にある。
+4層モデルの定義と各層のチェックリストは .opencode/standards/principles/resilience.md の「4つの防御層」を参照。
+以下の概要は理解のための簡易版。詳細は .opencode/standards/principles/resilience.md にある。
 
 ```
-Layer 1: 壊れにくくする（Prevention）    → principles/resilience.md Layer 1 参照
-Layer 2: 気づく（Detection）            → principles/resilience.md Layer 2 参照
-Layer 3: 被害を限定する（Containment）  → principles/resilience.md Layer 3 参照
-Layer 4: 回復する（Recovery）           → principles/resilience.md Layer 4 参照
+Layer 1: 壊れにくくする（Prevention）    → .opencode/standards/principles/resilience.md Layer 1 参照
+Layer 2: 気づく（Detection）            → .opencode/standards/principles/resilience.md Layer 2 参照
+Layer 3: 被害を限定する（Containment）  → .opencode/standards/principles/resilience.md Layer 3 参照
+Layer 4: 回復する（Recovery）           → .opencode/standards/principles/resilience.md Layer 4 参照
 ```
 
 どれか1層が破られても他の層が機能する設計。

@@ -309,14 +309,14 @@ setup-harness.sh でテンプレートをコピーして、
 **ハーネス健全性の評価（定期実行）**：
 
    ```
-   principles/harness-engineering.md と principles/subagents.md を読んで、
+   .opencode/standards/principles/harness-engineering.md と .opencode/standards/principles/subagents.md を読んで、
    現在の .opencode/ ディレクトリの構成を評価してください。
    以下を確認してください：
    1. AGENTS.mdが60〜100行以内か
    2. rules/ に使われていないファイルがないか
    3. skills/ に使われていないスキルがないか
    4. usage/ の履歴から削除候補を特定する
-   5. agents/ のサブエージェント定義が principles/subagents.md の設計基準に従っているか
+   5. agents/ のサブエージェント定義が .opencode/standards/principles/subagents.md の設計基準に従っているか
    ```
 
 ドキュメントリンクの自動検証・品質診断の自動化（Scheduled/Continuous）を

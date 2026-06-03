@@ -237,7 +237,7 @@ AIは以下の判断フローを自律的に実行する。人間が指示する
   この2つは別の障害を想定している。片方だけの設定は不完全。
 
 原則2：タイムアウト値は constants/ に定数として定義する
-   コードに数値を直接書かない（principles/ssot-and-constants.md の原則に従う）
+   コードに数値を直接書かない（.opencode/standards/principles/ssot-and-constants.md の原則に従う）
   定数名の例：
     EXTERNAL_API_CONNECT_TIMEOUT_MS
     EXTERNAL_API_READ_TIMEOUT_MS
@@ -436,7 +436,7 @@ Heartbeat（KeepAlive）：
 
 GraphQLを使用するプロジェクトでのみ適用する（REST APIのみのプロジェクトはスキップ）。
 セキュリティ対策（Introspection制御・クエリ深さ制限・認可・エラーメッセージ）の詳細は
-principles/security-implementation.md の「GraphQLセキュリティ」セクションを参照。
+.opencode/standards/principles/security-implementation.md の「GraphQLセキュリティ」セクションを参照。
 
 このファイルでは通信設計の観点のみを定義する:
 
@@ -453,7 +453,7 @@ N+1問題の防止:
 Introspectionの制御:
    Introspection（スキーマ情報の取得）は開発環境のみ有効にする
    本番環境ではIntrospectionを無効化してスキーマ情報を隠す
-   → principles/security-implementation.md の「GraphQLセキュリティ」セクションも参照する
+   → .opencode/standards/principles/security-implementation.md の「GraphQLセキュリティ」セクションも参照する
 
 Subscriptionのスケール:
    GraphQL Subscriptionを使う場合はWebSocketと同じスケール設計が必要

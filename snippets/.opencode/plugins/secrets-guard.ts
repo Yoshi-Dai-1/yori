@@ -1,38 +1,53 @@
 import type { Plugin } from "@opencode-ai/plugin"
+import secretPatterns from "../config/secret-patterns.json"
 
-const SECRET_FILE_PATTERNS = [
-  /\.env\.local$/,
-  /\.env\..+\.local$/,
-  /credentials\.json$/,
-  /service-account.*\.json$/,
-  /\.pem$/,
-  /\.key$/,
-  /\.p12$/,
-  /id_rsa$/,
-  /id_ed25519$/,
-]
+/**
+ * secrets-guard.ts
+ *
+ * 機密ファイル・機密情報パターンの書き込みを防止する。
+ *
+ * パターン定義は SSoT（.opencode/config/secret-patterns.json）に統合済み。
+ * パターンを追加・変更する場合は JSON ファイルのみを編集すること。
+ * pre-commit フックも同じ JSON から生成される（P1-1 修正）。
+ */
 
-const SECRET_CONTENT_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
-  { pattern: /API_KEY\s*=\s*.+/m, label: "API_KEY" },
-  { pattern: /SECRET\s*=\s*.+/m, label: "SECRET" },
-  { pattern: /PASSWORD\s*=\s*.+/m, label: "PASSWORD" },
-  { pattern: /-----BEGIN.*PRIVATE KEY-----/m, label: "PRIVATE KEY" },
-  { pattern: /ghp_[a-zA-Z0-9]{36}/, label: "GitHub PAT" },
-  { pattern: /sk-[a-zA-Z0-9]{20,}/, label: "OpenAI Key" },
-  { pattern: /AKIA[0-9A-Z]{16}/, label: "AWS Access Key" },
-]
+interface ContentPattern {
+  pattern: string
+  label: string
+}
 
-function extractOps(tool: string, args: Record<string, any>): Array<{ filePath: string; content: string }> {
+interface SecretPatternsConfig {
+  filePatterns: string[]
+  contentPatterns: ContentPattern[]
+}
+
+const FILE_PATTERN_REGS: RegExp[] = (secretPatterns as SecretPatternsConfig).filePatterns.map(
+  (p) => new RegExp(p),
+)
+const CONTENT_PATTERN_REGS: Array<{ pattern: RegExp; label: string }> = (
+  secretPatterns as SecretPatternsConfig
+).contentPatterns.map((c) => ({
+  pattern: new RegExp(c.pattern),
+  label: c.label,
+}))
+
+function extractOps(
+  tool: string,
+  args: Record<string, any>,
+): Array<{ filePath: string; content: string }> {
   if (tool === "multiedit") {
     return (args.operations || []).map((op: any) => ({
       filePath: op.filePath || op.path || "",
       content: op.content || op.newString || "",
     }))
   }
-  return [{
-    filePath: args.filePath || "",
-    content: tool === "write" ? (args.content || "") : ((args.newString || args.content) || ""),
-  }]
+  return [
+    {
+      filePath: args.filePath || "",
+      content:
+        tool === "write" ? args.content || "" : args.newString || args.content || "",
+    },
+  ]
 }
 
 export const SecretsGuardPlugin: Plugin = async ({ client }) => ({
@@ -44,15 +59,15 @@ export const SecretsGuardPlugin: Plugin = async ({ client }) => ({
     for (const { filePath: fp, content } of ops) {
       if (!fp) continue
 
-      if (SECRET_FILE_PATTERNS.some((p) => p.test(fp))) {
+      if (FILE_PATTERN_REGS.some((p) => p.test(fp))) {
         throw new Error(
           `Do not write secret files: ${fp}\n` +
-          "Use .env.example for environment variable templates."
+            "Use .env.example for environment variable templates.",
         )
       }
 
       if (!content) continue
-      for (const { pattern, label } of SECRET_CONTENT_PATTERNS) {
+      for (const { pattern, label } of CONTENT_PATTERN_REGS) {
         if (pattern.test(content)) {
           await client.app.log({
             body: {

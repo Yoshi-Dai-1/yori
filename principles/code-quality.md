@@ -45,7 +45,7 @@ const calculateDepreciatedValue = (
 開発者が変更を避けるようになると、機能追加もバグ修正も停滞する。
 
 低保守性のサイン：
-- 1つのファイルがprinciples/file-size-and-cohesion.md の閾値を超えている（単一責任の原則違反のサイン）
+- 1つのファイルが.opencode/standards/principles/file-size-and-cohesion.md の閾値を超えている（単一責任の原則違反のサイン）
 - 同じロジックが複数箇所にコピーされている（DRY原則違反）
 - マジックナンバーが散在している（意味不明な `0.08` や `1440` など）
 - 変数名が `a`、`b`、`tmp`、`data2` など
@@ -232,13 +232,13 @@ function calculateLegacyScore(value: number): number {
                   対処：「定数はすべて constants/ に移して」と指示する
 
 複雑性の蓄積    → 動けばいいコードが積み上がる
-                   対処：principles/file-size-and-cohesion.md の閾値に従い分割を指示する
+                   対処：.opencode/standards/principles/file-size-and-cohesion.md の閾値に従い分割を指示する
 ```
 
 ### 品質チェックの確認順序（毎実装後）
 
 実装完了後の確認順序（型チェック → lint → テスト → @code-reviewer → 人間レビュー）は
-`principles/tdd-with-ai.md` の「TDDと他のツールの組み合わせ」セクションに定義している。
+`.opencode/standards/principles/tdd-with-ai.md` の「TDDと他のツールの組み合わせ」セクションに定義している。
 このファイルでは重複して定義しない。
 
 

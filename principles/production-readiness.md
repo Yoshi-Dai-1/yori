@@ -319,10 +319,10 @@ GraphQL（GraphQLを使用している場合）：
 ## 8. 多層防御（侵入された後の備え）
 
 「防ぎ切れなかった場合」を前提にした設計が、未知の脅威への唯一の対策。
-詳細なチェックリストと実装方法は `principles/resilience.md` の Layer2〜4 を参照。
+詳細なチェックリストと実装方法は `.opencode/standards/principles/resilience.md` の Layer2〜4 を参照。
 
 本番リリース前に確認すること：
-- `principles/resilience.md` の「4つの防御層」チェックリストを実施済みか
+- `.opencode/standards/principles/resilience.md` の「4つの防御層」チェックリストを実施済みか
 - `docs/operations.md` にインシデント対応手順が記載されているか
 - 依存ライブラリの自動更新アラートが設定されているか
 
@@ -331,7 +331,7 @@ GraphQL（GraphQLを使用している場合）：
 ## 9. コード品質
 
 「動く」だけでなく「維持できる」状態でリリースする。
-→ 詳細は `principles/code-quality.md` を参照。
+→ 詳細は `.opencode/standards/principles/code-quality.md` を参照。
 
 ```
 構造的品質：
@@ -388,7 +388,7 @@ SLA / 可用性：
   [ ] ユーザーへの事前通知フローが決まっているか（メンテナンス通知等）
 ```
 
-→ 詳細は `principles/commercial-operations.md` を参照。
+→ 詳細は `.opencode/standards/principles/commercial-operations.md` を参照。
 
 ### 推奨（可能であれば対応する）
 - パフォーマンス：インデックス・ページネーション

@@ -49,7 +49,7 @@ AIにコード生成を依頼するときも同じ。
 | テスト戦略 | ビジネスロジックのユニットテストのみ | テストフレームワークと方針を定義 | テストピラミッド全層を定義 | 方針なしだとテストが散らかる |
 
 商用・チーム開発では、上記に加えて**開発プロセス要件**（ブランチ戦略・変更管理・インシデント管理・監査ログ）の定義が必要になる。
-これらは非機能要件ではなく運用ガバナンスの領域であり、`principles/commercial-operations.md` で定義する。
+これらは非機能要件ではなく運用ガバナンスの領域であり、`.opencode/standards/principles/commercial-operations.md` で定義する。
 
 **セキュリティだけは例外**：フェーズに関わらず最低限の定義が必要。
 「APIキーを環境変数で管理する」「通信はHTTPS」は初日から守る。
@@ -208,7 +208,7 @@ RPO（データ損失許容範囲）：___ 時間分
 **可観測性（Observability）について：**
 可観測性とは「本番で何が起きているかを把握できる状態」。
 「動いているように見える」と「健全に動いている」は別物。
-実装の詳細は `principles/resilience.md`（Layer2: Detection）に集約している。
+実装の詳細は `.opencode/standards/principles/resilience.md`（Layer2: Detection）に集約している。
 
 可観測性の3本柱：
 ```
@@ -423,7 +423,7 @@ E2Eテスト（少数）
 
 「どれくらいの品質で作るか」は非機能要件として定義する。
 定義しないとAIも人間も「動けばいい」を基準にしてしまう。
-→ 詳細は `principles/code-quality.md` を参照。
+→ 詳細は `.opencode/standards/principles/code-quality.md` を参照。
 
 ```
 品質基準：

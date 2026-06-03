@@ -54,8 +54,8 @@ ARCHITECTURE.md のルールに従っているか。
 ```
 確認すること：
 [ ] 依存の方向が正しいか（上位層が下位層にのみ依存しているか）
-[ ] 命名規則（principles/naming-conventions.md）に従っているか
-[ ] ファイルサイズが principles/file-size-and-cohesion.md の閾値（300行以内）に収まっているか
+[ ] 命名規則（.opencode/standards/principles/naming-conventions.md）に従っているか
+[ ] ファイルサイズが .opencode/standards/principles/file-size-and-cohesion.md の閾値（300行以内）に収まっているか
 [ ] SSOTが守られているか（同じ情報が複数箇所にないか）
 [ ] マジックナンバーが定数化されているか
 ```

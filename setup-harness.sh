@@ -153,31 +153,72 @@ done
 echo "✅ .opencode/skills/ に組み込みSkillsをコピーしました（release-prep / live-operation / handoff）"
 
 # 外部スキルをダウンロード（find-skills / skill-creator）
+# P1-4 修正：.opencode/config/skills.lock.yaml からコミットハッシュを読み込んで固定
 echo ""
 echo "📦 外部スキルをダウンロードしています..."
 if command -v git &>/dev/null; then
   SKILL_TMP=$(mktemp -d)
+  SKILLS_LOCK=".opencode/config/skills.lock.yaml"
 
+  # lock ファイルから commit を読み取る（yq が無ければ grep でフォールバック）
+  if [ -f "$SKILLS_LOCK" ]; then
+    if command -v yq &>/dev/null; then
+      FIND_SKILLS_COMMIT=$(yq -r '.external_skills.find-skills.commit' "$SKILLS_LOCK")
+      SKILL_CREATOR_COMMIT=$(yq -r '.external_skills.skill-creator.commit' "$SKILLS_LOCK")
+    else
+      # yq がない場合は sed/awk でフォールバック
+      FIND_SKILLS_COMMIT=$(awk '/^  find-skills:/,/^  skill-creator:/' "$SKILLS_LOCK" | grep "commit:" | head -1 | sed 's/.*commit: *//' | tr -d '"')
+      SKILL_CREATOR_COMMIT=$(awk '/^  skill-creator:/,/^[^ ]/' "$SKILLS_LOCK" | grep "commit:" | head -1 | sed 's/.*commit: *//' | tr -d '"')
+    fi
+  else
+    FIND_SKILLS_COMMIT=""
+    SKILL_CREATOR_COMMIT=""
+  fi
+
+  # find-skills
   echo "  → find-skills（vercel-labs/skills）..."
-  git clone --depth 1 https://github.com/vercel-labs/skills.git "$SKILL_TMP/vercel-labs-skills" 2>/dev/null && \
-    cp -r "$SKILL_TMP/vercel-labs-skills/find-skills" ".opencode/skills/" && \
-    echo "  ✅ find-skills をダウンロードしました" || \
-    echo "  ⚠️  find-skills のダウンロードに失敗しました"
+  if [ -n "$FIND_SKILLS_COMMIT" ] && [ "$FIND_SKILLS_COMMIT" != "null" ]; then
+    echo "    ロックされたコミット: ${FIND_SKILLS_COMMIT:0:10}"
+    git clone https://github.com/vercel-labs/skills.git "$SKILL_TMP/vercel-labs-skills" 2>/dev/null && \
+      (cd "$SKILL_TMP/vercel-labs-skills" && git checkout "$FIND_SKILLS_COMMIT" 2>/dev/null) && \
+      cp -r "$SKILL_TMP/vercel-labs-skills/find-skills" ".opencode/skills/" && \
+      echo "  ✅ find-skills をダウンロードしました（固定コミット）" || \
+      echo "  ⚠️  find-skills のダウンロードに失敗しました"
+  else
+    echo "    ⚠️  skills.lock.yaml にコミットハッシュが未設定です"
+    echo "    P1-4 推奨：動作確認済みのコミットハッシュを $SKILLS_LOCK に記入してください"
+    echo "    今回は main ブランチから取得しますが、再現性は保証されません"
+    git clone --depth 1 https://github.com/vercel-labs/skills.git "$SKILL_TMP/vercel-labs-skills" 2>/dev/null && \
+      cp -r "$SKILL_TMP/vercel-labs-skills/find-skills" ".opencode/skills/" && \
+      echo "  ✅ find-skills をダウンロードしました（main・非固定）" || \
+      echo "  ⚠️  find-skills のダウンロードに失敗しました"
+  fi
 
+  # skill-creator
   echo "  → skill-creator（anthropics/skills）..."
-  git clone --depth 1 https://github.com/anthropics/skills.git "$SKILL_TMP/anthropics-skills" 2>/dev/null && \
-    cp -r "$SKILL_TMP/anthropics-skills/skill-creator" ".opencode/skills/" && \
-    echo "  ✅ skill-creator をダウンロードしました" || \
-    echo "  ⚠️  skill-creator のダウンロードに失敗しました"
+  if [ -n "$SKILL_CREATOR_COMMIT" ] && [ "$SKILL_CREATOR_COMMIT" != "null" ]; then
+    echo "    ロックされたコミット: ${SKILL_CREATOR_COMMIT:0:10}"
+    git clone https://github.com/anthropics/skills.git "$SKILL_TMP/anthropics-skills" 2>/dev/null && \
+      (cd "$SKILL_TMP/anthropics-skills" && git checkout "$SKILL_CREATOR_COMMIT" 2>/dev/null) && \
+      cp -r "$SKILL_TMP/anthropics-skills/skill-creator" ".opencode/skills/" && \
+      echo "  ✅ skill-creator をダウンロードしました（固定コミット）" || \
+      echo "  ⚠️  skill-creator のダウンロードに失敗しました"
+  else
+    echo "    ⚠️  skills.lock.yaml にコミットハッシュが未設定です"
+    echo "    P1-4 推奨：動作確認済みのコミットハッシュを $SKILLS_LOCK に記入してください"
+    git clone --depth 1 https://github.com/anthropics/skills.git "$SKILL_TMP/anthropics-skills" 2>/dev/null && \
+      cp -r "$SKILL_TMP/anthropics-skills/skill-creator" ".opencode/skills/" && \
+      echo "  ✅ skill-creator をダウンロードしました（main・非固定）" || \
+      echo "  ⚠️  skill-creator のダウンロードに失敗しました"
+  fi
 
   rm -rf "$SKILL_TMP"
   echo "✅ 外部スキルのダウンロードが完了しました"
 else
   echo "⚠️  git が見つかりません。手動でスキルをインストールしてください："
-  echo "     git clone --depth 1 https://github.com/vercel-labs/skills.git"
-  echo "     cp -r skills/find-skills .opencode/skills/"
-  echo "     git clone --depth 1 https://github.com/anthropics/skills.git"
-  echo "     cp -r skills/skill-creator .opencode/skills/"
+  echo "     git clone https://github.com/vercel-labs/skills.git"
+  echo "     cd skills && git checkout <skills.lock.yaml のコミットハッシュ>"
+  echo "     cp -r find-skills /path/to/project/.opencode/skills/"
 fi
 
 # サブエージェント定義をコピー
@@ -194,29 +235,115 @@ echo "   （planner / evaluator / code-reviewer / security-auditor / test-genera
 
 # standards をコピー（principles/ architectures/ tech-decision テンプレート）
 # .opencode/standards/ に配置することで、AIがアクセス制限なく参照できる
+# P1-5 修正：マージ戦略を導入。既存ファイルは上書きせず、差分があれば警告。
+#           プロジェクト固有の上書きは .local/ ディレクトリで対応。
 mkdir -p .opencode/standards/principles .opencode/standards/architectures
-cp "$DEV_STANDARDS_PATH/principles/"*.md .opencode/standards/principles/
-cp "$DEV_STANDARDS_PATH/architectures/"*.md .opencode/standards/architectures/
-cp "$DEV_STANDARDS_PATH/snippets/tech-decision.md.template" .opencode/standards/tech-decision.md.template
+mkdir -p .opencode/standards/principles/.local
+mkdir -p .opencode/standards/architectures/.local
 
-# security-requirements.md の存在を明示確認（principles/ 全ファイルコピー済みだが重要なので検証）
+# .local/ ディレクトリの説明ファイル
+if [ ! -f ".opencode/standards/principles/.local/README.md" ]; then
+  cat > ".opencode/standards/principles/.local/README.md" << 'LOCALREADME'
+# プロジェクト固有の上書き（principles/）
+
+このディレクトリに置かれたファイルは、同名の dev-standards ファイルより優先されます。
+dev-standards 側の同名ファイルが更新されても上書きされません。
+
+使い方：
+1. `.opencode/standards/principles/<file>.md` を編集
+2. 同じファイル名で `.opencode/standards/principles/.local/<file>.md` に保存
+3. 編集後にこのディレクトリの同名ファイルを参照するようにする
+
+例：dev-standards の `security-requirements.md` をプロジェクト固有の
+リスクプロファイルに合わせて上書きしたい場合
+1. `.opencode/standards/principles/.local/security-requirements.md` を作成
+2. 内容をカスタマイズ
+3. プロジェクト内の他のファイルからこの .local 版を参照する
+
+注意：dev-standards 側の更新内容を取り込みたい場合は手動マージが必要です。
+LOCALREADME
+  echo "ℹ️  .opencode/standards/principles/.local/README.md を作成しました（プロジェクト固有の上書き機構）"
+fi
+
+if [ ! -f ".opencode/standards/architectures/.local/README.md" ]; then
+  cat > ".opencode/standards/architectures/.local/README.md" << 'LOCALREADME'
+# プロジェクト固有の上書き（architectures/）
+
+このディレクトリに置かれたファイルは、同名の dev-standards ファイルより優先されます。
+詳細は `.opencode/standards/principles/.local/README.md` を参照。
+LOCALREADME
+fi
+
+# principles/ のマージコピー
+DIFF_COUNT=0
+NEW_COUNT=0
+for SRC_FILE in "$DEV_STANDARDS_PATH/principles/"*.md; do
+  [ -f "$SRC_FILE" ] || continue
+  FNAME=$(basename "$SRC_FILE")
+  TARGET=".opencode/standards/principles/$FNAME"
+
+  if [ ! -f "$TARGET" ]; then
+    cp "$SRC_FILE" "$TARGET"
+    NEW_COUNT=$((NEW_COUNT + 1))
+  elif ! diff -q "$SRC_FILE" "$TARGET" > /dev/null 2>&1; then
+    # 差分あり：上書きせず警告
+    DIFF_COUNT=$((DIFF_COUNT + 1))
+    if [ "$DIFF_COUNT" -le 5 ]; then
+      echo "  ⚠️  principles/$FNAME に差分あり（上書き保護・.local/ への移動を検討）"
+    elif [ "$DIFF_COUNT" -eq 6 ]; then
+      echo "  ⚠️  他にも差分があります（以降は省略）"
+    fi
+  fi
+done
+
+# architectures/ のマージコピー
+for SRC_FILE in "$DEV_STANDARDS_PATH/architectures/"*.md; do
+  [ -f "$SRC_FILE" ] || continue
+  FNAME=$(basename "$SRC_FILE")
+  TARGET=".opencode/standards/architectures/$FNAME"
+
+  if [ ! -f "$TARGET" ]; then
+    cp "$SRC_FILE" "$TARGET"
+    NEW_COUNT=$((NEW_COUNT + 1))
+  elif ! diff -q "$SRC_FILE" "$TARGET" > /dev/null 2>&1; then
+    DIFF_COUNT=$((DIFF_COUNT + 1))
+    if [ "$DIFF_COUNT" -le 10 ]; then
+      echo "  ⚠️  architectures/$FNAME に差分あり（上書き保護・.local/ への移動を検討）"
+    fi
+  fi
+done
+
+# tech-decision テンプレートは強制コピー（テンプレートは編集対象外）
+if [ ! -f ".opencode/standards/tech-decision.md.template" ]; then
+  cp "$DEV_STANDARDS_PATH/snippets/tech-decision.md.template" .opencode/standards/tech-decision.md.template
+fi
+
+if [ "$DIFF_COUNT" -gt 0 ]; then
+  echo "ℹ️  差分があるファイルは上書きされませんでした。"
+  echo "   反映方法："
+  echo "   A) 差分を確認してプロジェクトに取り込む：diff \$DEV_STANDARDS_PATH/principles/X.md .opencode/standards/principles/X.md"
+  echo "   B) プロジェクト固有の差分を保持：.opencode/standards/principles/.local/X.md にコピー"
+  echo "   C) dev-standards の最新版で強制上書き：rm .opencode/standards/principles/X.md && setup-harness.sh 再実行"
+  echo "   合計 ${DIFF_COUNT} ファイルに差分があります"
+fi
+echo "✅ standards/ をマージコピーしました（新規 ${NEW_COUNT} / 差分保持 ${DIFF_COUNT}）"
+
+# security-requirements.md の存在を明示確認
 if [ ! -f ".opencode/standards/principles/security-requirements.md" ]; then
   echo "❌ security-requirements.md のコピーに失敗しました"
   VALIDATION_FAILED=1
 fi
 
-# コピーしたファイル内の相互参照パスを .opencode/standards/ 用に書き換える
-# （コピー元の principles/ や architectures/ はプロジェクト内に存在しないため）
-if sed --version 2>/dev/null | grep -q "GNU"; then
-  find .opencode/standards -name "*.md" | while read f; do
-    sed -i '/\.opencode\/standards/! s|principles/\([a-z_-]*\.md\)|.opencode/standards/principles/\1|g' "$f"
-    sed -i '/\.opencode\/standards/! s|architectures/\([a-z_-]*\.md\)|.opencode/standards/architectures/\1|g' "$f"
-  done
-else
-  find .opencode/standards -name "*.md" | while read f; do
-    sed -i '' '/\.opencode\/standards/! s|principles/\([a-z_-]*\.md\)|.opencode/standards/principles/\1|g' "$f"
-    sed -i '' '/\.opencode\/standards/! s|architectures/\([a-z_-]*\.md\)|.opencode/standards/architectures/\1|g' "$f"
-  done
+# 参照パスはコピー元で既に .opencode/standards/ 形式に統一済み（2026-06 修正）。
+# 旧形式の混在による書き換えは P0-1 として解消済み。
+# 検証：コピー後の .opencode/standards/ 配下の .md ファイルに
+#      「.opencode/standards/principles/」「.opencode/standards/architectures/」以外の
+#      相互参照（principles/xxx.md / architectures/xxx.md）が残っていないか確認
+STALE_REF=$(grep -rE "(^|[^/])principles/[a-z_-]+\.md" .opencode/standards/ 2>/dev/null | grep -v ".opencode/standards/principles/" | wc -l | tr -d ' ')
+STALE_REF_ARCH=$(grep -rE "(^|[^/])architectures/[a-z_-]+\.md" .opencode/standards/ 2>/dev/null | grep -v ".opencode/standards/architectures/" | wc -l | tr -d ' ')
+if [ "$STALE_REF" -gt 0 ] || [ "$STALE_REF_ARCH" -gt 0 ]; then
+  echo "⚠️  旧形式の相互参照が ${STALE_REF} 件（principles）+ ${STALE_REF_ARCH} 件（architectures）残っています"
+  echo "    dev-standards 側で修正してから再実行してください"
 fi
 echo "✅ .opencode/standards/ をコピーしました"
 echo "   （principles/ 全ファイル・architectures/ 全ファイル・tech-decision テンプレート）"
@@ -232,6 +359,20 @@ for PLUGIN_FILE in "$SNIPPETS/.opencode/plugins/"*.ts "$SNIPPETS/.opencode/plugi
   fi
 done
 echo "✅ .opencode/plugins/ に Plugin をコピーしました"
+
+# SSoT ファイル（.opencode/config/）をコピー
+# P1-1 修正：secret-patterns.json を SSoT として配置
+# P1-4 修正：skills.lock.yaml もここに配置
+mkdir -p .opencode/config
+for CONFIG_FILE in "$SNIPPETS/.opencode/config/"*.json "$SNIPPETS/.opencode/config/"*.yaml "$SNIPPETS/.opencode/config/"*.yml; do
+  if [ -f "$CONFIG_FILE" ]; then
+    CONFIG_NAME=$(basename "$CONFIG_FILE")
+    if [ ! -f ".opencode/config/$CONFIG_NAME" ]; then
+      cp "$CONFIG_FILE" ".opencode/config/$CONFIG_NAME"
+    fi
+  fi
+done
+echo "✅ .opencode/config/ に SSoT ファイルをコピーしました"
 
 # Plugin 依存関係（package.json）を .opencode/ 直下にコピー
 if [ -f "$SNIPPETS/.opencode/package.json" ] && [ ! -f ".opencode/package.json" ]; then
@@ -353,11 +494,14 @@ else
 fi
 
 # .env を作成（.env.example が存在し .env が存在しない場合）
-# ※ 空ファイルのみ作成し、初期値の記入は AI（stack-setup.md の自動展開レベル）に委ねる
-#    これにより AI がプロジェクト性質に応じた初期値を記入できる
+# ※ P0-4 修正：.env の値推測は AI が行わない方針に変更。
+#    空ファイルを作成し、AGENTS.md Session Protocol Step 4 で
+#    人間に「.env の値を入力してください」と促す。
+#    AI は .env.example のキー一覧を空値でコピーする処理を行うが、
+#    値そのものは人間のみが入力する。
 if [ -f ".env.example" ] && [ ! -f ".env" ]; then
   touch .env
-  echo "✅ .env を作成しました（AIが初期値を記入します）"
+  echo "✅ .env を作成しました（Session Protocol Step 4 で AI がキー構造を補完し、値は人間が入力）"
   echo "⚠️  .env は絶対にコミットしないでください（.gitignoreで除外済み）"
 elif [ -f ".env" ]; then
   echo "ℹ️  .env は既に存在します（上書き保護）"
@@ -547,78 +691,77 @@ fi
 echo ""
 # .git/hooks/pre-commit を作成（人間のgit commitも保護する）
 # このファイルは .git/ 内にあるため git 管理対象外だが、setup-harness.sh が毎回作成する
+# P1-1 修正：.opencode/config/secret-patterns.json からパターンを読み込んで動的生成
 if [ -d ".git" ]; then
-  cat > .git/hooks/pre-commit << 'HOOKEOF'
+  PATTERNS_JSON=".opencode/config/secret-patterns.json"
+  if [ ! -f "$PATTERNS_JSON" ]; then
+    echo "❌ $PATTERNS_JSON が見つかりません。SSoT ファイルがコピーされていません" >&2
+    exit 1
+  fi
+
+  if ! command -v jq &>/dev/null; then
+    echo "⚠️  jq がインストールされていません。pre-commit フックにフォールバック版を生成します" >&2
+    echo "   本来の動作には jq のインストールを推奨します（apt install jq / brew install jq）" >&2
+  fi
+
+  # jq でパターンを読み込んで bash 配列に変換
+  if command -v jq &>/dev/null; then
+    FILE_PATTERNS_BASH=$(jq -r '.filePatterns[]' "$PATTERNS_JSON" | awk '{print "  \x27" $0 "\x27"}')
+    CONTENT_PATTERNS_BASH=$(jq -r '.contentPatterns[].pattern' "$PATTERNS_JSON" | awk '{print "  \x27" $0 "\x27"}')
+  else
+    # フォールバック：最低限のパターン（.env 系のみ）
+    FILE_PATTERNS_BASH="  '\\.env\\.local$'"
+    CONTENT_PATTERNS_BASH=""
+  fi
+
+  # 動的生成した pre-commit フック
+  cat > .git/hooks/pre-commit <<HOOKEOF
 #!/bin/bash
 # pre-commit hook: 機密情報・秘密鍵・env ファイルのコミットを防ぐ
-# setup-harness.sh が自動生成。再セットアップで再作成される。
+# 自動生成元：$PATTERNS_JSON
+# 再生成するには setup-harness.sh を再実行してください。
 
 echo "[Security] コミット前セキュリティチェック..."
 
 FAILED=0
 
 # ── 危険なファイル名のチェック ─────────────────────────────────────
-# .env 系
-ENV_FILES=$(git diff --cached --name-only | grep -E '(^|/)\.env$|(^|/)\.env\.' | grep -v '\.example$')
-if [ -n "$ENV_FILES" ]; then
-  echo "[ERROR] .env ファイルがコミットに含まれています:" >&2
-  echo "$ENV_FILES" >&2
-  echo "  git restore --staged <file> で除外してください。" >&2
-  FAILED=1
-fi
-
-# 秘密鍵・証明書ファイル
-KEY_FILES=$(git diff --cached --name-only | grep -E '\.(pem|key|p12|pfx|crt|cer|der)$|^id_rsa$|^id_ed25519$|^id_dsa$|^id_ecdsa$')
-if [ -n "$KEY_FILES" ]; then
-  echo "[ERROR] 秘密鍵・証明書ファイルがコミットに含まれています:" >&2
-  echo "$KEY_FILES" >&2
-  FAILED=1
-fi
-
-# 認証情報ファイル
-CRED_FILES=$(git diff --cached --name-only | grep -E '(credentials|service.?account).*\.json$|\.npmrc$|\.netrc$|\.sqlite$|\.sqlite3$|\.db$')
-if [ -n "$CRED_FILES" ]; then
-  echo "[WARN] 認証情報ファイルの可能性があります:" >&2
-  echo "$CRED_FILES" >&2
-  echo "  機密情報が含まれていないか確認してください。" >&2
-  FAILED=1
-fi
-
-# ── 危険なコンテンツパターンのチェック ──────────────────────────────
-CONTENT_PATTERNS=(
-  "API_KEY[[:space:]]*="
-  "API_SECRET[[:space:]]*="
-  "SECRET_KEY[[:space:]]*="
-  "PASSWORD[[:space:]]*="
-  "PRIVATE_KEY"
-  "ACCESS_TOKEN[[:space:]]*="
-  "DATABASE_URL[[:space:]]*="
-  "aws_access_key_id"
-  "aws_secret_access_key"
-  "GOOGLE_APPLICATION_CREDENTIALS"
-  "STRIPE_SECRET_KEY"
-  "SENDGRID_API_KEY"
-  "Bearer [A-Za-z0-9+/]"
-  "sk-[a-zA-Z0-9]{20}"
-  "ghp_[a-zA-Z0-9]"
-  "-----BEGIN.*PRIVATE KEY-----"
+# パターンは $PATTERNS_JSON の filePatterns から読み込み
+FILE_PATTERNS=(
+${FILE_PATTERNS_BASH}
 )
 
-for PATTERN in "${CONTENT_PATTERNS[@]}"; do
-  MATCHES=$(git diff --cached --name-only \
-    | xargs grep -l -E "$PATTERN" 2>/dev/null \
-    | grep -v "\.env" \
-    | grep -v "\.example" \
-    | grep -v "pre-commit" \
-    | grep -v "setup-harness")
-  if [ -n "$MATCHES" ]; then
-    echo "[WARN] 機密情報パターン「$PATTERN」を検出:" >&2
-    echo "$MATCHES" >&2
+for PATTERN in "\${FILE_PATTERNS[@]}"; do
+  MATCHES=\$(git diff --cached --name-only | grep -E "\$PATTERN" | grep -v '\.example\$')
+  if [ -n "\$MATCHES" ]; then
+    echo "[ERROR] 機密ファイル（\$PATTERN）がコミットに含まれています:" >&2
+    echo "\$MATCHES" >&2
     FAILED=1
   fi
 done
 
-if [ $FAILED -eq 1 ]; then
+# ── 危険なコンテンツパターンのチェック ──────────────────────────────
+# パターンは $PATTERNS_JSON の contentPatterns から読み込み
+CONTENT_PATTERNS=(
+${CONTENT_PATTERNS_BASH}
+)
+
+for PATTERN in "\${CONTENT_PATTERNS[@]}"; do
+  MATCHES=\$(git diff --cached --name-only \
+    | xargs grep -l -E "\$PATTERN" 2>/dev/null \
+    | grep -v "\.env" \
+    | grep -v "\.example" \
+    | grep -v "pre-commit" \
+    | grep -v "setup-harness" \
+    | grep -v "secret-patterns.json")
+  if [ -n "\$MATCHES" ]; then
+    echo "[WARN] 機密情報パターン「\$PATTERN」を検出:" >&2
+    echo "\$MATCHES" >&2
+    FAILED=1
+  fi
+done
+
+if [ \$FAILED -eq 1 ]; then
   echo "" >&2
   echo "[ERROR] コミットを中止しました。" >&2
   echo "  問題のファイルを確認し、git restore --staged <file> で除外してください。" >&2
@@ -630,7 +773,8 @@ echo "[OK] セキュリティチェック通過"
 exit 0
 HOOKEOF
   chmod +x .git/hooks/pre-commit
-  echo "✅ .git/hooks/pre-commit を設定しました（人間のコミットも機密情報から保護）"
+  echo "✅ .git/hooks/pre-commit を設定しました（$PATTERNS_JSON から動的生成）"
+  echo "   人間のコミットも機密情報から保護。パターン更新は同 JSON を編集して setup-harness.sh 再実行"
 else
   echo "ℹ️  .git ディレクトリが見つかりません。git init 後に setup-harness.sh を再実行してください。"
 fi

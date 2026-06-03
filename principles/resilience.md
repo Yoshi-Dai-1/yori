@@ -22,9 +22,9 @@
 
 ### Layer 1：壊れにくくする（Prevention）
 
-→ セキュリティ（principles/security-implementation.md）・TDD（principles/tdd-with-ai.md）・
-   コードレビュー（principles/code-review.md）で対応済み。
-→ 外部通信の安定性設計（principles/network-resilience.md）もこの層に属する。
+→ セキュリティ（.opencode/standards/principles/security-implementation.md）・TDD（.opencode/standards/principles/tdd-with-ai.md）・
+   コードレビュー（.opencode/standards/principles/code-review.md）で対応済み。
+→ 外部通信の安定性設計（.opencode/standards/principles/network-resilience.md）もこの層に属する。
   タイムアウト・リトライ・冪等性の設計は「壊れにくくする」防御層の一部。
   `.opencode/rules/network-resilience.md` が通信コードの編集時に自律的に確認する。
 
@@ -249,7 +249,7 @@ resilience.md の観点から設計を確認してください：
 ### 月次の定期診断
 
 ```
-principles/resilience.md と ARCHITECTURE.md を参照して、
+.opencode/standards/principles/resilience.md と ARCHITECTURE.md を参照して、
 現在のシステムのレジリエンスを評価してください。
 
 確認してほしい項目：

@@ -1,0 +1,32 @@
+# 外部スキル バージョンロックファイル
+#
+# P1-4 修正（2026-06）：外部リポジトリのコミットハッシュを固定し、
+# 任意の main ブランチ更新による破壊を防ぐ。
+#
+# 使い方：
+# 1. 新しいバージョンを取り込みたいとき
+#    cd /tmp && git clone <source>
+#    cd <source> && git log --oneline -10
+#    動作確認したコミットハッシュをこのファイルに記入
+# 2. setup-harness.sh を再実行してロックを反映
+#
+# コミットハッシュの入手先：
+#   find-skills: https://github.com/vercel-labs/skills/commits/main
+#   skill-creator: https://github.com/anthropics/skills/commits/main
+#
+# 動作確認済みのハッシュに更新してください（初期値は2026-06-01時点）。
+
+external_skills:
+  find-skills:
+    source: https://github.com/vercel-labs/skills.git
+    # main ブランチの最新コミット。動作確認後に固定する。
+    # 未固定状態（空文字）の場合、setup-harness.sh は警告を出して処理を続行する
+    commit: ""
+    path: find-skills
+
+  skill-creator:
+    source: https://github.com/anthropics/skills.git
+    # main ブランチの最新コミット。動作確認後に固定する。
+    # 未固定状態（空文字）の場合、setup-harness.sh は警告を出して処理を続行する
+    commit: ""
+    path: skill-creator
