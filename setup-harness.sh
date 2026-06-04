@@ -233,6 +233,19 @@ done
 echo "✅ .opencode/agents/ にサブエージェント定義をコピーしました"
 echo "   （planner / evaluator / code-reviewer / security-auditor / test-generator / codebase-investigator / resilience-checker / code-quality-auditor）"
 
+# サブエージェント共有ファイル（_shared/）をコピー
+mkdir -p .opencode/agents/_shared
+for SHARED_FILE in "$SNIPPETS/agents/_shared/"*.md; do
+  if [ -f "$SHARED_FILE" ]; then
+    SHARED_NAME=$(basename "$SHARED_FILE")
+    if [ ! -f ".opencode/agents/_shared/$SHARED_NAME" ]; then
+      cp "$SHARED_FILE" ".opencode/agents/_shared/$SHARED_NAME"
+      echo "✅ .opencode/agents/_shared/$SHARED_NAME をコピーしました"
+    fi
+  fi
+done
+echo "✅ .opencode/agents/_shared/ に共有ファイルをコピーしました"
+
 # standards をコピー（principles/ architectures/ tech-decision テンプレート）
 # .opencode/standards/ に配置することで、AIがアクセス制限なく参照できる
 # P1-5 修正：マージ戦略を導入。既存ファイルは上書きせず、差分があれば警告。
