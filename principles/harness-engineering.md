@@ -44,9 +44,11 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
   docs/（プロジェクト成果物・AIと人間が共有するドキュメント）
     project-definition.md  プロジェクトの目的・制約・Won't
     spec.md                仕様書・Sprint Contract（Plannerが生成）
-    features.json          Feature List・pass/fail追跡（Plannerが生成・Evaluatorが更新）
+    tasks.json          Task List・pass/fail追跡（Plannerが生成・Evaluatorが更新）
     build-log.md           セッション間の意思決定・試行錯誤の積み上げログ
     operations.md          本番運用手順書
+    working/               タスクごとの揮発的な状態（計画・メモ・チェックリスト）
+    archive/               完了したタスクのアーカイブ（task-archive.ts が自動提案・.gitignore 対象）
 
   .opencode/（ハーネスの詳細）
     rules/               glob matchで自動読込（判断基準）
@@ -79,7 +81,7 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
 | rules/ | glob matchで自動（関連ファイル編集時） | 判断基準の自動提供 |
 | skills/ | descriptionで自動参照（発言検知）、または/コマンドで明示呼び出し | 手順書（定型作業の標準化）|
 | agents/ | @エージェント名で呼び出したとき | 独立コンテキストの専門処理 |
-| plugins/ | コードイベント発生時（ツール実行後等） | 強制的なガードレール・自動記録 |
+| plugins/ | コードイベント発生時（ツール実行後等） | 強制的なガードレール・自動記録・プロアクティブなルール注入 |
 
 ---
 
@@ -101,7 +103,7 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
 「コンテキストが苦しい」と自己申告するよう促しても信頼できない。
 自己評価バイアスと同様に、同じモデルが自分の状態を正確に認識することは期待できない。
 正しい対処は AIへの検知依頼ではなく、**ハーネス設計による構造的な予防**：
-- Feature List（`docs/features.json`）：pass/fail が外部に管理され、宣言的な「完了」が通らない
+- Task List（`docs/tasks.json`）：pass/fail が外部に管理され、宣言的な「完了」が通らない
 - Sprint Contract：完了基準をスプリント開始前に合意・外部化する
 - Context Reset：コンテキストをクリアして新しいエージェントに引き継ぐ（clean slate）
 
@@ -111,10 +113,14 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
 
 GANの Generator-Evaluator 構造に着想を得た現代的なハーネス設計。
 
+**完了の定義**：フィーチャーは `@evaluator` が Sprint Contract に基づく QA 評価で
+PASS と判定し、`docs/tasks.json` の `passes` フィールドを `true` に更新した
+時点で「完了」とする。それ以外の方法で完了を宣言してはいけない。
+
 ```
 Planner（サブエージェント）
   役割：1〜4文のプロンプトを詳細な仕様書（docs/spec.md）と
-        Feature List（docs/features.json）に変換する
+        Task List（docs/tasks.json）に変換する
   使うタイミング：中規模以上のタスク開始時
   書く場所：`.opencode/agents/subagents/planner.md`
 
@@ -131,22 +137,44 @@ Evaluator（サブエージェント）
   書く場所：`.opencode/agents/subagents/evaluator.md`
 ```
 
-### Feature List（docs/features.json）
+### Task List（docs/tasks.json）
 
 Planner がスプリント計画と同時に生成する機能追跡ファイル。
 各フィーチャーに `"passes": false` フィールドを持ち、Evaluator のみが `true` に更新する。
 **Markdown ではなく JSON を使う理由**：エージェントが Markdown より JSON を
 誤って上書き・編集する可能性が低いため、状態が安定して追跡できる。
 
+#### フィーチャー形式
+
+```json
+{
+  "id": "auth-refactor",
+  "passes": false,
+  "group": "auth-refactor"
+}
+```
+
+| フィールド | 型 | 役割 |
+|-----------|------|------|
+| `id` | string | フィーチャーのユニーク識別子 |
+| `passes` | boolean | Evaluator のみが更新する完了フラグ |
+| `group` | string | `docs/working/<group>/` との対応（省略可） |
+
+`group` フィールドは **作業ディレクトリ パターン** 使用時に必須。
+`task-archive.ts` Plugin が `session.idle` 検知時にこのフィールドで
+各作業ディレクトリの全タスクの `passes` が `true` かを確認し、
+完了したタスクを自動アーカイブする。
+`group` フィールドがないタスクはアーカイブ対象外（手動で対応する）。
+
 #### passes フィールドの保護メカニズム
 
-`passes` フィールドは tool.execute.before Plugin（`features-guard.ts`）によって
+`passes` フィールドは tool.execute.before Plugin（`tasks-guard.ts`）によって
 機械的に保護される。
 
 - **ブロック対象**: 実装エージェントが誤って `passes: true` を設定する操作
 - **許可条件**: `.opencode/.evaluator-updating` マーカーファイルが存在する場合のみ
 - **評価エージェントの責務**: `PASS` 判定後、マーカー作成 → `passes` 更新 → マーカー削除の順に実行
-- **詳細**: `.opencode/plugins/features-guard.ts` と
+- **詳細**: `.opencode/plugins/tasks-guard.ts` と
   `.opencode/agents/subagents/evaluator.md` の「PASS後の後処理」セクションを参照
 
 ### Sprint Contract（スプリント契約）
@@ -290,6 +318,66 @@ Compaction ではなく Context Reset を選ぶ。
 
 ---
 
+## 作業ディレクトリ（タスク間の状態分離）
+
+### なぜ必要か
+
+`docs/spec.md` / `docs/tasks.json` / `docs/build-log.md` はプロジェクト全体で
+1つのファイルとして設計されている。単一タスクの進行には十分だが、複数タスクが
+並行する局面では、各タスクの計画・メモ・状態を分離して管理する必要がある。
+作業ディレクトリは**各タスクの揮発的な状態を分離する箱**として機能する。
+
+### パターン
+
+```
+docs/
+  spec.md                ← プロジェクト全体の仕様（共通）
+  tasks.json          ← Task List（共通）
+  build-log.md           ← 意思決定ログ（共通）
+  working/               ← ★ タスクごとに分離した作業ディレクトリ
+    auth-refactor/
+      plan.md            ← タスクの詳細計画
+      notes.md           ← 試行錯誤のメモ
+      review-checklist.md ← 完了前チェック
+    payment-integration/
+      plan.md
+      notes.md
+      review-checklist.md
+  archive/               ← 完了したタスクのアーカイブ（task-archive.ts が自動提案）
+    old-feature/
+      notes.md
+      plan.md
+      review-checklist.md
+```
+
+### 使い方
+
+1. **タスク開始時**：`@planner` が `docs/working/<group>/` を作成し `plan.md` を書く
+2. **タスク実装中**：メインエージェントは作業ディレクトリ内で計画・メモを管理
+3. **タスク完了時**：`task-archive.ts` Plugin（`session.idle`）が `tasks.json` を確認する。
+   同一 `group` フィールドを持つ全タスクの `passes` が `true`（= `@evaluator` が
+   完了と判定）の場合、当該作業ディレクトリをアーカイブ対象として提案する
+4. **アーカイブ時**：AI が `docs/working/<group>/` の内容を
+   `docs/archive/<group>/` へ移動する
+
+### handoff-artifact.md との違い
+
+| 仕組み | スコープ | ライフサイクル | 目的 |
+|--------|----------|----------------|------|
+| `handoff-artifact.md` | **セッション** | `session.deleted` で再生成（毎回上書き） | 前セッションの文脈を次セッションに渡す |
+| `docs/working/<group>/` | **タスク** | タスク完了まで保持 | 複数タスクの状態を互いに干渉させない |
+
+### 使い方を判断する基準
+
+| タスク規模 | 作業ディレクトリ | 判定基準（数値で判断） |
+|-----------|-----------------|----------------------|
+| 単機能 | 使わない | タスク数1 |
+| 中規模 | 任意 | タスク数2〜5 |
+| 大規模 | 使う | タスク数6以上 |
+| 既存 working ディレクトリが2以上 | **必須** | `docs/working/` 内ディレクトリ数が2以上 |
+
+---
+
 ## dev-standardsとハーネスの関係
 
 ```
@@ -329,11 +417,11 @@ setup-harness.sh でテンプレートをコピーして、
 [1〜4文でやりたいことを書く]
 ```
 
-→ Planner が docs/spec.md（Sprint Contract 含む）と docs/features.json を生成する。
+→ Planner が docs/spec.md（Sprint Contract 含む）と docs/tasks.json を生成する。
 → 生成後、Sprint 1 の Contract を @evaluator にレビューしてもらってから実装を開始する。
 
-**Feature List の現在の進捗を確認する**：
+**Task List の現在の進捗を確認する**：
 
 ```
-docs/features.json を読んで、未完了（passes: false）のフィーチャーを一覧してください。
+docs/tasks.json を読んで、未完了（passes: false）のタスクを一覧してください。
 ```

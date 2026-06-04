@@ -25,6 +25,8 @@ max_turns: 20
 呼び出し時のプロンプト（1〜4文）に加えて、以下を read_file で自律的に読む：
 - `ARCHITECTURE.md`（技術スタック・層のルール）
 - `docs/project-definition.md`（存在する場合。プロジェクトの目的・制約）
+- `docs/tasks.json`（存在する場合。既存タスクと group フィールドの確認）
+- `docs/working/`（存在する場合。list_directory で既存ディレクトリ数を確認）
 
 人間が手動でこれらのファイルを渡す必要はない。
 
@@ -40,40 +42,7 @@ max_turns: 20
 
 ## 仕様書の構成
 
-以下の構造で仕様書を作成する：
-
-```
-## [プロジェクト名]
-
-### 概要
-[何を・誰のために・なぜ作るか 3〜5文]
-
-### ビジュアルデザイン方針
-[UIの雰囲気・カラートーン・参考にするデザインパターン]
-[.opencode/skills/frontend-design/SKILL.md が存在すれば参照する（プロジェクトローカルスキル。なければスキップ）]
-
-### 機能一覧
-[機能を論理的なグループに分けて列挙する]
-
-#### [グループ名]
-- [機能1]：[ユーザーにとっての価値]
-- [機能2]：[ユーザーにとっての価値]
-
-### スプリント計画
-[機能グループを実装順に並べる。各スプリントで動くものが完成する単位にする]
-
-#### Sprint 1：[テーマ]
-実装する機能：[機能リスト]
-完了の定義：[ユーザーが実際に操作できる状態の記述]
-Sprint Contract：（出力形式 > Sprint N Contract のフォーマットを使い、このセクション内に記述する）
-
-#### Sprint 2：[テーマ]
-...
-
-### 技術スタックの補足
-[ARCHITECTURE.mdにない、このアプリ固有の技術判断があれば記載]
-[ない場合は「ARCHITECTURE.mdに従う」と記載]
-```
+`docs/spec-structure.md` のテンプレートに従う。
 
 ## 確認すること
 
@@ -82,63 +51,41 @@ Won'tセクションに記載された機能は仕様書に含めない。
 
 ## 出力形式
 
-以下の 2 ファイルを生成する。ファイルに書き込む前に「この仕様で進めてよいか」を確認する。
+以下の順番でファイルを生成する。
 
-### 1. docs/spec.md（仕様書・人間が読む）
+### Step 1: docs/spec.md（仕様書）
 
 仕様書を `docs/spec.md` として出力する。
-各スプリントに **Sprint Contract** セクションを含める：
+各スプリントに Sprint Contract セクションを含める。
+フォーマットは `docs/sprint-contract-template.md` を参照する。
 
-```markdown
-##### Sprint N Contract（承認待ち）
+### Step 2: docs/tasks.json（Task List）
 
-**Generator が実装すること**：
-- [具体的な機能]
-
-**Evaluator が検証する完了基準**：
-- [ ] [操作手順と期待結果を検証可能な形式で記述]
-       例：「新規チャットボタンを押す → 空のチャット画面が表示される」
-- [ ] [エラー系・エッジケースの確認事項]
-
-**NFR 完了基準**（省略可。省略時は Evaluator が測定のみ実施・合否判定なし）：
-- [ ] パフォーマンス：[例：主要API の p95 ≤ 500ms。未定義の場合はこの行を削除]
-- [ ] エラーレート：[例：操作中にクリティカルエラー 0 件。未定義の場合はこの行を削除]
-
-**承認**：（スプリント開始前に Evaluator が記入）
-```
-
-Sprint Contract は「何ができれば完了か」を操作手順として記述する。
-「動いていれば OK」のような主観的な表現は使わない。
-
-Sprint Contract を作成した後、`ARCHITECTURE.md` の「品質診断戦略」を確認し、
-NFR 完了基準の定義を以下の通り自動的に提案する：
-- 「品質診断戦略：Continuous」の場合：p95・エラーレート等の数値目標を必ず設定するよう促す
-- 「品質診断戦略：Scheduled」の場合：測定可能なNFRを設定することを推奨として提案する
-- 「品質診断戦略：Reactive」または未定義の場合：省略可のまま（人間が必要なら追加する）
-
-### 2. docs/features.json（Feature List・機械が追跡する）
-
-フィーチャーごとに pass/fail 状態を管理する JSON ファイル。
+タスクごとに pass/fail 状態を管理する JSON ファイル。
 **Evaluator のみが `"passes": true` に更新できる。Generator は `passes` フィールドを変更しない。**
 Markdown ではなく JSON を使う理由：エージェントが Markdown より JSON を誤って
 上書き・編集する可能性が低く、状態追跡が安定するため。
 
-```json
-[
-  {
-    "id": "F001",
-    "sprint": 1,
-    "category": "functional",
-    "description": "[ユーザーが何をできるか 1 文で記述]",
-    "steps": [
-      "[操作手順 1]",
-      "[操作手順 2]",
-      "[期待結果]"
-    ],
-    "passes": false
-  }
-]
-```
+フォーマットは `docs/tasks-json-template.json` を参照する。
+
+`group` フィールドは作業ディレクトリ（`docs/working/<group>/`）との対応に使う。
+割り当て基準：
+- 同一の `group` 値：**同一スプリント内で実装する関連タスク**（`sprint` フィールドが同一）
+- 異なる `group` 値：**別スプリント・別タイミングで実装する独立したタスク**
+
+既存の `docs/tasks.json` がある場合、既存 group フィールドと整合性を取る：
+- 既存 group と関連するタスク → 既存 group 値を再利用
+- 完全に新しいタスク群 → 新しい group 値を割り当て
+
+### Step 3: 作業ディレクトリの作成判定
+
+Step 2 で作成した tasks.json の内容に基づき、以下**いずれか**を満たす場合に `docs/working/<group>/` を作成する：
+- tasks.json のタスク数が6以上
+- `docs/working/` 内に既存ディレクトリが2以上（list_directory で確認）
+
+作成する場合、`docs/working/<group>/` に plan.md / notes.md / review-checklist.md を作成する。
+各テンプレートは `docs/working/` に配置されている（setup-harness.sh がコピー済み）。
+テンプレートを参照し、内容を記入する。
 
 ## 重要
 

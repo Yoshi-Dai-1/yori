@@ -631,6 +631,29 @@ if [ ! -f "docs/quality-scorecard.md" ]; then
   echo "✅ docs/quality-scorecard.md の雛形を作成しました（月次診断後に @code-quality-auditor の結果を転記する）"
 fi
 
+# 仕様書・Sprint Contract・tasks.json テンプレートをコピー
+for TEMPLATE_FILE in "$SNIPPETS/docs/spec-structure.md" "$SNIPPETS/docs/sprint-contract-template.md" "$SNIPPETS/docs/tasks-json-template.json"; do
+  if [ -f "$TEMPLATE_FILE" ]; then
+    TEMPLATE_NAME=$(basename "$TEMPLATE_FILE")
+    if [ ! -f "docs/$TEMPLATE_NAME" ]; then
+      cp "$TEMPLATE_FILE" "docs/$TEMPLATE_NAME"
+      echo "✅ docs/$TEMPLATE_NAME をコピーしました"
+    fi
+  fi
+done
+
+# 作業ディレクトリのテンプレートをコピー
+mkdir -p docs/working
+for TEMPLATE_FILE in "$SNIPPETS/docs/working/"*.template; do
+  if [ -f "$TEMPLATE_FILE" ]; then
+    TEMPLATE_NAME=$(basename "$TEMPLATE_FILE" .template)
+    if [ ! -f "docs/working/$TEMPLATE_NAME" ]; then
+      cp "$TEMPLATE_FILE" "docs/working/$TEMPLATE_NAME"
+      echo "✅ docs/working/$TEMPLATE_NAME のテンプレートをコピーしました"
+    fi
+  fi
+done
+
 # .gitignore に追加
 # .gitignore がない場合は新規作成してから追記する
 if [ ! -f ".gitignore" ]; then

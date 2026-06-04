@@ -20,7 +20,7 @@ import type { Plugin } from "@opencode-ai/plugin"
  * 検知する3つのシグナル：
  *   1. 編集頻度の閾値超過（セッション単位、直近 EDIT_VOLUME_WINDOW_MS 内に EDIT_VOLUME_THRESHOLD 件）
  *   2. 同一ファイルの連続編集（セッション単位、直近 LOOP_WINDOW_MS 内に LOOP_THRESHOLD 件）
- *   3. features.json の pass 率が 50% 未満（session.idle 時、project-wide）
+ *   3. tasks.json の pass 率が 50% 未満（session.idle 時、project-wide）
  *
  * 設計原則「Plugin は AI と対話する」に従い、警告は Toast + AI への prompt 通知を行う。
  * ただし通知は「トリガー時点の事実」のみ。AI に判断を委ねない。
@@ -46,7 +46,7 @@ const EDIT_VOLUME_THRESHOLD = 20  // 10分で 20 回
 const LOOP_WINDOW_MS = 5 * 60 * 1000  // 5分
 const LOOP_THRESHOLD = 3  // 同一ファイルを5分以内に3回編集
 const PASS_RATE_THRESHOLD = 0.5
-const MIN_FEATURES_FOR_ALERT = 5
+const MIN_TASKS_FOR_ALERT = 5
 const SESSION_TTL_MS = 30 * 60 * 1000  // 30分無操作で stale 判定
 
 function getOrCreateStats(sessionId: string): SessionStats {
@@ -88,17 +88,17 @@ async function notifyAI(
   })
 }
 
-async function checkFeaturesPassRate(): Promise<{
+async function checkTasksPassRate(): Promise<{
   total: number
   passed: number
   rate: number
 } | null> {
-  const file = Bun.file("docs/features.json")
-  const features = await file.json().catch(() => null)
-  if (!features || !Array.isArray(features)) return null
+  const file = Bun.file("docs/tasks.json")
+  const tasks = await file.json().catch(() => null)
+  if (!tasks || !Array.isArray(tasks)) return null
 
-  const total = features.length
-  const passed = features.filter((f: any) => f.passes === true).length
+  const total = tasks.length
+  const passed = tasks.filter((f: any) => f.passes === true).length
   return { total, passed, rate: total > 0 ? passed / total : 0 }
 }
 
@@ -167,9 +167,9 @@ export const HarnessHealthPlugin: Plugin = async ({ client }) => {
     },
 
     "session.idle": async (input) => {
-      const result = await checkFeaturesPassRate()
+      const result = await checkTasksPassRate()
       if (!result) return
-      if (result.total < MIN_FEATURES_FOR_ALERT) return
+      if (result.total < MIN_TASKS_FOR_ALERT) return
       if (result.rate >= PASS_RATE_THRESHOLD) return
 
       const passRate = (result.rate * 100).toFixed(0)
@@ -185,9 +185,9 @@ export const HarnessHealthPlugin: Plugin = async ({ client }) => {
       await notifyAI(
         client,
         sessionId,
-        `harness-health: features.json の pass 率は ${passRate}%（${result.passed}/${result.total}）です。` +
+        `harness-health: tasks.json の pass 率は ${passRate}%（${result.passed}/${result.total}）です。` +
           `閾値 ${PASS_RATE_THRESHOLD * 100}% を下回っています。` +
-          `未完了の features を見直してください。`,
+          `未完了のタスクを見直してください。`,
       )
     },
   }

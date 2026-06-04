@@ -1,0 +1,15 @@
+[
+  {
+    "id": "F001",
+    "sprint": 1,
+    "category": "functional",
+    "description": "[ユーザーが何をできるか 1 文で記述]",
+    "steps": [
+      "[操作手順 1]",
+      "[操作手順 2]",
+      "[期待結果]"
+    ],
+    "passes": false,
+    "group": "[group]"
+  }
+]

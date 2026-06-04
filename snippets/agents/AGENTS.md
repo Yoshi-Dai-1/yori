@@ -151,8 +151,9 @@ git add -A && git commit -m "[生成したメッセージ]"
 
 <!-- [プロジェクト名]・依存の方向・Taking on がプレースホルダーのままなら、このセクションを無視しARCHITECTURE.mdの記入を先に促す -->
 
-**仕様が1〜4文の実装依頼 かつ 複数ファイル・複数機能が必要なとき**：
-→ `@planner` を呼び出し docs/spec.md と docs/features.json を作成する
+**仕様が1〜4文の実装依頼 かつ 複数ファイル・複数タスクが必要なとき**：
+→ `@planner` を呼び出し docs/spec.md と docs/tasks.json を作成する
+  作業ディレクトリの判断基準：タスク数6以上 / docs/working/ 内ディレクトリが2以上 → `docs/working/<group>/`（plan.md / notes.md / review-checklist.md）も作成する
 
 **各スプリント開始前**：
 → `@evaluator` に Sprint Contract レビューを依頼する（承認まで繰り返す）
@@ -185,22 +186,23 @@ git add -A && git commit -m "[生成したメッセージ]"
 1. `.opencode/handoff-artifact.md` が存在する場合 → 読んで前のセッションの文脈を復元する
    `## Security Status` セクションを確認し、未対応のセキュリティ要件がある場合は最初に報告する
    存在しない場合 → `AGENTS.md` と `ARCHITECTURE.md` を読み、Current Task を確認する
-2. `docs/features.json` が存在する場合、未完了フィーチャー（`"passes": false`）を確認する
-3. **Smoke Test**：Dev コマンドが定義されており実装が存在する場合のみ実行する
+2. `docs/tasks.json` が存在する場合、未完了タスク（`"passes": false`）を確認する
+3. `docs/working/` が存在する場合 → 各 `<group>/` の `plan.md` を読み、未完了タスクの文脈を復元する
+4. **Smoke Test**：Dev コマンドが定義されており実装が存在する場合のみ実行する
    （コードなし・APIのみ・CLIはスキップ。代わりにテストコマンドを使う）
    → ビルドエラー・基本機能が壊れている場合は修復を優先する
-4. **`.env` の状態確認**（P0-4 修正）：
+5. **`.env` の状態確認**（P0-4 修正）：
    - `.env` が存在しない場合 → `.env.example` のキー一覧を読み、各キーを空値で `.env` にコピーする
    - `.env` が空の場合 → 人間に「.env の値を入力してください（機密情報の判断は人間が行う）」と促す
    - `.env` に値がある場合 → 何もしない
    - **`.env` の値を AI が推測・自動生成しない**（機密情報の判断は人間のみが行う）
-5. Current Task と `.opencode/project-context.md` の「現在のタスク」を現在の状態に更新する
-6. **Plugin 正常性チェック**：
+6. Current Task と `.opencode/project-context.md` の「現在のタスク」を現在の状態に更新する
+7. **Plugin 正常性チェック**：
    `.opencode/plugins/*.ts` が存在し、AGENTS.md のプロジェクト名がプレースホルダー（`[プロジェクト名]`）でない場合
    かつ bun がインストールされていない場合
    → 人間に bun のインストールを提案する
    （Plugin の動作には bun ランタイムが必要です）
-7. **月次診断期限チェック**：
+8. **月次診断期限チェック**：
    `docs/quality-scorecard.md` が存在する場合、最終診断日を確認する
    → 前回の診断から30日以上経過している場合は、人間に月次診断の実施を提案する
    → 提案内容：「前回診断から30日以上経過しています。@resilience-checker と @code-quality-auditor による月次診断を実行しますか？」

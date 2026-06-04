@@ -80,3 +80,6 @@ htmlcov/
 # === その他 ===
 *.tgz
 *.tar.gz
+
+# === 作業ディレクトリのアーカイブ ===
+docs/archive/

@@ -111,7 +111,7 @@ src/ 以下のコードベースを対象に品質診断を実施してくださ
               独立したコンテキストで仕様を策定することで、実装都合に引きずられない設計ができる
 **使うタイミング**：中規模以上のタスク（数時間以上）開始時・フルアプリ構築の起点
 **出力**：`docs/spec.md`（仕様書・Sprint Contract を含む）と
-          `docs/features.json`（Feature List・pass/fail 追跡）の 2 ファイル
+          `docs/tasks.json`（Task List・pass/fail 追跡）の 2 ファイル
 
 ```
 @planner
@@ -128,7 +128,7 @@ src/ 以下のコードベースを対象に品質診断を実施してくださ
               独立したコンテキストで行うことで、完了基準の甘い設定を事前に排除できる
 **使うタイミング**：
   ① 各スプリント開始前（Sprint Contract レビュー・承認）
-  ② 各スプリント完了後（QA評価・Feature List の passes フィールド更新）
+  ② 各スプリント完了後（QA評価・Task List の passes フィールド更新）
 
 **【スプリント開始前】Sprint Contract レビュー：**
 
@@ -137,13 +137,13 @@ src/ 以下のコードベースを対象に品質診断を実施してくださ
 Sprint [番号] の Contract を docs/spec.md で確認して承認してください。
 ```
 
-**【スプリント完了後】QA評価 + Feature List 更新：**
+**【スプリント完了後】QA評価 + Task List 更新：**
 
 ```
 @evaluator
 Sprint [番号] の評価をしてください。
 仕様は docs/spec.md を参照してください。
-PASSの場合は docs/features.json の該当スプリントの passes を true に更新してください。
+PASSの場合は docs/tasks.json の該当スプリントの passes を true に更新してください。
 ```
 
 → 詳細は `.opencode/standards/principles/harness-engineering.md` の Planner・Generator・Evaluator の 3 段階構成を参照。
