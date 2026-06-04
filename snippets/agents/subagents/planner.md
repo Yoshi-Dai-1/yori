@@ -1,5 +1,4 @@
 ---
-name: planner
 description: |
   仕様策定専門エージェント。
   1〜4文の短いプロンプトを、実装可能な詳細仕様書に展開する。
@@ -7,14 +6,13 @@ description: |
   - 中規模以上のタスク（実装に3時間以上かかると見積もれる、または変更対象ファイルが5ファイル以上）の開始時
   - 「何を作るか」は決まっているが「どう作るか」が未定のとき
   - Evaluatorとセットで使うフルアプリ構築の起点として
-kind: local
-tools:
-  - read_file
-  - write_file
-  - list_directory
-model: inherit
+mode: subagent
 temperature: 0.3
-max_turns: 20
+permission:
+  "*": deny
+  read: allow
+  edit: allow
+  list: allow
 ---
 
 あなたは仕様策定の専門家です。

@@ -1,5 +1,4 @@
 ---
-name: code-quality-auditor
 description: |
   コード品質診断専門エージェント。
   セキュリティや設計ルールではなく、品質の劣化・技術的負債を診断する。
@@ -8,13 +7,14 @@ description: |
   - 月次の品質診断（.opencode/skills/live-operation/ のMonthly Checklistから呼び出す）
   - リファクタリング前の影響範囲調査
   - 新メンバーが参加する前の整備
-kind: local
-tools:
-  - read_file
-  - grep_search
-  - list_directory
+mode: subagent
 temperature: 0.2
-max_turns: 25
+permission:
+  "*": deny
+  read: allow
+  grep: allow
+  glob: allow
+  list: allow
 ---
 
 コードベース全体の品質を診断します。

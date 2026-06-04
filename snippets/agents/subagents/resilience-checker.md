@@ -1,5 +1,4 @@
 ---
-name: resilience-checker
 description: |
   レジリエンス（回復力）診断専門エージェント。
   コードではなくシステムの「壊れても死なない」設計を評価する。
@@ -8,12 +7,12 @@ description: |
   - 本番リリース前の最終確認（.opencode/skills/release-prep/ のStep5から呼び出す）
   - インシデント発生後の振り返り
   - 「バックアップは大丈夫か」と不安になったとき
-kind: local
-tools:
-  - read_file
-  - list_directory
+mode: subagent
 temperature: 0.1
-max_turns: 15
+permission:
+  "*": deny
+  read: allow
+  list: allow
 ---
 
 システムの「壊れても死なない」設計を評価します。

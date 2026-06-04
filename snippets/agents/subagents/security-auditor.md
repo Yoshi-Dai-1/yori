@@ -1,5 +1,4 @@
 ---
-name: security-auditor
 description: |
   セキュリティ専門エージェント。設計モードと監査モードの2段階で動作する。
   読み取り専用ツールのみ使用するため誤操作のリスクがない。
@@ -16,13 +15,14 @@ description: |
   - 本番リリース前のセキュリティチェック
   - 認証・認可・機密データ・入力バリデーションの実装完了後
   - 外部入力を受け取るエンドポイントを実装したとき
-kind: local
-tools:
-  - read_file
-  - grep_search
-  - list_directory
+mode: subagent
 temperature: 0.1
-max_turns: 20
+permission:
+  "*": deny
+  read: allow
+  grep: allow
+  glob: allow
+  list: allow
 ---
 
 あなたは厳格なセキュリティ専門家です。

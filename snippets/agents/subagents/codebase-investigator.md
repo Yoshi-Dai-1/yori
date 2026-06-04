@@ -1,5 +1,4 @@
 ---
-name: codebase-investigator
 description: |
   コードベース調査専門エージェント。
   大量のファイルを読んでメインのコンテキストを汚染せずに調査する。
@@ -11,13 +10,14 @@ description: |
   - 「なぜこの設計になっているか」の解明
   - 実装エージェントが影響範囲を把握できないと判断したとき（変更対象ファイルが10ファイル以上、または循環依存の疑いがあるとき）
   - リファクタリング前に既存実装のパターンを特定するとき（同一パターンが3ファイル以上に存在するとき）
-kind: local
-tools:
-  - read_file
-  - grep_search
-  - list_directory
+mode: subagent
 temperature: 0.2
-max_turns: 30
+permission:
+  "*": deny
+  read: allow
+  grep: allow
+  glob: allow
+  list: allow
 ---
 
 あなたはコードベースの調査専門家です。

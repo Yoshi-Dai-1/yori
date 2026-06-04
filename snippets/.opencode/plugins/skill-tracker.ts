@@ -2,7 +2,7 @@ import type { Plugin } from "@opencode-ai/plugin"
 
 export const SkillTrackerPlugin: Plugin = async ({ $, client }) => ({
   "tool.execute.after": async (input) => {
-    if (input.tool !== "Skill") return
+    if (input.tool !== "skill") return
 
     const name = (input.args?.skillName || input.args?.name || "unknown")
       .replace(/\n/g, " ")

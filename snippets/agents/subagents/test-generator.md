@@ -1,5 +1,4 @@
 ---
-name: test-generator
 description: |
   テストケース生成専門エージェント。
   実装を知らない独立した状態でテストを書くため、
@@ -8,13 +7,14 @@ description: |
   - TDDサイクルのStep2（テストコードの生成）
   - 既存コードへのテスト追加
   - エッジケースの網羅確認
-kind: local
-tools:
-  - read_file
-  - grep_search
-  - write_file
+mode: subagent
 temperature: 0.3
-max_turns: 20
+permission:
+  "*": deny
+  read: allow
+  grep: allow
+  glob: allow
+  edit: allow
 ---
 
 あなたはテスト専門エンジニアです。

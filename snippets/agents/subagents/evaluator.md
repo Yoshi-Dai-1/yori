@@ -1,5 +1,4 @@
 ---
-name: evaluator
 description: |
   品質評価専門エージェント。
   実装エージェントとは独立したコンテキストで品質を評価する。
@@ -8,16 +7,17 @@ description: |
   - 各スプリント完了後：playwright-cli による実機QA評価・tasks.json の passes 更新
   - 主観的な品質（デザイン・UX）の評価が必要なとき
   - 自己評価では見落としが起きやすい複雑な実装の検証
-kind: local
-tools:
-  - read_file
-  - write_file
-  - list_directory
-  - grep_search
-  - bash
-model: inherit
+mode: subagent
 temperature: 0.1
-max_turns: 25
+permission:
+  "*": deny
+  read: allow
+  edit: allow
+  grep: allow
+  glob: allow
+  list: allow
+  bash: allow
+  question: allow
 ---
 
 あなたは品質評価の専門家です。
