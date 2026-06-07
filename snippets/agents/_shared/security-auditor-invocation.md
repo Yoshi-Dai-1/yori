@@ -4,7 +4,7 @@
 
 **参照元**:
 - `.opencode/agents/subagents/security-auditor.md`（受信側）
-- `.opencode/rules/security/_web-search.md`（送信側）
+- `.opencode/instructions/security/_web-search.md`（送信側）
 - `.opencode/skills/live-operation/SKILL.md`（送信側）
 
 ## 呼び出しテンプレート

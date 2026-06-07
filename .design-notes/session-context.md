@@ -3,41 +3,65 @@
 <!-- セッション終了時に上書き更新する（追記しない）。
      前回の履歴は git log で参照可能。 -->
 
-## 今回の変更（2026-06-03）
+## 今回の変更（2026-06-07）
 
-作業ディレクトリ パターンの Plugin 化完了。AGENTS.md 追記 + 2本の Plugin 新規作成。
+block-on-first-write 方式への移行 + 非コードファイルギャップ修正 + 全ファイル整合性監査と修正。
+
+### Changed files
 
 | ファイル | 内容 |
 |---------|------|
-| `snippets/.opencode/plugins/working-dir-guide.ts` | **新規**: tool.execute.before で docs/working/ の Read/Write/Edit を検知し、ルールを注入 |
-| `snippets/.opencode/plugins/compaction-context.ts` | **新規**: experimental.session.compacting で作業ディレクトリの状態をコンテキストに注入 |
-| `snippets/agents/AGENTS.md` | Session Protocol に Step 3（docs/working/ 確認）を追加。@planner に作業ディレクトリ作成の数値基準を追記 |
-| `snippets/.opencode/plugins/README.md` | working-dir-guide.ts / compaction-context.ts を追加 |
-| `principles/harness-engineering.md` | plugins/ の役割記述を更新（「プロアクティブなルール注入」を追加） |
+| `snippets/.opencode/plugins/rule-injector.ts` | **全面書き換え**: block-on-first-write + CSS(.css/.scss) を CODE_FILE_PATTERN に追加 + 非コードファイルギャップ(go.mod/pom.xml/build.gradle)修正 + COMMON_CODE_RULES 削除 |
+| `snippets/.opencode/plugins/README.md` | rule-injector セクション全面更新（作用フロー・BLOCK/注入テーブル） |
+| `.design-notes/session-context.md` | このファイル（上書き） |
 
-## 現在の設計判断
+### 🔴 Issues found and fixed
 
-- **アーキテクチャ選定はAIが自律判断する**: 定義完了時点でAIはプロジェクト全容を把握しており、人間が「選んで」と指示する必要はない。Step 5 でフローチャートを読み、自律的に判断し結果を提示する
-- **session-context.md は常に上書き**: 履歴ではなく現在の文脈スナップショット。履歴は git で追う
-- **「など」の適否は機能ベース**: 開集合としての「など」は、機能カテゴリを定義している場合は正当。単なる曖昧さ回避の「など」は禁止
-- **Context Anxiety 検知は per-session sliding window 方式**: セッション毎に独立した sliding window。サブエージェント・並列セッションを分離して追跡。TTL=30分で stale session を自動クリーンアップ（セッション境界検知に依存しない）
-- **Plugin が AI に通知するパターン**: 警告は Toast + `client.session.prompt` で AI に通知するが、通知内容は「トリガー時点の事実」のみ。AI の記憶喪失に影響されないよう、毎回完全な文脈を含める
-- **.env の値は人間が入力する**: AI は `.env` の値を推測・生成しない。機密情報の判断は人間のみが行う
-- **作業ディレクトリは「状態分離の箱」**: タスク間の揮発的状態を分離する。並列実行はサブエージェントが担う（P1 Phase 1 では逐次実装を前提）
-- **タスクアーカイブは Plugin が提案・AI が実行**: task-archive.ts は `session.idle` 検知時にアーカイブ提案のみ。ファイル移動は AI が行う（Plugin はファイル操作しない）
-- **Phase 2/3 は条件充足時のみ導入**: サブエージェント sessionID 未検証・観測指標なし・マージ戦略未確立のため
-- **Plugin は AI の記憶に依存しない**: working-dir-guide.ts は tool.execute.before で毎回ルールを注入。compaction-context.ts はコンパクション時に状態を維持。AGENTS.md への最小追記（+3行）は常時ロードされる参照経路として機能
-- **作業ディレクトリの判断基準は数値で定義**: 「複数タスクが想定される場合」のような曖昧表現は禁止。タスク数6以上 / docs/working/ 内ディレクトリが2以上で判断
+| # | ファイル | 問題 | 修正 |
+|---|---------|------|------|
+| 1 | `snippets/agents/AGENTS.md:99` | bare path `tdd-with-ai.md` — target project で解決不能 | → `.opencode/standards/principles/tdd-with-ai.md` |
+| 2 | `docs/build-log.md` | 4ファイルで参照されているが template なし・setup-harness.sh 未作成 | → `snippets/docs/build-log.md.template` 作成 + setup-harness.sh に作成ステップ追加 |
+| 3 | `README.md:317` | "11つの TS Plugin" → 実際は13 | → "13つの" |
+| 4 | `README.md:312` | ".opencode/instructions/*.md を自動ロードする設定" → 現在は Plugin 駆動 | → Plugin 注入の説明に修正 |
+| 5 | `setup-harness.sh:136` | instructions コピーコメントに6ファイル欠落 | → 全ファイル明示 |
+| 6 | `stack-setup.md:76-78` | Step 3.6 と Step 4 が同一ファイル _step-36-arch.md を重複参照 | 低優先度・機能的に正しいため未修正 |
+
+### Verifications
+
+- **paths: vs filePattern**: 113/113 エントリ全件一致 ✅
+- **孤立ファイル**: 全 instruction ファイルが RULES または CONVENTION_FILES に所属 ✅
+- **plugins ファイル参照**: 全13 Plugin のパスが相対パスで正しい ✅
+- **principles 相互参照**: 全 `.opencode/standards/principles/` プレフィックス ✅
+- **旧 rules/ パス**: 全滅（0件）✅
+- **opencode.json.template**: `["AGENTS.md"]` ✅
+
+### Key design decisions
+
+1. **block-on-first-write**: 初回コードファイル書き込みを `throw new Error()` で BLOCK。AI に規約ファイルを読ませてから再試行させる。`tool.execute.before` のエラーは AI の tool result に返り人間には表示されない。
+
+2. **規約ファイル3本でブロック**: `naming-conventions.md`, `directory-structure.md`, `coding-conventions.md`。この3つは「最初の1行」で決定される構造（ファイル名・階層・コードパターン）に影響し、後からの修正コストが高い。
+
+3. **COMMON_CODE_RULES 削除**: 規約は block-on-first-write で処理。グループ注入は不要になった。
+
+4. **非コードファイルギャップ修正**:
+   - `security`: `docs/project-definition.md`, `AGENTS.md`, `package.json`, `requirements*.txt`, `*.toml`, `Gemfile`, `composer.json`, `pubspec.yaml`, `*.csproj`, `packages.config` を filePattern に追加
+   - `network-resilience`: `ARCHITECTURE.md`, `docs/project-definition.md` を filePattern に追加
+   - `design-contract`: `design/*.json` を filePattern に追加
+
+5. **conventionsRead は事前読了を尊重**: AI が初回書き込みより前に規約ファイルを自発的に読んでいた場合、ブロックは発生しない（`conventionsRead.size` がセットされているため）。
+
+6. **コンパクション耐性**: セッションコンパクションでメモリ状態は消失するが、最悪1回の再ブロックで回復。AI は会話履歴から規約内容を把握しており即座に再試行する。
+
+### Current RULES (Plugin-injected, noReply)
+
+- `code-quality`: コードファイル編集時（ファイルサイズ制限、単一責任）
+- `security`: コードファイル + 非コードファイル編集時 + 内容キーワード検出（login/auth/token/stripe/payment 等）
+- `network-resilience`: コードファイル + ARCHITECTURE.md + docs/project-definition.md 編集時 + 内容キーワード検出（fetch/axios/retry/timeout 等）
+- `design-contract`: UIファイル(.tsx/.jsx/.css/.scss) + DESIGN.md + design/*.json 編集時
+- `stack-setup`: ARCHITECTURE.md 編集時
 
 ## 残タスク
 
-| タスク | 状態 |
-|-------|------|
-| `working-dir-guide.ts` の `tool.execute.before` 動作 | 未検証（OpenCode 依存）。Plugin ランタイム実機テスト時に確認 |
-| `compaction-context.ts` の `experimental.session.compacting` 動作 | 未検証（OpenCode 依存）。Plugin ランタイム実機テスト時に確認 |
-| `session.deleted` 実機テスト | 継続保留（opencode Plugin ランタイムが必要。初回リリース後に確認） |
-| `harness-health.ts` の `session.idle` イベント動作 | 未検証（OpenCode 依存）。Plugin ランタイム実機テスト時に確認 |
-| `task-archive.ts` の `session.idle` イベント動作 | 未検証（OpenCode 依存）。Plugin ランタイム実機テスト時に確認 |
-| サブエージェントの sessionID 仕様 | 未検証（per-session 方式の前提）。詳細は `.design-notes/subagent-session.md` |
-| Phase 2 導入条件の充足確認 | 未（将来） |
-| Phase 3 導入条件の充足確認 | 未（遠い将来） |
+- rule-injector.ts の実機動作未検証（OpenCode Plugin ランタイム依存）
+- compaction-context.ts との連携（conventionsOffered 状態の保存）は未実装（将来対応）
+- 他プロジェクト実機テスト（setup-harness.sh 実行後）

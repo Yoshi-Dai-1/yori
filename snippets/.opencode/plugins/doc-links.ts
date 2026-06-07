@@ -15,7 +15,7 @@ const TARGET_FILES = [
   /AGENTS\.md$/,
   /ARCHITECTURE\.md$/,
   /^decisions\/.+\.md$/,
-  /\.opencode\/rules\/.+\.md$/,
+  /\.opencode\/instructions\/.+\.md$/,
   /\.opencode\/skills\/.+\/SKILL\.md$/,
 ]
 

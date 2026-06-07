@@ -6,6 +6,16 @@ import type { Plugin } from "@opencode-ai/plugin"
  * コンパクション時に docs/working/ の状態を注入する。
  * 公式ドキュメントの experimental.session.compacting パターン準拠。
  *
+ * CAUTION: experimental.session.compacting は実験的API。
+ * OpenCode 公式ドキュメントより：
+ *   "Experimental options are not stable. They may change or be removed without notice."
+ *
+ * 将来削除された場合の代替手段:
+ *   代替A: tui.prompt.append（TUI限定・安定API）
+ *   代替B: working-dir-guide.ts の tool.execute.before パターンで
+ *          ファイル操作時にコンテキスト注入（範囲は限定）
+ *   最終手段: AGENTS.md に全ルールをインライン化（OpenCode 非依存）
+ *
  * コンパクション後も作業ディレクトリの文脈を維持し、
  * 記憶喪失によるルール逸脱を防ぐ。
  */

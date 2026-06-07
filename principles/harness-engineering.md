@@ -24,7 +24,7 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
 
 | 確認する問い | Noのとき何が起きるか |
 |------------|-------------------|
-| このルールは `AGENTS.md` か `.opencode/rules/` に書いてあるか | エージェントはルールがないものとして動く |
+| このルールは `AGENTS.md` か `.opencode/instructions/` に書いてあるか | エージェントはルールがないものとして動く |
 | この設計判断は `decisions/` に記録されているか | エージェントは再び同じ判断を一から行う（または誤る） |
 | このアーキテクチャの「なぜ」は `ARCHITECTURE.md` に書いてあるか | エージェントは依存ルールを意図せず破る |
 | このプロジェクト固有の制約は `docs/project-definition.md` にあるか | エージェントはWon'tの機能を実装してしまう |
@@ -51,7 +51,7 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
     archive/               完了したタスクのアーカイブ（task-archive.ts が自動提案・.gitignore 対象）
 
   .opencode/（ハーネスの詳細）
-    rules/               glob matchで自動読込（判断基準）
+    instructions/        opencode.json instructions がセッション開始時にLLMに注入（判断基準）
     skills/              プロジェクトスコープのスキル（gitで共有）
                          descriptionで自動参照・/コマンドで明示呼び出しも可能
     agents/              サブエージェント定義（@名前で呼び出す）
@@ -73,12 +73,12 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
 
 ---
 
-## AGENTS.md・rules・skills・Pluginsの役割分担
+## AGENTS.md・instructions・skills・Pluginsの役割分担
 
 | ファイル | 読み込まれるタイミング | 役割 |
 |---------|---------------------|------|
 | AGENTS.md | 常時（セッション開始時） | 常駐指示・禁止事項・参照先 |
-| rules/ | glob matchで自動（関連ファイル編集時） | 判断基準の自動提供 |
+| instructions/ | opencode.json instructions がセッション開始時に注入 | マークダウン判断基準の提供 |
 | skills/ | descriptionで自動参照（発言検知）、または/コマンドで明示呼び出し | 手順書（定型作業の標準化）|
 | agents/ | @エージェント名で呼び出したとき | 独立コンテキストの専門処理 |
 | plugins/ | コードイベント発生時（ツール実行後等） | 強制的なガードレール・自動記録・プロアクティブなルール注入 |
@@ -128,7 +128,7 @@ Generator（メインエージェント・Build）
   役割：仕様書から実装する。各スプリント開始前に Evaluator へ
         Sprint Contract のレビューを依頼し、承認を得てから実装に入る
   使うタイミング：常時
-  書く場所：AGENTS.md（＋rules/ skills/ が自動補助）
+   書く場所：AGENTS.md（＋instructions/ skills/ が自動補助）
 
 Evaluator（サブエージェント）
   役割：① Sprint Contract のレビュー（スプリント開始前・合意）
@@ -190,7 +190,7 @@ Evaluator が承認してから実装に入る。
 
 ```
 10分以内の単機能実装   → ハーネスなし（プロンプト直接）
-30分〜1時間の中規模   → AGENTS.md + rules/ + skills/ + code-reviewer
+30分〜1時間の中規模   → AGENTS.md + instructions/ + skills/ + code-reviewer
 数時間のフルアプリ    → 上記 + Planner + Generator + Evaluator
                         （Sprint Contract → Build → QA サイクル）
 ```
@@ -200,7 +200,7 @@ Evaluator が承認してから実装に入る。
 ## 5つの原則
 
 **1. Progressive Disclosure（段階的開示）**
-AGENTS.mdは60〜100行以内。詳細は rules/・docs/ に分離して
+AGENTS.mdは60〜100行以内。詳細は instructions/・docs/ に分離して
 必要なときだけ読み込まれるようにする。
 全部を常に見せるのではなく、必要なときに必要なものだけ。
 
@@ -273,7 +273,7 @@ GCのもう一つの契機：**モデルのアップグレード時**。
 
 ```
 Day 1：AGENTS.mdに5行（プロジェクト概要・コマンド・禁止事項）
-Week 1：同じ指摘を2回した → rules/ に追加
+Week 1：同じ指摘を2回した → instructions/ に追加
 Week 2：3回以上繰り返した作業 → skills/ に追加（/skill-creator で作成）
 Month 1：使っていないものを削除（最初のGC）
 以降：問題にぶつかるたびに追加・定期的に削除
@@ -401,7 +401,7 @@ setup-harness.sh でテンプレートをコピーして、
    現在の .opencode/ ディレクトリの構成を評価してください。
    以下を確認してください：
    1. AGENTS.mdが60〜100行以内か
-   2. rules/ に使われていないファイルがないか
+   2. instructions/ に使われていないファイルがないか
    3. skills/ に使われていないスキルがないか
    4. usage/ の履歴から削除候補を特定する
    5. agents/ のサブエージェント定義が .opencode/standards/principles/subagents.md の設計基準に従っているか

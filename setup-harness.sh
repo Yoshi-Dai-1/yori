@@ -34,7 +34,7 @@ fi
 SNIPPETS="$DEV_STANDARDS_PATH/snippets"
 
 # .opencode/ ディレクトリ作成
-mkdir -p .opencode/{rules,skills,agents,plugins,usage}
+mkdir -p .opencode/{instructions,skills,agents,plugins,usage}
 
 # docs/ ディレクトリ作成
 mkdir -p docs
@@ -131,19 +131,19 @@ else
   echo "ℹ️  .opencode/project-context.md は既に存在します（上書き保護）"
 fi
 
-# rules テンプレート
-# rules/ 以下の全ファイルを再帰的にコピー（上書き保護あり）
-# 含まれるルール：security.md / security/*.md / stack-setup.md / stack-setup/*.md / network-resilience.md / network-resilience/*.md / _shared/*.md
+# instructions テンプレート
+# instructions/ 以下の全ファイルを再帰的にコピー（上書き保護あり）
+# 含まれるルール：code-quality.md / code-review.md / design-contract.md / directory-structure.md / naming-conventions.md / network-resilience.md / network-resilience/*.md / security.md / security/*.md / stack-setup.md / stack-setup/*.md / _shared/*.md / _template.md
 while IFS= read -r -d '' RULE_FILE; do
-  REL_PATH="${RULE_FILE#$SNIPPETS/.opencode/rules/}"
+  REL_PATH="${RULE_FILE#$SNIPPETS/.opencode/instructions/}"
   REL_PATH="${REL_PATH#/}"
-  TARGET=".opencode/rules/$REL_PATH"
+  TARGET=".opencode/instructions/$REL_PATH"
   if [ ! -f "$TARGET" ]; then
     mkdir -p "$(dirname "$TARGET")"
     cp "$RULE_FILE" "$TARGET"
-    echo "✅ .opencode/rules/$REL_PATH をコピーしました"
+    echo "✅ .opencode/instructions/$REL_PATH をコピーしました"
   fi
-done < <(find "$SNIPPETS/.opencode/rules/" -name "*.md" -type f -print0)
+done < <(find "$SNIPPETS/.opencode/instructions/" -name "*.md" -type f -print0)
 
 # 全Skillsを外部から取得（release-prep / live-operation / handoff / find-skills / skill-creator）
 for SKILL_DIR in "$SNIPPETS/.opencode/skills/"/*/; do
@@ -642,6 +642,11 @@ fi
 if [ ! -f "docs/quality-scorecard.md" ]; then
   cp "$SNIPPETS/docs/quality-scorecard.md.template" docs/quality-scorecard.md
   echo "✅ docs/quality-scorecard.md の雛形を作成しました（月次診断後に @code-quality-auditor の結果を転記する）"
+fi
+
+if [ ! -f "docs/build-log.md" ]; then
+  cp "$SNIPPETS/docs/build-log.md.template" docs/build-log.md
+  echo "✅ docs/build-log.md の雛形を作成しました（handoff スキル / evaluator が自動追記）"
 fi
 
 # 仕様書・Sprint Contract・tasks.json テンプレートをコピー

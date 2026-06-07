@@ -1,15 +1,6 @@
----
-paths:
-  - "DESIGN.md"
-  - "design/*.json"
-  - "**/*.css"
-  - "**/*.tsx"
-  - "**/*.jsx"
----
+# デザイン契約ルール（Design Contract Rules）
 
-# デザイン契約常駐ルール（Design Contract Rules）
-
-このファイルは DESIGN.md・design JSON・UI コンポーネントファイルを編集するたびに自動リロードされる。
+このルールは DESIGN.md・UI コンポーネントファイル編集時に Plugin が注入する。
 詳細な判断基準は `.opencode/standards/principles/design-contract.md` を参照（必要時に読む）。
 
 ---

@@ -15,7 +15,7 @@ production-readiness.md     → リリース前チェックリスト
 ```
 参照タイミングと参照元：
   外部API・DBへの通信を含む機能の実装依頼を受けたとき
-    → `.opencode/rules/network-resilience.md` の自律トリガー経由
+    → `.opencode/instructions/network-resilience.md` の自律トリガー経由
   ARCHITECTURE.md Step3 完了後
     → ARCHITECTURE.md.template の通信設計セクション記入時
   @resilience-checker の月次診断時

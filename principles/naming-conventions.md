@@ -462,10 +462,10 @@ JWT_SECRET            → JWT署名用シークレット
 
 ---
 
-## 命名規則の確定手順（`.opencode/rules/stack-setup.md` Step 3.5 ブロックA（命名規則の確定・転記）から呼び出される）
+## 命名規則の確定手順（`.opencode/instructions/stack-setup.md` Step 3.5 ブロックA（命名規則の確定・転記）から呼び出される）
 
-このセクションは `.opencode/rules/stack-setup.md` の Step 3.5 ブロックA（命名規則の確定・転記）が呼び出したときのみ実行する。
-トリガーと実行タイミングは `.opencode/rules/stack-setup.md` が管理する。このファイルは手順のみを定義する。
+このセクションは `.opencode/instructions/stack-setup.md` の Step 3.5 ブロックA（命名規則の確定・転記）が呼び出したときのみ実行する。
+トリガーと実行タイミングは `.opencode/instructions/stack-setup.md` が管理する。このファイルは手順のみを定義する。
 
 ### 実行内容
 

@@ -1,26 +1,6 @@
----
-paths:
-  - "**/*.ts"
-  - "**/*.tsx"
-  - "**/*.js"
-  - "**/*.jsx"
-  - "**/*.py"
-  - "**/*.go"
-  - "**/*.rs"
-  - "**/*.java"
-  - "**/*.kt"
-  - "**/*.rb"
-  - "**/*.swift"
-  - "**/*.php"
-  - "**/*.c"
-  - "**/*.cpp"
-  - "**/*.cs"
----
+# ディレクトリ構成ルール（Directory Structure Rules）
 
-# ディレクトリ構成常駐ルール（Directory Structure Rules）
-
-このファイルはコードファイルを編集するたびに自動リロードされる。
-AGENTS.md のコンテキスト消失後も、このルールが常にディレクトリ構成の判断を補完する。
+このルールはコードファイル編集時に Plugin が注入する。
 
 詳細な判断基準は以下を参照（必要時に読む）：
 - `.opencode/standards/principles/directory-structure.md`

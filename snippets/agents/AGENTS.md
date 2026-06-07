@@ -6,7 +6,7 @@
 
 > **優先順位**: SSoT > 安全 > 品質。迷ったらこの順に従う。
 > **言語**: 日本語（プロジェクトで指定された場合はそれに従う）。
-> **SSoT**: このファイルが全エージェント・全自動化ツールの共通規範。ツール固有の設定は各ラッパー（`CLAUDE.md` 等）に書く。
+> **SSoT**: このファイルが全エージェント・全自動化ツールの共通規範。詳細ルールは `.opencode/instructions/` に分離し、Plugin がイベント駆動で注入する。
 
 ## Project Overview
 
@@ -96,7 +96,7 @@ git add -A && git commit -m "[生成したメッセージ]"
 コミットのタイミング（上から順に確認し、最初に該当した条件を使う）：
 
 1. **TDD フローが完了した直後**
-   `tdd-with-ai.md` の Step 8 に従う。これが最優先。
+   `.opencode/standards/principles/tdd-with-ai.md` の Step 8 に従う。これが最優先。
    TDD を使っているときはこの条件のみ適用する。
 
 2. **人間が「コミットして」「commit して」と明示した直後**
@@ -113,7 +113,7 @@ git add -A && git commit -m "[生成したメッセージ]"
 実行はしない。人間が確認・修正してから実行する。
 
 <!-- 判断基準：.opencode/standards/principles/network-resilience.md -->
-<!-- 常駐ルール：.opencode/rules/network-resilience.md -->
+<!-- event-injected rule: .opencode/instructions/network-resilience.md -->
 - 外部API・DB・内部サービスへの通信を実装するとき → 接続タイムアウトと読み取りタイムアウトの両方を設定する
 - タイムアウト値・リトライ回数などの設定値をコードに直書きしない（constants/ に定数として定義する）
 - 冪等でない操作（決済・メール送信・SMS送信・通知送信）にタイムアウト後のリトライを設定しない
@@ -122,13 +122,13 @@ git add -A && git commit -m "[生成したメッセージ]"
 
 ## Security Boundaries
 
-<!-- 判断基準：.opencode/standards/principles/security-requirements.md / 常駐ルール：.opencode/rules/security.md -->
+<!-- 判断基準：.opencode/standards/principles/security-requirements.md / event-injected rule: .opencode/instructions/security.md -->
 
 - 認証・決済・個人情報・外部APIの実装依頼を受けたとき → 実装前に `@security-auditor（設計モード）` を呼び出す
 - 認証・認可・機密データ・入力バリデーションを実装したとき → 完了後に `@security-auditor（監査モード）` を呼び出す
 - 外部入力を受け取るエンドポイントを実装したとき → バックエンドバリデーションを確認する
 - 環境変数を追加したとき → `.env.example` に反映しシークレットスキャンを実行する
-- package.json / requirements.txt / requirements-dev.txt / pyproject.toml / go.mod / Cargo.toml / pom.xml / build.gradle / build.gradle.kts / Gemfile / composer.json / pubspec.yaml / *.csproj / packages.config を編集したとき → `.opencode/rules/security.md` の言語別コマンド対応表に従いauditを実行する。対応表にない言語の場合は人間に確認を促す
+- package.json / requirements.txt / requirements-dev.txt / pyproject.toml / go.mod / Cargo.toml / pom.xml / build.gradle / build.gradle.kts / Gemfile / composer.json / pubspec.yaml / *.csproj / packages.config を編集したとき → `.opencode/instructions/security.md` の言語別コマンド対応表に従いauditを実行する。対応表にない言語の場合は人間に確認を促す
 <!-- このプロジェクト固有の制約（@security-auditor が自動追記）-->
 
 ## TDD Cycle
@@ -160,7 +160,7 @@ git add -A && git commit -m "[生成したメッセージ]"
   `passes` フィールドは **Evaluator のみ** が更新する
 
 **スプリント完了後**：
-→ `@evaluator` でQA評価。PASS → 次のスプリントへ。FAIL → 修正して再評価。セキュリティ関連の実装が含まれる場合は `.opencode/rules/security.md` のスプリント完了後トリガーに従う
+→ `@evaluator` でQA評価。PASS → 次のスプリントへ。FAIL → 修正して再評価。セキュリティ関連の実装が含まれる場合は `.opencode/instructions/security.md` のスプリント完了後トリガーに従う
 
 **調査が必要なとき**（影響範囲・原因調査）：
 → `@codebase-investigator` を呼び出す（メインのコンテキストを汚さない）

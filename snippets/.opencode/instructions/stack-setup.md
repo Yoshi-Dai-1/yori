@@ -1,11 +1,6 @@
----
-paths:
-  - ARCHITECTURE.md
----
+# 技術スタック設定ファイルの展開ルール
 
-# 技術スタック設定ファイルの自動展開ルール
-
-`ARCHITECTURE.md` の編集時に自動発火する。`paths` のスコープは `ARCHITECTURE.md` のみ。
+`ARCHITECTURE.md` 編集時に Plugin が注入する。
 
 ## 検出と展開の手順
 
@@ -48,38 +43,38 @@ paths:
 **既存ファイルは上書きしない。**
 
 ### ツールインストールの自動化ルール（共通プロトコル）
-→ `.opencode/rules/stack-setup/_install-protocol.md` を読んで実行する
+→ `.opencode/instructions/stack-setup/_install-protocol.md` を読んで実行する
 
 ### 言語別 設定ファイル展開
 以下のファイルを読み、検出された言語に該当するブロックのみ実行する：
 
 | 言語 | 参照先 |
 |------|--------|
-| TypeScript / JavaScript | `.opencode/rules/stack-setup/_typescript.md` |
-| Python | `.opencode/rules/stack-setup/_python.md` |
-| Go | `.opencode/rules/stack-setup/_go.md` |
-| Ruby | `.opencode/rules/stack-setup/_ruby.md` |
-| Swift | `.opencode/rules/stack-setup/_swift.md` |
-| Rust | `.opencode/rules/stack-setup/_rust.md` |
-| Kotlin | `.opencode/rules/stack-setup/_kotlin.md` |
-| Java | `.opencode/rules/stack-setup/_java.md` |
-| C / C++ / C# | `.opencode/rules/stack-setup/_c-family.md` |
-| PHP | `.opencode/rules/stack-setup/_php.md` |
+| TypeScript / JavaScript | `.opencode/instructions/stack-setup/_typescript.md` |
+| Python | `.opencode/instructions/stack-setup/_python.md` |
+| Go | `.opencode/instructions/stack-setup/_go.md` |
+| Ruby | `.opencode/instructions/stack-setup/_ruby.md` |
+| Swift | `.opencode/instructions/stack-setup/_swift.md` |
+| Rust | `.opencode/instructions/stack-setup/_rust.md` |
+| Kotlin | `.opencode/instructions/stack-setup/_kotlin.md` |
+| Java | `.opencode/instructions/stack-setup/_java.md` |
+| C / C++ / C# | `.opencode/instructions/stack-setup/_c-family.md` |
+| PHP | `.opencode/instructions/stack-setup/_php.md` |
 
 ### .env 展開 + .gitignore 補完
-→ `.opencode/rules/stack-setup/_env-gitignore.md` を読んで実行する（.gitignore は展開レベルに関わらず常に実行）
+→ `.opencode/instructions/stack-setup/_env-gitignore.md` を読んで実行する（.gitignore は展開レベルに関わらず常に実行）
 
 ### アーキテクチャ種別別ファイル展開
-→ `.opencode/rules/stack-setup/_arch-deploy.md` を読んで実行する
+→ `.opencode/instructions/stack-setup/_arch-deploy.md` を読んで実行する
 
 ### Step 3.5: 命名規則・フレームワーク深掘り・コンプライアンス
-→ `.opencode/rules/stack-setup/_step-35.md` を読んで実行する（Step 2 と Step 3 の完了直後または ARCHITECTURE.md 更新時）
+→ `.opencode/instructions/stack-setup/_step-35.md` を読んで実行する（Step 2 と Step 3 の完了直後または ARCHITECTURE.md 更新時）
 
 ### Step 3.6: アーキテクチャ固有ルールの適用
-→ `.opencode/rules/stack-setup/_step-36-arch.md` を読んで実行する
+→ `.opencode/instructions/stack-setup/_step-36-arch.md` を読んで実行する
 
 ### Step 4: アーキテクチャ違反検出設定
-→ `.opencode/rules/stack-setup/_step-36-arch.md` を読んで実行する
+→ `.opencode/instructions/stack-setup/_step-36-arch.md` を読んで実行する
 
 ## 重要なルール
 

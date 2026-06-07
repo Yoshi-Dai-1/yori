@@ -26,7 +26,7 @@
    コードレビュー（.opencode/standards/principles/code-review.md）で対応済み。
 → 外部通信の安定性設計（.opencode/standards/principles/network-resilience.md）もこの層に属する。
   タイムアウト・リトライ・冪等性の設計は「壊れにくくする」防御層の一部。
-  `.opencode/rules/network-resilience.md` が通信コードの編集時に自律的に確認する。
+  `.opencode/instructions/network-resilience.md` が通信コードの編集時に自律的に確認する。
 
 ### Layer 2：壊れたことに気づく（Detection）
 

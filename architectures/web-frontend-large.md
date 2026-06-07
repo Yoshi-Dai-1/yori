@@ -187,7 +187,7 @@ project-root/
 
 ## Design Contract
 
-rules/design-contract.md に従う。design/token-ssot.json を色・フォント・スペーシングの正本とし、design/component-map.json でコンポーネント名と実装の対応を管理する。
+instructions/design-contract.md に従う。design/token-ssot.json を色・フォント・スペーシングの正本とし、design/component-map.json でコンポーネント名と実装の対応を管理する。
 
 ---
 
