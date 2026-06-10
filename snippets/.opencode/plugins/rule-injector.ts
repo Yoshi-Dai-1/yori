@@ -52,6 +52,12 @@ const RULES: RuleDef[] = [
     filePath: ".opencode/instructions/stack-setup.md",
     filePattern: /ARCHITECTURE\.md$/i,
   },
+  {
+    name: "tdd-cycle",
+    filePath: ".opencode/instructions/tdd-cycle.md",
+    filePattern: /\.test\.(ts|js|tsx|jsx|py|go|rs|cpp|c|rb)$|_test\.(go|py|rs|cpp|c|rb)$|test_.*\.(py|rs|c|cpp)$|(\.|_)spec\.(ts|js|tsx|jsx|py|rb)$|(Test|Tests|Spec)\.(java|kt|cs|swift|php|c|cpp)$/i,
+    contentPatterns: [/test/i, /spec/i, /tdd/i, /describe\(/i, /it\(/i, /assert/i, /expect/i, /func Test/i, /#\[test\]/i],
+  },
 ]
 
 interface RuleSessionState {

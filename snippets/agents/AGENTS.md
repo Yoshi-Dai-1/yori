@@ -1,38 +1,19 @@
 # AGENTS.md
 
-<!-- 推奨行数：60〜100行（コメント行・空行を除いたコンテンツ行数）-->
-<!-- このファイルはAIエージェントが自動で読み込む「作業指示書」-->
-<!-- 詳細ドキュメントへの参照を書く。詳細をここに書かない（段階的開示）-->
-
+> **行動原則**: Think Before Coding > Simplicity First > Surgical Changes > Goal-Driven Execution
 > **優先順位**: SSoT > 安全 > 品質。迷ったらこの順に従う。
+> **安全原則**: 推測禁止 / 検証の明示 / 破壊的Git操作の禁止
 > **言語**: 日本語（プロジェクトで指定された場合はそれに従う）。
 > **SSoT**: このファイルが全エージェント・全自動化ツールの共通規範。詳細ルールは `.opencode/instructions/` に分離し、Plugin がイベント駆動で注入する。
 
-## Project Overview
+<!-- 記入方法: .opencode/agents/agents-fill-guide.md を読む -->
 
-<!-- 記入方法：以下のプロンプトをAIに渡す
-「AGENTS.md の Project Overview と Commands を記入してください。
- docs/project-definition.md と ARCHITECTURE.md を参照しながら、
- 以下を1つずつ質問して埋めてください：
- 1. プロジェクト名と目的（1〜2文）
- 2. 技術スタックとバージョン
- 3. 実行コマンド（install/dev/build/typecheck/lint/test）
- 4. 依存の方向（ARCHITECTURE.mdから転記）
- 5. 現在取り組んでいるタスク
- 6. 設定ファイルの自動展開レベル（以下の3択から選んでください）：
-    1. 自動展開：言語確定時に設定ファイルを確認なしで自動作成する（デフォルト・初心者〜標準）
-    2. 確認付き展開：すべての設定ファイル作成前に内容を説明し、承認を得てから作成する（上級者向け）
-    3. 展開なし：設定ファイルはすべて自分で管理する。AIは提案のみ行い作成はしない（上級者・独自構成あり）
-    選択後、.opencode/project-context.md の「未設定」を選択した値に書き換える。
- 質問は1つずつ。私が答えるまで次に進まないでください。」
--->
+## Project Overview
 
 [プロジェクト名]：[何のためのプロジェクトか1〜2文。技術スタックとバージョンも含める]
 
 ## Commands
 
-<!-- エージェントが実行すべきコマンドを完全な形で書く -->
-<!-- 言語・ツールに合わせて書き換える（ARCHITECTURE.md 記入後に stack-setup.md が補完する） -->
 - Install: `[例: pnpm install / pip install -r requirements.txt / go mod download]`
 - Dev: `[例: pnpm dev / python main.py / go run ./cmd/...]`
 - Build: `[例: pnpm build / go build ./... / cargo build]`
@@ -53,7 +34,6 @@ UIデザインの入口は `DESIGN.md` を参照（詳細は DESIGN.md の Read 
 ## Code Style
 
 詳細は `.opencode/coding-conventions.md` を参照。
-<!-- 言語・フレームワークに合わせて書き換える。不要な行は削除する -->
 - ディレクトリ名：[例: kebab-case / snake_case]
 - クラス・型名：[例: PascalCase]
 - 関数・変数名：[例: camelCase（JS/TS）/ snake_case（Python/Go/Rust）]
@@ -62,7 +42,6 @@ UIデザインの入口は `DESIGN.md` を参照（詳細は DESIGN.md の Read 
 
 ## Boundaries（禁止事項）
 
-<!-- 最重要。省略しない -->
 - `.env*` ファイルを変更・コミットしない
 - 新しい環境変数を追加するときは `.env.example` にもキー名（値は空）を追記する
 - `.env.example` は必ずコミット対象とする（チームとAIが必要な変数を把握するため）
@@ -75,6 +54,12 @@ UIデザインの入口は `DESIGN.md` を参照（詳細は DESIGN.md の Read 
 - セキュリティ問題を後回しにしない
 - テストが通らない変更を本番に適用しない
 - 1コミットに複数の目的の変更を混ぜない
+
+## Safety Rules
+
+- **推測禁止**: 読んでいないコードについて推測しない。関連ファイルを読み、利用箇所を検索してから判断する。
+- **検証の明示**: 検証できない変更は、理由と手動確認手順を報告に含める。完了前に「何を変えたか」「何を検証したか」「何が未検証か」を明示する。
+- **Git操作の制限**: 明示的に依頼されていない限り、commit・push・reset・rebase・force-push・ファイル削除・破壊的操作を行わない。
 
 ## コミット実行（Commit Execution）
 
@@ -112,14 +97,6 @@ git add -A && git commit -m "[生成したメッセージ]"
 ```
 実行はしない。人間が確認・修正してから実行する。
 
-<!-- 判断基準：.opencode/standards/principles/network-resilience.md -->
-<!-- event-injected rule: .opencode/instructions/network-resilience.md -->
-- 外部API・DB・内部サービスへの通信を実装するとき → 接続タイムアウトと読み取りタイムアウトの両方を設定する
-- タイムアウト値・リトライ回数などの設定値をコードに直書きしない（constants/ に定数として定義する）
-- 冪等でない操作（決済・メール送信・SMS送信・通知送信）にタイムアウト後のリトライを設定しない
-- 通信設計の採否（タイムアウト・リトライ・冪等性・サーキットブレーカー・プーリング）を ARCHITECTURE.md の「通信設計」セクションに記録する
-<!-- このプロジェクト固有の通信制約（@resilience-checker が自動追記） -->
-
 ## Security Boundaries
 
 <!-- 判断基準：.opencode/standards/principles/security-requirements.md / event-injected rule: .opencode/instructions/security.md -->
@@ -128,50 +105,26 @@ git add -A && git commit -m "[生成したメッセージ]"
 - 認証・認可・機密データ・入力バリデーションを実装したとき → 完了後に `@security-auditor（監査モード）` を呼び出す
 - 外部入力を受け取るエンドポイントを実装したとき → バックエンドバリデーションを確認する
 - 環境変数を追加したとき → `.env.example` に反映しシークレットスキャンを実行する
-- package.json / requirements.txt / requirements-dev.txt / pyproject.toml / go.mod / Cargo.toml / pom.xml / build.gradle / build.gradle.kts / Gemfile / composer.json / pubspec.yaml / *.csproj / packages.config を編集したとき → `.opencode/instructions/security.md` の言語別コマンド対応表に従いauditを実行する。対応表にない言語の場合は人間に確認を促す
+- 依存関係ファイル編集時 → `.opencode/instructions/security.md` の言語別audit対応表に従う
 <!-- このプロジェクト固有の制約（@security-auditor が自動追記）-->
 
 ## TDD Cycle
 
 詳細は `.opencode/standards/principles/tdd-with-ai.md` を参照。
-実装完了後の確認順序（型チェック → lint → テスト → @code-reviewer → 人間レビュー）も同ファイルに定義。
-
-**TDDサイクルのStep2（テストコードの生成）**：
-→ `@test-generator` を呼び出す
-
-**バグを修正するとき**：
-→ 修正の前に、バグを再現するテストを先に書く。`@test-generator` を呼び出す
-
-**ソースファイルが編集され、同一セッションで対応するテストファイルが編集されない場合（テストドリフト検知）**：
-→ 編集されたソースファイルの公開関数/クラス一覧と対応テストファイルのカバレッジを比較する
-→ テストされていない変更点をリストアップし、`@test-generator` の呼び出しを提案する
-→ 除外条件: 編集がコメント・空白・型定義のみの変更、またはテストファイルが存在しないことが意図的（スクリプト・自動生成ファイル）の場合
+基本方針: 実装前にテストを書き、`@test-generator` を呼び出す。確認順序: 型チェック → lint → テスト → `@code-reviewer` → 人間レビュー。
+テストドリフト（ソース編集後にテスト未更新の検出）: `.opencode/instructions/tdd-cycle.md` 参照。
 
 ## Subagents
 
-<!-- [プロジェクト名]・依存の方向・Taking on がプレースホルダーのままなら、このセクションを無視しARCHITECTURE.mdの記入を先に促す -->
+<!-- [プロジェクト名]・依存の方向・Taking on がプレースホルダーのままなら、ARCHITECTURE.mdの記入を先に促す -->
 
-**仕様が1〜4文の実装依頼 かつ 複数ファイル・複数タスクが必要なとき**：
-→ `@planner` を呼び出し docs/spec.md と docs/tasks.json を作成する
-  作業ディレクトリの判断基準：タスク数6以上 / docs/working/ 内ディレクトリが2以上 → `docs/working/<group>/`（plan.md / notes.md / review-checklist.md）も作成する
-
-**各スプリント開始前**：
-→ `@evaluator` に Sprint Contract レビューを依頼する（承認まで繰り返す）
-  `passes` フィールドは **Evaluator のみ** が更新する
-
-**スプリント完了後**：
-→ `@evaluator` でQA評価。PASS → 次のスプリントへ。FAIL → 修正して再評価。セキュリティ関連の実装が含まれる場合は `.opencode/instructions/security.md` のスプリント完了後トリガーに従う
-
-**調査が必要なとき**（影響範囲・原因調査）：
-→ `@codebase-investigator` を呼び出す（メインのコンテキストを汚さない）
-**本番環境が稼働中のコードを変更するとき**：
-→ 変更前に `.opencode/skills/live-operation/` の Pre-Change Checklist を実行する
-
-**月次診断時**（または「診断して」と指示されたとき）：
-→ `@resilience-checker` でレジリエンス診断 + `@code-quality-auditor` でコード品質監査
-
-**本番リリース前**：
-→ `@resilience-checker` で最終確認
+- 複数ファイル・複数タスクの実装 → `@planner`（spec.md + tasks.json 生成。作業ディレクトリ判断基準は harness-engineering.md）
+- スプリント開始前 → `@evaluator`（Sprint Contract レビュー。承認まで繰り返す）
+- スプリント完了後 → `@evaluator`（QA評価。PASS → 次、FAIL → 修正）
+- 調査・原因特定 → `@codebase-investigator`（メインコンテキストを汚さない）
+- 本番コード変更前 → `.opencode/skills/live-operation/` Pre-Change Checklist
+- 月次診断 → `@resilience-checker` + `@code-quality-auditor`
+- 本番リリース前 → `@resilience-checker` 最終確認
 
 ## Current Task
 
@@ -183,35 +136,16 @@ git add -A && git commit -m "[生成したメッセージ]"
 ## Session Protocol
 
 **セッション開始時**：
-1. `.opencode/handoff-artifact.md` が存在する場合 → 読んで前のセッションの文脈を復元する
-   `## Security Status` セクションを確認し、未対応のセキュリティ要件がある場合は最初に報告する
-   存在しない場合 → `AGENTS.md` と `ARCHITECTURE.md` を読み、Current Task を確認する
-2. `docs/tasks.json` が存在する場合、未完了タスク（`"passes": false`）を確認する
-3. `docs/working/` が存在する場合 → 各 `<group>/` の `plan.md` を読み、未完了タスクの文脈を復元する
-4. **Smoke Test**：Dev コマンドが定義されており実装が存在する場合のみ実行する
-   （コードなし・APIのみ・CLIはスキップ。代わりにテストコマンドを使う）
-   → ビルドエラー・基本機能が壊れている場合は修復を優先する
-5. **`.env` の状態確認**（P0-4 修正）：
-   - `.env` が存在しない場合 → `.env.example` のキー一覧を読み、各キーを空値で `.env` にコピーする
-   - `.env` が空の場合 → 人間に「.env の値を入力してください（機密情報の判断は人間が行う）」と促す
-   - `.env` に値がある場合 → 何もしない
-   - **`.env` の値を AI が推測・自動生成しない**（機密情報の判断は人間のみが行う）
+1. `.opencode/handoff-artifact.md` を確認 → 存在すれば読んで文脈復元（`## Security Status` も確認）。なければ `AGENTS.md` + `ARCHITECTURE.md` を読む
+2. `docs/tasks.json` の未完了タスク（`"passes": false`）を確認
+3. `docs/working/` 内の各 `<group>/plan.md` を読み未完了タスクの文脈を復元
+4. **Smoke Test**: Dev コマンドが定義されており実装が存在する場合のみ実行（コードなし・APIのみ・CLIはスキップ）。ビルドエラーは修復を優先
+5. **`.env` の状態確認**：空なら `.env.example` のキー一覧を空値で `.env` にコピーし、人間に値入力を促す。値を推測・自動生成しない
 6. Current Task と `.opencode/project-context.md` の「現在のタスク」を現在の状態に更新する
-7. **Plugin 正常性チェック**：
-   `.opencode/plugins/*.ts` が存在し、AGENTS.md のプロジェクト名がプレースホルダー（`[プロジェクト名]`）でない場合
-   かつ bun がインストールされていない場合
-   → 人間に bun のインストールを提案する
-   （Plugin の動作には bun ランタイムが必要です）
-8. **月次診断期限チェック**：
-   `docs/quality-scorecard.md` が存在する場合、最終診断日を確認する
-   → 前回の診断から30日以上経過している場合は、人間に月次診断の実施を提案する
-   → 提案内容：「前回診断から30日以上経過しています。@resilience-checker と @code-quality-auditor による月次診断を実行しますか？」
-   → quality-scorecard.md が存在しない場合は初回診断として提案する
+7. **Plugin 正常性チェック**: `.opencode/plugins/*.ts` が存在しプロジェクト名が埋まっているのに `bun` 未インストールの場合 → インストールを提案
+8. **月次診断期限チェック**: `docs/quality-scorecard.md` の最終診断日が30日以上前（または不存在）なら診断実施を提案
 
-**セッション終了時**：`session.deleted` イベントの Plugin（`handoff.ts`）が
-`.opencode/handoff-artifact.md` のテンプレートを自動生成し、`docs/build-log.md` に日付行を追記する。
-作業内容を確実に引き継ぐには handoff スキルを使う（`@handoff` または「今日はここまで」と伝える）。
-handoff スキルが実行済みの場合（`<!-- HANDOFF_FILLED -->` マーカーが存在する場合）、Pluginは既存ファイルを上書きしない。
+**セッション終了時**：`handoff.ts` Plugin（`session.deleted`）が `.opencode/handoff-artifact.md` のテンプレートを自動生成し、`docs/build-log.md` に日付行を追記する。詳細な引き継ぎは `@handoff` または「今日はここまで」と伝える。handoff スキル実行済みの場合（`<!-- HANDOFF_FILLED -->` マーカーあり）、Pluginは既存ファイルを上書きしない。
 
 ## Report Format
 

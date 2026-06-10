@@ -55,6 +55,17 @@ else
   echo "ℹ️  AGENTS.md は既に存在します（上書き保護）"
 fi
 
+# ===== AGENTS.md 記入ガイドのコピー（自動ロードされない位置） =====
+if [ -f "$SNIPPETS/agents/_fill-guide.md" ]; then
+  mkdir -p .opencode/agents
+  if [ ! -f ".opencode/agents/agents-fill-guide.md" ]; then
+    cp "$SNIPPETS/agents/_fill-guide.md" .opencode/agents/agents-fill-guide.md
+    echo "✅ .opencode/agents/agents-fill-guide.md をコピーしました（AGENTS.md 記入時にAIが参照）"
+  else
+    echo "ℹ️  .opencode/agents/agents-fill-guide.md は既に存在します（上書き保護）"
+  fi
+fi
+
 # ===== ARCHITECTURE.md のコピー =====
 if [ ! -f "ARCHITECTURE.md" ]; then
   cp "$SNIPPETS/ARCHITECTURE.md.template" ARCHITECTURE.md

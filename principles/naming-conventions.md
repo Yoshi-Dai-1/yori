@@ -66,9 +66,33 @@ shared/form-components/
 | リポジトリ | `camelCase.ts`（`Repository` suffix推奨） | `stockRepository.ts` |
 | 型定義ファイル | `*.types.ts` | `stock.types.ts` |
 | 定数ファイル | `*.constants.ts` | `api.constants.ts` |
-| テストファイル | `*.test.ts` / `*.spec.ts` | `useStockData.test.ts` |
+| テストファイル | 各言語の標準規約に従う（下記「テストファイル命名規則」参照） | `useStockData.test.ts` |
 | 設定ファイル | ツールの規約に従う | `jest.config.ts` |
 | スタイル（CSS Modules） | `*.module.css` | `stockCard.module.css` |
+
+---
+
+## テストファイル命名規則
+
+テストファイルは原則として各言語の標準規約に従う。ARCHITECTURE.md に確定値がある場合はそちらを優先する。
+
+| 言語 | 標準パターン | 例 |
+|------|-------------|----|
+| JavaScript / TypeScript | `*.test.ts` / `*.spec.ts` | `useLogin.test.ts` |
+| React (JSX/TSX) | `*.test.tsx` / `*.spec.tsx` | `HomeScreen.test.tsx` |
+| Python | `test_*.py` / `*_test.py` / `*.test.py` | `test_auth.py` |
+| Go | `*_test.go`（Goコンパイラが強制） | `handler_test.go` |
+| Rust | `*_test.rs`（`tests/` ディレクトリも可） | `lib_test.rs` |
+| Java | `*Test.java` / `*Tests.java` / `*Spec.java` | `UserServiceTest.java` |
+| Kotlin | `*Test.kt` / `*Spec.kt` | `AuthSpec.kt` |
+| C# | `*Tests.cs` / `*Test.cs` | `ShoppingCartTests.cs` |
+| Ruby | `*_spec.rb`（RSpec） / `*_test.rb`（Minitest） | `user_spec.rb` |
+| Swift | `*Tests.swift` | `LoginTests.swift` |
+| C / C++ | `*_test.cpp` / `*_test.c` / `*Test.cpp` / `*Test.c` | `calculator_test.cpp` |
+| PHP | `*Test.php` / `*Tests.php` | `PaymentGatewayTest.php` |
+
+言語別表にない言語は、その言語の標準テスティングフレームワークの規約に従う。
+ARCHITECTURE.md の「命名規則」セクションが常に最優先される。
 
 ---
 

@@ -14,6 +14,7 @@
 1. `.opencode/standards/principles/naming-conventions.md` を読み、ファイル名の命名規則を確認する
 2. ARCHITECTURE.md の「命名規則」セクションに確定値がある場合はそちらを SSOT として従う
 3. 拡張子に応じた言語別ルールを適用する
+4. **テストファイルは各言語の標準規約（`principles/naming-conventions.md` の「テストファイル命名規則」参照）に従う。プロジェクト独自の規約がある場合は ARCHITECTURE.md を優先する**
 
 ### 新しい関数・変数・クラス・型を命名するとき
 
