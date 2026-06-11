@@ -11,9 +11,9 @@ description: |
   Make sure to use this skill even when the user does not say "handoff"
   explicitly — any context reset, development pause, session end, or session resumption
   qualifies. Do NOT use for release preparation (use release-prep instead).
-version: 1.0.0
-status: active
 ---
+
+<!-- template-version: 1.0.0, template-status: active -->
 
 ## When to Use
 
@@ -28,6 +28,8 @@ status: active
 - 単純な質問・調査タスク（状態保存が不要なとき）
 
 ## Workflow
+
+### 常時実行
 
 1. **現在の状態を保存する**
    `.opencode/handoff-artifact.md` を以下のフォーマットで write_file で保存する
@@ -98,7 +100,7 @@ status: active
    - 自動監視が「未設定」の場合 → Dependabot / CI組み込みの設定を提案する
    人間からの指示を待たずに実行する。
 
-4.5 **フィードバックループの確認（初回本番リリース時のみ・自律実行）**
+#### フィードバックループの確認（初回本番リリース時のみ・自律実行）
 
    このステップを実行する条件を順番に確認する：
 
@@ -143,6 +145,8 @@ status: active
    - 「今は設定しない」を選んだ場合も「フィードバック収集：設定しない（意図的）」と記録する
    - アナリティクスを導入する場合は検索を実行して選択肢を提示し、
      選択されたツールを ARCHITECTURE.md の「非機能要件」セクションに追記する
+
+### 条件付き実行
 
 5. **EOL（サービス終了・アーカイブ）の処理（条件実行）**
 

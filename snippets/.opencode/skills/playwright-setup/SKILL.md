@@ -2,11 +2,14 @@
 name: playwright-setup
 description: |
   playwright-cli のセットアップ確認・インストールを行うスキル。
-  @evaluator が評価を始める前に呼び出す。
-  playwright-cli がインストールされていない場合、人間にインストール方法を選択させる。
-version: 1.0.0
-status: active
+  @evaluator が評価を始める前に必ず呼び出す。
+  Make sure to use this skill whenever the user mentions 「テスト」「E2E」「ブラウザテスト」
+  「ビジュアルリグレッション」「スナップショットテスト」「playwright」— even if the user
+  only wants to run a single test or check if tests are configured.
+  Do NOT use for unit tests or API tests (those don't need a browser).
 ---
+
+<!-- template-version: 1.0.0, template-status: active -->
 
 # playwright-cli セットアップ
 

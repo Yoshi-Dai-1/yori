@@ -9,9 +9,9 @@ description: |
   Do NOT use after release (use live-operation instead).
   Do NOT use for development-only deployments with no real users.
   優先順位：Security（即死系・省略不可）> The Twelve-Factor App > チェックリスト完了 > 新機能停止
-version: 1.0.0
-status: active
 ---
+
+<!-- template-version: 1.0.0, template-status: active -->
 
 ## When to Use
 
