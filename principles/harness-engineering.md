@@ -38,7 +38,7 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
 
 ```
 プロジェクトルート/
-  AGENTS.md              エントリポイント（60〜100行）常にロードされる
+  AGENTS.md              エントリポイント（60〜200行）常にロードされる
   ARCHITECTURE.md        設計の詳細（AGENTS.mdから参照）
 
   docs/（プロジェクト成果物・AIと人間が共有するドキュメント）
@@ -122,7 +122,7 @@ Planner（サブエージェント）
   役割：1〜4文のプロンプトを詳細な仕様書（docs/spec.md）と
         Task List（docs/tasks.json）に変換する
   使うタイミング：中規模以上のタスク開始時
-  書く場所：`.opencode/agents/subagents/planner.md`
+  書く場所：`.opencode/agents/planner.md`
 
 Generator（メインエージェント・Build）
   役割：仕様書から実装する。各スプリント開始前に Evaluator へ
@@ -134,7 +134,7 @@ Evaluator（サブエージェント）
   役割：① Sprint Contract のレビュー（スプリント開始前・合意）
         ② ビルド完了後の品質評価（playwright-cli で実機確認）
   使うタイミング：フルアプリ構築・主観的品質が重要なとき
-  書く場所：`.opencode/agents/subagents/evaluator.md`
+  書く場所：`.opencode/agents/evaluator.md`
 ```
 
 ### Task List（docs/tasks.json）
@@ -175,7 +175,7 @@ Planner がスプリント計画と同時に生成する機能追跡ファイル
 - **許可条件**: `.opencode/.evaluator-updating` マーカーファイルが存在する場合のみ
 - **評価エージェントの責務**: `PASS` 判定後、マーカー作成 → `passes` 更新 → マーカー削除の順に実行
 - **詳細**: `.opencode/plugins/tasks-guard.ts` と
-  `.opencode/agents/subagents/evaluator.md` の「PASS後の後処理」セクションを参照
+  `.opencode/agents/evaluator.md` の「PASS後の後処理」セクションを参照
 
 ### Sprint Contract（スプリント契約）
 
@@ -184,7 +184,7 @@ Sprint Contract の枠組みは Planner が spec.md 生成時に作成する。
 Generator は各スプリント開始前に @evaluator を呼び出してレビューを依頼し、
 Evaluator が承認してから実装に入る。
 「実装者の解釈」と「評価者の期待」のずれを事前に防ぐ。
-詳細フォーマットは `.opencode/agents/subagents/planner.md` と `.opencode/agents/subagents/evaluator.md` を参照。
+詳細フォーマットは `.opencode/agents/planner.md` と `.opencode/agents/evaluator.md` を参照。
 
 タスク規模別の推奨構成：
 
@@ -200,7 +200,7 @@ Evaluator が承認してから実装に入る。
 ## 5つの原則
 
 **1. Progressive Disclosure（段階的開示）**
-AGENTS.mdは60〜100行以内。詳細は instructions/・docs/ に分離して
+AGENTS.mdは60〜200行以内。詳細は instructions/・docs/ に分離して
 必要なときだけ読み込まれるようにする。
 全部を常に見せるのではなく、必要なときに必要なものだけ。
 
@@ -400,7 +400,7 @@ setup-harness.sh でテンプレートをコピーして、
    .opencode/standards/principles/harness-engineering.md と .opencode/standards/principles/subagents.md を読んで、
    現在の .opencode/ ディレクトリの構成を評価してください。
    以下を確認してください：
-   1. AGENTS.mdが60〜100行以内か
+   1. AGENTS.mdが60〜200行以内か
    2. instructions/ に使われていないファイルがないか
    3. skills/ に使われていないスキルがないか
    4. usage/ の履歴から削除候補を特定する

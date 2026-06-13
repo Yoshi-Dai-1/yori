@@ -148,6 +148,42 @@ AI エージェントが bash で `git commit` を実行したときにのみ動
 commit-review.ts が PR レビューと同じ品質保証をコミット時にコード強制するため、
 main ブランチに直接コミットして問題ない。
 
+### 未対応のトリガー
+
+| トリガー | 現状 | 理由 |
+|---------|------|------|
+| `gh pr create` | AI自己遵守（`_trigger-pr.md`） | PR頻度が低く、commit-review.ts が個別コミットを保護 |
+| `git push`（非main） | AI自己遵守（`_trigger-pr.md`） | push 検出は誤検知リスク大（force push は別途 destructive-op-guard.ts が保護）
+
+## `destructive-op-guard.ts` 詳細
+
+AGENTS.md Safety Rules に定義されている破壊的操作のうち、コード強制する範囲としない範囲。
+
+### 強制する操作（guard がブロック）
+
+| 操作 | パターン |
+|------|---------|
+| `git reset --hard` | `git reset --hard ...` |
+| `git rebase` | `git rebase ...` |
+| `git push --force` / `--force-with-lease` | `git push --force...` |
+| `git branch -d` / `-D` | `git branch -d...` / `-D...` |
+| `git clean -fd` | `git clean -f[d]...` |
+| `rm -rf` / `rm -r` | `rm -rf...` / `rm -r...` |
+| `--no-verify`（フックバイパス） | `--no-verify` |
+
+### 強制しない操作（AI の行動原則に委ねる）
+
+| 操作 | コード強制しない理由 |
+|------|-------------------|
+| `git commit`（通常） | commit-review.ts が別途レビュー強制。通常の commit 自体は必須操作 |
+| `git push`（plain） | 頻繁に使う正常操作。force push のみ別途 guard |
+| `git add` | 頻繁に使う正常操作 |
+| ファイル削除（単一ファイル） | 誤検知が多い（正常なリファクタリング・リネームを阻害するため） |
+
+**設計意図**: `destructive-op-guard.ts` は Safety Rules の完全なコード実装ではなく、**復元が困難な操作のみを最低限ブロックする**ガードレール。復元可能な操作（通常 push, commit, 単一ファイル削除）は AGENTS.md の行動原則（AI 自発遵守）に委ね、誤検知リスクを回避している。
+
+`commit-review.ts`、`secrets-guard.ts` と合わせて defense in depth を構成する。
+
 ## `rule-injector.ts` 詳細
 
 ファイル編集時にファイル種別と内容を検出し、対応するルールファイルの参照を注入する。

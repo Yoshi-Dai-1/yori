@@ -64,46 +64,27 @@ UIデザインの入口は `DESIGN.md` を参照（詳細は DESIGN.md の Read 
 ## コミット実行（Commit Execution）
 
 セッション開始時に `ARCHITECTURE.md` の「開発プロセス」セクションを読み、
-「コミット実行」設定を確認する。
-設定がない場合・セクションが存在しない場合は「AI が提案・人間が実行」として動作する。
+「コミット実行」設定を確認する。設定がない場合は「AI が提案・人間が実行」として動作する。
 
-コミットメッセージの型・形式は `.opencode/standards/principles/naming-conventions.md` の
-「コミットメッセージ（Conventional Commits）」セクションに従う。AI が常に生成する。
-
-実行するコマンド（ステージングとコミットを一括で行う）：
+コミットメッセージは `.opencode/standards/principles/naming-conventions.md` の
+Conventional Commits 形式に従う。実行コマンド:
 ```
 git add -A && git commit -m "[生成したメッセージ]"
 ```
-`.env*` ファイルは `git add -A` に含めない（pre-commit フックが検出するが二重の保護として）。
+`.env*` ファイルは `git add -A` に含めない（pre-commit フックが二重保護）。
 
 ### 設定：「AI が自律実行」の場合
 
-コミットのタイミング（上から順に確認し、最初に該当した条件を使う）：
-
-1. **TDD フローが完了した直後**
-   `.opencode/standards/principles/tdd-with-ai.md` の Step 8 に従う。これが最優先。
-   TDD を使っているときはこの条件のみ適用する。
-
-2. **人間が「コミットして」「commit して」と明示した直後**
-   TDD を使っていない場合はこの条件のみ適用する。
-   人間の明示指示なしに自律コミットしない。
+1. **TDD フロー完了直後**（`tdd-with-ai.md` Step 8）。TDD 使用時はこの条件のみ。
+2. **人間の明示指示（「コミットして」）直後**（TDD 非使用時のみ）。
 
 ### 設定：「AI が提案・人間が実行」の場合
 
-以下のタイミングで人間にコミットを提案する（上から順に確認し、最初に該当した条件を使う）：
+1. **TDD 確認順序完了後**（型チェック → lint → テスト → @code-reviewer → 人間レビュー → 提案）
+2. **人間の明示指示時**
 
-1. **TDD フローの確認順序が完了した直後**
-   （型チェック → lint → テスト → @code-reviewer → 人間レビュー → 提案）
-   人間レビューで OK が出たら、次のターンで提案する。
-
-2. **人間から「コミットして」「commit して」と明示されたとき**
-
-提案の形式：
-```
-git add -A && git commit -m "[生成したメッセージ]"
-```
-実行はしない。人間が確認・修正後、「実行して」と指示 → AI が bash 実行し commit-review.ts が発火する。
-人間がターミナルにコピペして手動実行すると commit-review.ts が動作しない。
+提案後、人間が「実行して」と指示 → AI が bash 実行し commit-review.ts が発火する。
+人間のターミナル手動実行では commit-review.ts は動作しない。
 
 ## Security Boundaries
 
@@ -148,10 +129,11 @@ git add -A && git commit -m "[生成したメッセージ]"
 2. `docs/tasks.json` の未完了タスク（`"passes": false`）を確認
 3. `docs/working/` 内の各 `<group>/plan.md` を読み未完了タスクの文脈を復元
 4. **Smoke Test**: Dev コマンドが定義されており実装が存在する場合のみ実行（コードなし・APIのみ・CLIはスキップ）。ビルドエラーは修復を優先
-5. **`.env` の状態確認**：空なら `.env.example` のキー一覧を空値で `.env` にコピーし、人間に値入力を促す。値を推測・自動生成しない
+5. **`.env` の状態確認**：`.opencode/instructions/stack-setup/_env-gitignore.md` が存在し「設定ファイルの自動展開レベル」が「自動展開」または「確認付き展開」ならその指示に従う。なければ `.env.example` のキー一覧を空値で `.env` にコピーし、人間に値入力を促す。値を推測・自動生成しない。
 6. Current Task と `.opencode/project-context.md` の「現在のタスク」を現在の状態に更新する
 7. **Plugin 正常性チェック**: `.opencode/plugins/*.ts` が存在しプロジェクト名が埋まっているのに `bun` 未インストールの場合 → インストールを提案
 8. **月次診断期限チェック**: `docs/quality-scorecard.md` の最終診断日が30日以上前（または不存在）なら診断実施を提案
+9. **build-log 確認**: `docs/build-log.md` に `（更新待ち）` が残っている場合 → 前回の handoff が未完了。handoff スキルによる更新を促す
 
 **セッション終了時**：`handoff.ts` Plugin（`session.deleted`）が `.opencode/handoff-artifact.md` のテンプレートを自動生成し、`docs/build-log.md` に日付行を追記する。詳細な引き継ぎは handoff スキル（「今日はここまで」と伝える）が自動起動する。handoff スキル実行済みの場合（`<!-- HANDOFF_FILLED -->` マーカーあり）、Pluginは既存ファイルを上書きしない。
 

@@ -64,8 +64,8 @@ AIへの指示を書く前に「何が本当に重要か」を決める羅針盤
 |-----------|------|--------|
 | CRITICAL/HIGH/MEDIUM/LOW | セキュリティ脆弱性・脅威モデリング | `.opencode/instructions/security.md`, .opencode/standards/principles/threat-modeling.md |
 | A/B/C/D（4象限） | リスク優先順位付け（影響度×確率） | このファイル |
-| GREEN/YELLOW/RED | システムレジリエンス診断 | `.opencode/agents/subagents/resilience-checker.md` |
-| GOOD/CAUTION/ATTENTION | コード品質診断 | `.opencode/agents/subagents/code-quality-auditor.md` |
+| GREEN/YELLOW/RED | システムレジリエンス診断 | `.opencode/agents/resilience-checker.md` |
+| GOOD/CAUTION/ATTENTION | コード品質診断 | `.opencode/agents/code-quality-auditor.md` |
 
 ### 4象限とCRITICAL/HIGH/MEDIUM/LOWの紐付け
 

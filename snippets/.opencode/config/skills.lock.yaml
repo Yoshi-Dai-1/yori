@@ -19,14 +19,14 @@
 external_skills:
   find-skills:
     source: https://github.com/vercel-labs/skills.git
-    # main ブランチの最新コミット。動作確認後に固定する。
-    # 未固定状態（空文字）の場合、setup-harness.sh は警告を出して処理を続行する
+    # commit が空文字の場合、setup-harness.sh は GitHub の最新 main ブランチを使用する。
+    # そのため setup のたびに異なるバージョンが入る可能性がある。
+    # 特定バージョンに固定したい場合は、動作確認したコミットハッシュを記入する。
+    # 未固定でも動作に問題はないが、再現性を重視する場合は固定を推奨。
     commit: ""
-    path: find-skills
 
   skill-creator:
     source: https://github.com/anthropics/skills.git
-    # main ブランチの最新コミット。動作確認後に固定する。
-    # 未固定状態（空文字）の場合、setup-harness.sh は警告を出して処理を続行する
+    # commit が空文字の場合、setup-harness.sh は GitHub の最新 main ブランチを使用する。
+    # 再現性を確保したい場合は、動作確認済みのコミットハッシュに書き換える。
     commit: ""
-    path: skill-creator

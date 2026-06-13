@@ -29,7 +29,7 @@ permission:
 ### 1. ファイルサイズ（保守性の代理指標）
 
 src/ 以下のファイルを確認:
-- file-size-and-cohesion.md の閾値に従い診断する
+- `.opencode/standards/principles/file-size-and-cohesion.md` の閾値に従い診断する
 - テストファイルは除外する（テストは長くなることが自然）
 
 ### 2. 重複コードの疑い（DRY原則の違反）

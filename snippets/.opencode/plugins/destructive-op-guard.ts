@@ -6,6 +6,12 @@ import type { Plugin } from "@opencode-ai/plugin"
  * tool.execute.before で破壊的Git操作・ファイル削除をブロックする。
  * AGENTS.md の Safety Rules をコードで強制するガードレール。
  * 明示的に依頼された場合（人間の許可）はバイパスするため、完全ブロックではなくヒューマンインザループ。
+ *
+ * 設計意図：Safety Rules の完全実装ではなく、復元が困難な操作のみをブロックする。
+ * - ブロック対象：reset --hard, rebase, push --force, rm -rf 等（復元困難 or 履歴破壊）
+ * - ブロックしない：通常 push, commit, add, 単一ファイル削除（復元可能・AI 自発遵守に委ねる）
+ *   commit は commit-review.ts が別途レビュー強制、push --force 以外の push は正常操作。
+ *   単一ファイル削除は誤検知リスク（正常なリファクタリング・リネーム）を回避するため。
  */
 
 const DESTRUCTIVE_PATTERNS = [

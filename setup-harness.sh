@@ -91,6 +91,15 @@ if [[ "$HAS_UI" =~ ^[Yy]$ ]]; then
   else
     echo "ℹ️  design/INTAKE.md は既に存在します（上書き保護）"
   fi
+  for DESIGN_TEMPLATE in "$SNIPPETS/design/token-ssot.json.template" "$SNIPPETS/design/component-map.json.template"; do
+    if [ -f "$DESIGN_TEMPLATE" ]; then
+      TARGET_NAME=$(basename "$DESIGN_TEMPLATE")
+      if [ ! -f "design/$TARGET_NAME" ]; then
+        cp "$DESIGN_TEMPLATE" "design/$TARGET_NAME"
+        echo "✅ design/$TARGET_NAME をコピーしました"
+      fi
+    fi
+  done
   HAS_UI_FLAG=true
 else
   echo "ℹ️  DESIGN.md はスキップしました（UIなしプロジェクト）"
@@ -144,7 +153,7 @@ fi
 
 # instructions テンプレート
 # instructions/ 以下の全ファイルを再帰的にコピー（上書き保護あり）
-# 含まれるルール：code-quality.md / code-review.md / design-contract.md / directory-structure.md / naming-conventions.md / network-resilience.md / network-resilience/*.md / security.md / security/*.md / stack-setup.md / stack-setup/*.md / _shared/*.md / _template.md
+# 含まれるルール：code-quality.md / code-review.md / design-contract.md / directory-structure.md / naming-conventions.md / network-resilience.md / network-resilience/*.md / security.md / security/*.md / stack-setup.md / stack-setup/*.md / tdd-cycle.md / _shared/*.md / _template.md
 while IFS= read -r -d '' RULE_FILE; do
   REL_PATH="${RULE_FILE#$SNIPPETS/.opencode/instructions/}"
   REL_PATH="${REL_PATH#/}"
@@ -502,6 +511,12 @@ cat > .opencode/handoff-artifact.md << 'EOF'
 
 
 ## 変更したファイル
+
+
+## Security Status
+
+前回の診断日: （初回）
+未解決の懸念:
 
 EOF
   echo "✅ .opencode/handoff-artifact.md の雛形を作成しました"

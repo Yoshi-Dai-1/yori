@@ -11,7 +11,9 @@ temperature: 0.3
 permission:
   "*": deny
   read: allow
-  edit: allow
+  grep: allow
+  edit: allow    # ドキュメント・JSON 編集用（コード編集不可は prompt で制限）
+  write: allow   # spec.md / tasks.json 新規作成用
   list: allow
 ---
 
@@ -60,7 +62,7 @@ Won'tセクションに記載された機能は仕様書に含めない。
 ### Step 2: docs/tasks.json（Task List）
 
 タスクごとに pass/fail 状態を管理する JSON ファイル。
-**Evaluator のみが `"passes": true` に更新できる。Generator は `passes` フィールドを変更しない。**
+**Evaluator のみが `"passes": true` に更新できる。メインエージェントは `passes` フィールドを変更しない。**
 Markdown ではなく JSON を使う理由：エージェントが Markdown より JSON を誤って
 上書き・編集する可能性が低く、状態追跡が安定するため。
 

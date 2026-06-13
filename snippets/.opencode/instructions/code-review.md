@@ -14,7 +14,7 @@
 1. `.opencode/standards/principles/code-review.md` を読み、レビュー基準を確認する
 2. 以下の観点（優先順位順）でレビューを実行する：
    - 正確性：バグやエッジケースの考慮漏れがないか
-   - セキュリティ：脆弱性がないか
+   - セキュリティ：CRITICALレベルのみ（認証欠如・機密情報ハードコード・HTTPSなし）。HIGH以下は @security-auditor に委譲
    - 設計整合性：アーキテクチャ・命名規則（instructions/naming-conventions.md）・SSOTに違反していないか
    - 可読性：名前と構造から意図が読み取れるか
    - テスト容易性：テストが書ける構造か、テストが書かれているか

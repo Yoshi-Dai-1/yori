@@ -19,7 +19,7 @@ production-readiness.md     → リリース前チェックリスト
   ARCHITECTURE.md Step3 完了後
     → ARCHITECTURE.md.template の通信設計セクション記入時
   @resilience-checker の月次診断時
-    → `.opencode/agents/subagents/resilience-checker.md` の診断項目から参照
+    → `.opencode/agents/resilience-checker.md` の診断項目から参照
   `.opencode/standards/principles/production-readiness.md` のチェック実行時
     → エラーハンドリングセクションから参照
 ```
@@ -482,7 +482,7 @@ Subscriptionのスケール:
 5. 採用した対策の設定値が constants/ に定義されているか
    → 定数でない設定値が発見された場合は定数化を指示する
 
-報告形式（`.opencode/agents/subagents/resilience-checker.md` の形式に統合して報告する）：
+報告形式（`.opencode/agents/resilience-checker.md` の形式に統合して報告する）：
 
 [OK]     通信設計：ARCHITECTURE.md の通信設計テーブルが記入されている
 [要対応] タイムアウト：constants/ に定数が定義されていない → 定数化を指示する

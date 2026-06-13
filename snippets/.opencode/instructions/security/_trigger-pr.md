@@ -1,5 +1,7 @@
 ### PR が作成されたとき（`gh pr create` または `git push` が実行されたとき）
 
+> このルールは AI 自己遵守による（対応する Plugin は未実装）。AI は `gh pr create` / `git push` 実行時に以下のチェックを自律的に実施する。
+
 Bash ツールで `gh pr create` または `git push`（main/mainline 以外のブランチへの push）が実行されたとき：
 1. PR 対象ブランチの diff に以下の判定キーワードが含まれるかチェックする：
    login, auth, signin, password, token, session, jwt, oauth,

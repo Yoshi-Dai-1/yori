@@ -54,6 +54,7 @@ dev-standards/
     subagents.md                サブエージェントの設計と活用
     production-readiness.md     本番リリース前チェックリスト（9セクション：ユーザーテスト・負荷テスト・APIドキュメント・OSS公開チェックリスト追加）
     production-deployment.md    本番移行ガイド（12因子・DDD・監視）
+    qa-report-format.md       ★ QAレポートの標準フォーマット（@evaluator が使用）
 
   architectures/                プロジェクト種別ごとの構成パターン
     _how-to-choose.md           ★ 種別の選び方（フローチャート）← まずここを読む
@@ -71,18 +72,19 @@ dev-standards/
     iac.md                      IaC（Terraform / OpenTofu / AWS CDK / Pulumi / Ansible / Helm）
 
   decisions/                    判断の記録（ADR・技術選定）
-    001-no-numbering-in-src.md    ADR: プロダクションコードのディレクトリにナンバリングを使わない
-    002-kebab-case-for-dirs.md    ADR: ディレクトリ名に kebab-case を使う
-    003-three-layer-knowledge-management.md  ADR: 知識・雛形の管理を三層構造にする
-    skill-candidates.md          スキル化候補（AIが自動追記）
+    001-no-numbering-in-src.md    ADR: dev-standards 自身の設計判断（consumer project にはコピーされない）
+    002-kebab-case-for-dirs.md    ADR: dev-standards 自身の設計判断（consumer project にはコピーされない）
+    003-three-layer-knowledge-management.md  ADR: dev-standards 自身の設計判断（consumer project にはコピーされない）
+    skill-candidates.md          スキル化候補（consumer project の decisions/ にコピー・AIが自動追記）
 
   snippets/                       テンプレート集（コピーして使う）
     ARCHITECTURE.md.template    ★ セキュリティ・品質・依存関係リスク・スケーラビリティ・開発プロセスセクション追加
     DESIGN.md.template          UIデザイン入口テンプレート（索引。値は token-ssot.json が正本）
     design/
-      token-ssot.json.template  デザイントークンSSOTテンプレート（W3C形式）
-      component-map.json.template  コンポーネントマッピングテンプレート
+      token-ssot.json.template  デザイントークンSSOTテンプレート（W3C形式・UIプロジェクトでコピー）
+      component-map.json.template  コンポーネントマッピングテンプレート（UIプロジェクトでコピー）
       INTAKE.md.template       デザイン記入手順テンプレート（初回セットアップ時・再収集時に使用）
+    opencode.json.template      プロジェクト設定テンプレート（setup-harness.sh が opencode.json に展開）
     tech-decision.md.template   技術選定記録テンプレート
     .gitignore.template         git除外設定テンプレート
     .env.example                環境変数テンプレート（setup-harness.shが自動コピー）
@@ -90,13 +92,20 @@ dev-standards/
 
     docs/                       ドキュメント雛形
       quality-scorecard.md.template  ★ 月次診断スコアカード雛形
+      project-definition.md（雛形）  プロジェクト定義（setup-harness.sh が雛形生成・AIと対話して記入）
+      operations.md（雛形）          運用手順書（setup-harness.sh が雛形生成・本番移行時に記入）
+      build-log.md.template         ビルドログ雛形（handoff.ts が日付行を追記）
+      spec-structure.md             仕様書構造テンプレート
+      sprint-contract-template.md   スプリント契約テンプレート
+      tasks-json-template.json      tasks.json テンプレート
       working/                  作業ディレクトリテンプレート（setup-harness.sh がコピー）
         plan.md.template        タスクの詳細計画テンプレート
         notes.md.template       実装メモテンプレート
         review-checklist.md.template  完了前チェックテンプレート
 
-    agents/                     AGENTS.mdテンプレート（単一・60〜100行）
-      AGENTS.md                 全プロジェクト共通（フェーズ問わず使う・コミット実行設定を含む）
+    agents/                     AGENTS.mdテンプレート（単一・60〜200行）
+      AGENTS.md                 全プロジェクト共通（フェーズ問わず使う・コミット実行設定を含む・単一・60〜200行）
+      _fill-guide.md            AGENTS.md 記入ガイド（コピー先: .opencode/agents/agents-fill-guide.md にリネーム）
       subagents/                サブエージェント定義ファイル
       _shared/                  サブエージェント間で共有されるSSoT（呼び出し形式テンプレート等）
       planner.md              仕様策定（1〜4文→詳細仕様書）
@@ -113,6 +122,7 @@ dev-standards/
       instructions/                 マークダウンルール（Plugin rule-injector がイベント駆動で注入。opencode.json の instructions は ["AGENTS.md"] のみ）
         _shared/                   共有SSoT（ルール・エージェント間で横断的に利用可能）
           _info-source-format.md ★ 情報源通知フォーマット
+        _template.md              ルールファイル作成用テンプレート
         security.md               ★ セキュリティルール
           security/                 トリガー別手順（_trigger-project-definition / _trigger-first-code / 他6）
         network-resilience.md     ★ 通信設計ルール
@@ -124,10 +134,12 @@ dev-standards/
         code-review.md              コードレビュールール（@code-reviewer 呼出前に自動適用）
         directory-structure.md      ディレクトリ構成ルール
         naming-conventions.md       命名規則ルール
+        tdd-cycle.md                TDDサイクル手順（ドリフト検出を含む）
       skills/                   プロジェクトスコープのスキル（.opencode/skills/に配置・gitで共有）
         release-prep/SKILL.md   ★ 本番リリース準備（SemVer・CHANGELOG自動生成を含む）
         live-operation/SKILL.md ★ 本番稼働中の変更・月次診断・スケーリング診断
         handoff/SKILL.md        ★ 引き継ぎ・長期停止・再開・初回リリース後フィードバック設定・EOL
+        playwright-setup/SKILL.md ★ @evaluator 用ブラウザ自動操作環境（playwright-cli）
       plugins/
         README.md                                                  Pluginsの説明・一覧・セットアップ手順
         secrets-guard.ts                                          tool.execute.before：機密ファイル・パターン保護（P1-1：SSoT 化）
@@ -154,12 +166,22 @@ dev-standards/
       project-context.md.template
       coding-conventions.md.template
       package.json                                              Plugin 依存関係（@opencode-ai/plugin 型定義）
-      standards/                  dev-standards 参照ドキュメント（setup-harness.sh が自動コピー）
-        principles/               開発原則集（security-implementation / tdd-with-ai 等）
-        architectures/            アーキテクチャパターン集
-        tech-decision.md.template 技術選定記録テンプレート
 
-# setup-harness.sh 実行時に .opencode/skills/ にダウンロードされるスキル（プロジェクトスコープ）
+# setup-harness.sh 実行時に .opencode/skills/ にダウンロードされるスキル
+
+  .opencode/standards/（コピー先）  consumer project の参照ドキュメント（以下の3つを setup-harness.sh がアセンブル）
+    コピー元: principles/（root）   開発原則集（security-implementation / tdd-with-ai 等）
+    コピー元: architectures/（root）アーキテクチャパターン集
+    コピー元: snippets/tech-decision.md.template
+    .local/                       プロジェクト固有の上書き用（同名ファイルが dev-standards より優先）
+      README.md                   使い方の説明
+
+  .opencode/handoff-artifact.md    セッション間の引き継ぎ情報（setup-harness.sh が雛形生成・handoffスキルが記入・handoff.ts Plugin が自動生成）
+
+  .env                             環境変数（setup-harness.sh が空ファイル作成・AGENTS.md Session Protocol が値入力を促す）
+
+  .git/hooks/pre-commit            機密情報のコミット防止フック（secret-patterns.json から動的生成）
+
 # ※ すべてのスキルはプロジェクトフォルダ内に配置される。gitに含まれる。
   find-skills  （vercel-labs/skills）  外部スキルの検索・インストール
   skill-creator（anthropics/skills）  スキルの新規作成・改善・eval・description最適化
@@ -277,7 +299,7 @@ DEV_STANDARDS_PATH=../dev-standards bash ../dev-standards/setup-harness.sh
 
 ```
 セットアップスクリプトが雛形を自動作成している。
-`snippets/agents/AGENTS.md` の Project Overview コメント内にある対話プロンプト、および
+`snippets/agents/_fill-guide.md` にある対話プロンプト、および
 `.opencode/standards/principles/project-definition-guide.md` にあるテンプレートをAIに渡す。
 AIが質問を1つずつ投げかけるので答えていく。
 AIが docs/project-definition.md に記入してくれる。
@@ -293,7 +315,7 @@ docs/project-definition.md を参照しながらAIが一緒に埋めてくれる
 #### 3-3：`AGENTS.md` を記入する
 
 ```
-AGENTS.md の Project Overview のコメント内にある対話プロンプトをAIに渡す。
+`snippets/agents/_fill-guide.md` にある対話プロンプトをAIに渡す。
 ARCHITECTURE.md の内容をもとにAIが一緒に埋めてくれる。
 ```
 

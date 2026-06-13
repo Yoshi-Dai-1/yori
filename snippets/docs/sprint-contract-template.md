@@ -7,7 +7,7 @@
 ```markdown
 ##### Sprint N Contract（承認待ち）
 
-**Generator が実装すること**：
+**メインエージェントが実装すること**：
 - [具体的な機能]
 
 **Evaluator が検証する完了基準**：
