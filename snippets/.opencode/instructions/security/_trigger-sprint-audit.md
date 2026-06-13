@@ -4,7 +4,7 @@
 `@evaluator` のQA評価完了後、以下の条件チェックを実行する：
 
 スプリントで実装した内容に以下のいずれかが含まれる場合、
-`@evaluator` のQA評価完了後に `@security-auditor`（監査モード）を
+`@evaluator` のQA評価完了後に `@security-auditor` を
 自律的に呼び出す。人間の指示を待たない。
 
 ```

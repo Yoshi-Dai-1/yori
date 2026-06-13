@@ -1,16 +1,16 @@
-# security-auditor 監査モード呼び出し形式
+# @security-auditor 呼び出し形式
 
-**目的**: 依存ライブラリスキャン結果を security-auditor（監査モード）に渡すためのデータ契約。
+**目的**: 依存ライブラリスキャン結果を @security-auditor に渡すためのデータ契約。
 
 **参照元**:
-- `.opencode/agents/subagents/security-auditor.md`（受信側）
+- `.opencode/agents/security-auditor.md`（受信側）
 - `.opencode/instructions/security/_web-search.md`（送信側）
 - `.opencode/skills/live-operation/SKILL.md`（送信側）
 
 ## 呼び出しテンプレート
 
 ````
-@security-auditor（監査モード）
+@security-auditor
 
 以下の依存ライブラリスキャン結果を分析し、CRITICAL/HIGHの脆弱性について対策を提案してください：
 

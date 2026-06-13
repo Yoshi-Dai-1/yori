@@ -222,7 +222,7 @@ export const RuleInjectorPlugin: Plugin = async ({ client }) => ({
                 parts: [
                   {
                     type: "text",
-                    text: `[rule-injector] security: セキュリティ関連コード（login/auth/token/password 等）を検出しました。実装完了後は必ず @security-auditor（監査モード）を呼び出してレビューを受けてください。これは必須手順です。`,
+                    text: `[rule-injector] security: セキュリティ関連コード（login/auth/token/password 等）を検出しました。実装完了後は必ず @security-auditorを呼び出してレビューを受けてください。これは必須手順です。`,
                   },
                 ],
               },
@@ -259,7 +259,7 @@ export const RuleInjectorPlugin: Plugin = async ({ client }) => ({
           parts: [
             {
               type: "text",
-              text: `[rule-injector] security: このターンでセキュリティ関連コードを検出しました。@security-auditor（監査モード）を呼び出してセキュリティレビューを実施してください。これは必須手順です。`,
+              text: `[rule-injector] security: このターンでセキュリティ関連コードを検出しました。@security-auditorを呼び出してセキュリティレビューを実施してください。これは必須手順です。`,
             },
           ],
         },

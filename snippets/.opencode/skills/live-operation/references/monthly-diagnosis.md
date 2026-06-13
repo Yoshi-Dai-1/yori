@@ -25,7 +25,7 @@
 スキャン結果を `.opencode/agents/_shared/security-auditor-invocation.md` の形式で @security-auditor に渡す：
 
 ```
-@security-auditor（監査モード）
+@security-auditor
 ```
 
 `@security-auditor` 完了後、結果とスキャン結果を `handoff-artifact.md` の `## Security Status` に記録する：

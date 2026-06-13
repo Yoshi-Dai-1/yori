@@ -47,7 +47,7 @@ npm audit / pip-audit / cargo audit / govulncheck を実行した結果を受け
 
   audit コマンドの出力に "high" または "critical"（大文字小文字不問）の脆弱性が含まれていたとき：
     → CRITICAL の場合は即座に人間に報告する
-    → @security-auditor を監査モードで呼び出す。呼び出し形式は `.opencode/agents/_shared/security-auditor-invocation.md` を参照
+    → @security-auditor を呼び出す。呼び出し形式は `.opencode/agents/_shared/security-auditor-invocation.md` を参照
     → 除外条件: 既にこのセッション内で同一 CVE について @security-auditor を呼び出した場合はスキップする
 ```
 

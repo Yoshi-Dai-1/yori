@@ -242,7 +242,7 @@ for AGENT_FILE in "$SNIPPETS/agents/subagents/"*.md; do
   fi
 done
 echo "✅ .opencode/agents/ にサブエージェント定義をコピーしました"
-echo "   （planner / evaluator / code-reviewer / security-auditor / test-generator / codebase-investigator / resilience-checker / code-quality-auditor）"
+echo "   （planner / evaluator / code-reviewer / security-designer / security-auditor / test-generator / codebase-investigator / resilience-checker / code-quality-auditor）"
 
 # サブエージェント共有ファイル（_shared/）をコピー
 mkdir -p .opencode/agents/_shared

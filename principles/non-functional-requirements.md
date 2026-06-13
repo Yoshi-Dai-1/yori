@@ -152,7 +152,7 @@ RPO（データ損失許容範囲）：___ 時間分
 **このセクションを記入する前に：**
 `.opencode/standards/principles/security-requirements.md` の判断ステップを実行し、
 このプロジェクトの対応レベル（Lv.1〜4）を確定してから記入する。
-対応レベルが確定していない場合は `@security-auditor`（設計モード）を呼び出す。
+対応レベルが確定していない場合は `@security-designer` を呼び出す。
 
 **定義すべき項目：**
 

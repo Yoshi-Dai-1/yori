@@ -4,7 +4,8 @@
 
 詳細な判断基準・チェックリスト・言語別ガイドは以下を参照（必要時に読む）：
 - `.opencode/standards/principles/security-requirements.md`（対応レベル・法令判断・言語別詳細）
-- `.opencode/agents/security-auditor.md`（設計モード・監査モードの詳細手順）
+- `.opencode/agents/security-designer.md`（セキュリティ設計の詳細手順）
+- `.opencode/agents/security-auditor.md`（セキュリティ監査の詳細手順）
 
 ---
 
@@ -32,7 +33,7 @@
 | 外部入力処理 | request.body, req.params, form, input, query |
 | DB操作 | query, execute, sql, find, insert, update, delete |
 
-実装完了後は `@security-auditor`（監査モード）を呼び出す。
+実装完了後は `@security-auditor` を呼び出す。
 
 ---
 

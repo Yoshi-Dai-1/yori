@@ -100,17 +100,17 @@ git add -A && git commit -m "[生成したメッセージ]"
 
 提案の形式：
 ```
-以下のコマンドを実行してください：
 git add -A && git commit -m "[生成したメッセージ]"
 ```
-実行はしない。人間が確認・修正してから実行する。
+実行はしない。人間が確認・修正後、「実行して」と指示 → AI が bash 実行し commit-review.ts が発火する。
+人間がターミナルにコピペして手動実行すると commit-review.ts が動作しない。
 
 ## Security Boundaries
 
 <!-- 判断基準：.opencode/standards/principles/security-requirements.md / event-injected rule: .opencode/instructions/security.md -->
 
-- 認証・決済・個人情報・外部APIの実装依頼を受けたとき → 実装前に `@security-auditor（設計モード）` を呼び出す
-- 認証・認可・機密データ・入力バリデーションを実装したとき → 完了後に `@security-auditor（監査モード）` を呼び出す
+- 認証・決済・個人情報・外部APIの実装依頼を受けたとき → 実装前に `@security-designer` を呼び出す
+- 認証・認可・機密データ・入力バリデーションを実装したとき → 完了後に `@security-auditor` を呼び出す
 - 外部入力を受け取るエンドポイントを実装したとき → バックエンドバリデーションを確認する
 - 環境変数を追加したとき → `.env.example` に反映しシークレットスキャンを実行する
 - 依存関係ファイル編集時 → `.opencode/instructions/security.md` の言語別audit対応表に従う
@@ -153,7 +153,7 @@ git add -A && git commit -m "[生成したメッセージ]"
 7. **Plugin 正常性チェック**: `.opencode/plugins/*.ts` が存在しプロジェクト名が埋まっているのに `bun` 未インストールの場合 → インストールを提案
 8. **月次診断期限チェック**: `docs/quality-scorecard.md` の最終診断日が30日以上前（または不存在）なら診断実施を提案
 
-**セッション終了時**：`handoff.ts` Plugin（`session.deleted`）が `.opencode/handoff-artifact.md` のテンプレートを自動生成し、`docs/build-log.md` に日付行を追記する。詳細な引き継ぎは `@handoff` または「今日はここまで」と伝える。handoff スキル実行済みの場合（`<!-- HANDOFF_FILLED -->` マーカーあり）、Pluginは既存ファイルを上書きしない。
+**セッション終了時**：`handoff.ts` Plugin（`session.deleted`）が `.opencode/handoff-artifact.md` のテンプレートを自動生成し、`docs/build-log.md` に日付行を追記する。詳細な引き継ぎは handoff スキル（「今日はここまで」と伝える）が自動起動する。handoff スキル実行済みの場合（`<!-- HANDOFF_FILLED -->` マーカーあり）、Pluginは既存ファイルを上書きしない。
 
 ## Report Format
 

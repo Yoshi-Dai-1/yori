@@ -107,7 +107,7 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
     // 3. 両方のレビューを並列実行
     const diffBlock = `\`\`\`diff\n${diff}\n\`\`\``
     const reviewMessage = `以下の git diff のコードレビューを実施してください。\n\n${diffBlock}`
-    const auditMessage = `監査モードで動作してください。以下の git diff のセキュリティ監査を実施してください。\n\n${diffBlock}`
+    const auditMessage = `以下の git diff のセキュリティ監査を実施してください。\n\n${diffBlock}`
 
     const [reviewResult, auditResult] = await Promise.all([
       runReviewInSession(client, sessionId, "commit-review-code", reviewerMd, reviewMessage),
