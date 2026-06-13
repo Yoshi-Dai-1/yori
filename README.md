@@ -140,6 +140,9 @@ dev-standards/
         harness-health.ts                                         tool.execute.after/session.idle：Context Anxiety 検知（P0-3 per-session sliding window + TTL）
         task-archive.ts                                           session.idle：作業ディレクトリの自動アーカイブ提案
         working-dir-guide.ts                                      tool.execute.before：docs/working/ ファイル操作時のルール注入
+        rule-injector.ts                                           tool.execute.before：ファイル種別・内容に応じてルールファイル参照を注入（AGENTS.md 肥大化防止）
+        destructive-op-guard.ts                                   tool.execute.before：破壊的Git操作（reset --hard / rebase / push --force / rm -rf 等）のブロック
+        commit-review.ts                                           tool.execute.before：git commit 検出 → @code-reviewer + @security-auditor 並列実行 → 問題ありならブロック
         compaction-context.ts                                     experimental.session.compacting：コンパクション時に作業ディレクトリの状態を維持
       config/                       SSoT ファイル群
         secret-patterns.json                                     機密パターン定義（P1-1：secrets-guard と pre-commit の単一情報源）

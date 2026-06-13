@@ -161,7 +161,7 @@ for SKILL_DIR in "$SNIPPETS/.opencode/skills/"/*/; do
   SKILL_NAME=$(basename "$SKILL_DIR")
   cp -r "$SKILL_DIR" ".opencode/skills/$SKILL_NAME/"
 done
-echo "✅ .opencode/skills/ に組み込みSkillsをコピーしました（release-prep / live-operation / handoff）"
+echo "✅ .opencode/skills/ に組み込みSkillsをコピーしました（release-prep / live-operation / handoff / playwright-setup）"
 
 # 外部スキルをダウンロード（find-skills / skill-creator）
 # P1-4 修正：.opencode/config/skills.lock.yaml からコミットハッシュを読み込んで固定
@@ -757,9 +757,10 @@ if [ -d ".git" ]; then
   fi
 
   # jq でパターンを読み込んで bash 配列に変換
+  # severity が "block" または未設定のパターンのみ pre-commit でチェック（"warn" は除外）
   if command -v jq &>/dev/null; then
     FILE_PATTERNS_BASH=$(jq -r '.filePatterns[]' "$PATTERNS_JSON" | awk '{print "  \x27" $0 "\x27"}')
-    CONTENT_PATTERNS_BASH=$(jq -r '.contentPatterns[].pattern' "$PATTERNS_JSON" | awk '{print "  \x27" $0 "\x27"}')
+    CONTENT_PATTERNS_BASH=$(jq -r '.contentPatterns[] | select(.severity == "block" or (has("severity") | not)) | .pattern' "$PATTERNS_JSON" | awk '{print "  \x27" $0 "\x27"}')
   else
     # フォールバック：最低限のパターン（.env 系のみ）
     FILE_PATTERNS_BASH="  '\\.env\\.local$'"
@@ -793,7 +794,7 @@ for PATTERN in "\${FILE_PATTERNS[@]}"; do
 done
 
 # ── 危険なコンテンツパターンのチェック ──────────────────────────────
-# パターンは $PATTERNS_JSON の contentPatterns から読み込み
+# パターンは $PATTERNS_JSON の contentPatterns から読み込み（severity: "block" のみ）
 CONTENT_PATTERNS=(
 ${CONTENT_PATTERNS_BASH}
 )

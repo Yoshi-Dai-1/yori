@@ -3,65 +3,41 @@
 <!-- セッション終了時に上書き更新する（追記しない）。
      前回の履歴は git log で参照可能。 -->
 
-## 今回の変更（2026-06-07）
+## 今回の変更（2026-06-13）
 
-block-on-first-write 方式への移行 + 非コードファイルギャップ修正 + 全ファイル整合性監査と修正。
+commit-review.ts に @security-auditor（監査モード）を追加。@code-reviewer の委譲チェーンを解決。
 
 ### Changed files
 
 | ファイル | 内容 |
 |---------|------|
-| `snippets/.opencode/plugins/rule-injector.ts` | **全面書き換え**: block-on-first-write + CSS(.css/.scss) を CODE_FILE_PATTERN に追加 + 非コードファイルギャップ(go.mod/pom.xml/build.gradle)修正 + COMMON_CODE_RULES 削除 |
-| `snippets/.opencode/plugins/README.md` | rule-injector セクション全面更新（作用フロー・BLOCK/注入テーブル） |
-| `.design-notes/session-context.md` | このファイル（上書き） |
-
-### 🔴 Issues found and fixed
-
-| # | ファイル | 問題 | 修正 |
-|---|---------|------|------|
-| 1 | `snippets/agents/AGENTS.md:99` | bare path `tdd-with-ai.md` — target project で解決不能 | → `.opencode/standards/principles/tdd-with-ai.md` |
-| 2 | `docs/build-log.md` | 4ファイルで参照されているが template なし・setup-harness.sh 未作成 | → `snippets/docs/build-log.md.template` 作成 + setup-harness.sh に作成ステップ追加 |
-| 3 | `README.md:317` | "11つの TS Plugin" → 実際は13 | → "13つの" |
-| 4 | `README.md:312` | ".opencode/instructions/*.md を自動ロードする設定" → 現在は Plugin 駆動 | → Plugin 注入の説明に修正 |
-| 5 | `setup-harness.sh:136` | instructions コピーコメントに6ファイル欠落 | → 全ファイル明示 |
-| 6 | `stack-setup.md:76-78` | Step 3.6 と Step 4 が同一ファイル _step-36-arch.md を重複参照 | 低優先度・機能的に正しいため未修正 |
-
-### Verifications
-
-- **paths: vs filePattern**: 113/113 エントリ全件一致 ✅
-- **孤立ファイル**: 全 instruction ファイルが RULES または CONVENTION_FILES に所属 ✅
-- **plugins ファイル参照**: 全13 Plugin のパスが相対パスで正しい ✅
-- **principles 相互参照**: 全 `.opencode/standards/principles/` プレフィックス ✅
-- **旧 rules/ パス**: 全滅（0件）✅
-- **opencode.json.template**: `["AGENTS.md"]` ✅
+| `snippets/.opencode/plugins/commit-review.ts` | **@security-auditor 並列実行を追加**: git commit 検出 → @code-reviewer（一般 + CRITICAL security）+ @security-auditor（全severity）を並列子セッション実行 → いずれかが問題を検出したらブロック |
+| `snippets/.opencode/plugins/README.md` | commit-review.ts の説明を更新 |
+| `snippets/agents/AGENTS.md` | **「提案・人間実行」モードの名実一致**: TDD 完了後も AI が自律提案するよう修正（従来は人間指示が必須）。実行は人間（従来通り） |
+| `snippets/agents/AGENTS.md` | 「ブランチとPull Request」セクションを一旦追加したが削除（AI不要な情報によるAGENTS.md肥大化を避ける）。代わりに plugins/README.md に人間向け備考を追加 |
 
 ### Key design decisions
 
-1. **block-on-first-write**: 初回コードファイル書き込みを `throw new Error()` で BLOCK。AI に規約ファイルを読ませてから再試行させる。`tool.execute.before` のエラーは AI の tool result に返り人間には表示されない。
+1. **委譲チェーンの解決**: @code-reviewer が「HIGH以下は @security-auditor に委ねる」と明示していたが、commit-review.ts は @code-reviewer のみ実行していた。@security-auditor を追加することで委譲を解決した。
 
-2. **規約ファイル3本でブロック**: `naming-conventions.md`, `directory-structure.md`, `coding-conventions.md`。この3つは「最初の1行」で決定される構造（ファイル名・階層・コードパターン）に影響し、後からの修正コストが高い。
+2. **並列実行**: `Promise.all` で両方の子セッションを並列実行。シーケンシャルより高速で、片方が失敗しても他方の結果は取得できる。
 
-3. **COMMON_CODE_RULES 削除**: 規約は block-on-first-write で処理。グループ注入は不要になった。
+3. **セキュリティ監査の範囲**: 25+脆弱性クラスの明示列挙は行わず、@security-auditor の7カテゴリチェックリストに委ねる。LLM の訓練知識により実質的に同範囲をカバーするため、列挙による複雑性増加は避けた。
 
-4. **非コードファイルギャップ修正**:
-   - `security`: `docs/project-definition.md`, `AGENTS.md`, `package.json`, `requirements*.txt`, `*.toml`, `Gemfile`, `composer.json`, `pubspec.yaml`, `*.csproj`, `packages.config` を filePattern に追加
-   - `network-resilience`: `ARCHITECTURE.md`, `docs/project-definition.md` を filePattern に追加
-   - `design-contract`: `design/*.json` を filePattern に追加
+4. **hasIssues の拡張**: @security-auditor の出力形式（`[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]` を行頭に配置）も検出できるよう regex を拡張。`m` フラグで行頭マッチ。
 
-5. **conventionsRead は事前読了を尊重**: AI が初回書き込みより前に規約ファイルを自発的に読んでいた場合、ブロックは発生しない（`conventionsRead.size` がセットされているため）。
+5. **「提案・人間実行」モードの修正**: 従来は「人間から「コミットして」と指示されたとき」のみ提案していたが、名実一致のため TDD フロー完了後の自律提案を追加。commit-review.ts が発火する経路を明確化した。また TDD 完了後の提案により、人間が「コミットして」と言うのを忘れるケースもカバーできる。
 
-6. **コンパクション耐性**: セッションコンパクションでメモリ状態は消失するが、最悪1回の再ブロックで回復。AI は会話履歴から規約内容を把握しており即座に再試行する。
+### 設計上の判断
 
-### Current RULES (Plugin-injected, noReply)
-
-- `code-quality`: コードファイル編集時（ファイルサイズ制限、単一責任）
-- `security`: コードファイル + 非コードファイル編集時 + 内容キーワード検出（login/auth/token/stripe/payment 等）
-- `network-resilience`: コードファイル + ARCHITECTURE.md + docs/project-definition.md 編集時 + 内容キーワード検出（fetch/axios/retry/timeout 等）
-- `design-contract`: UIファイル(.tsx/.jsx/.css/.scss) + DESIGN.md + design/*.json 編集時
-- `stack-setup`: ARCHITECTURE.md 編集時
+**Security Guidance Layer 2 との差:**
+- **プロセス上のギャップ**（全severityのコミット時コード強制）: ✅ 解決（@security-auditor 追加）
+- **検出粒度のギャップ**（25+クラスの明示列挙 vs 7カテゴリ）: ❌ あえて残す（Simplicity First。LLM知識で同範囲カバー可能。列挙による複雑性増加を避ける）
+- **トリガータイミングの差**（毎ターン vs コミット時）: 変更なし（dev-standards はコミット時検出で十分と判断）
 
 ## 残タスク
 
 - rule-injector.ts の実機動作未検証（OpenCode Plugin ランタイム依存）
+- commit-review.ts の実機動作未検証（子セッション API + BunShell + 並列子セッションの実動作）
 - compaction-context.ts との連携（conventionsOffered 状態の保存）は未実装（将来対応）
 - 他プロジェクト実機テスト（setup-harness.sh 実行後）

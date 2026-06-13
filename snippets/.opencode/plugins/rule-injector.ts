@@ -69,6 +69,8 @@ interface SessionState {
   conventionsOffered: boolean
   conventionsRead: Set<string>
   rules: Map<string, RuleSessionState>
+  securityContentMatched: boolean
+  securityAuditInjected: boolean
 }
 
 const sessions = new Map<string, SessionState>()
@@ -80,6 +82,8 @@ function getSession(sessionId: string): SessionState {
       conventionsOffered: false,
       conventionsRead: new Set(),
       rules: new Map(),
+      securityContentMatched: false,
+      securityAuditInjected: false,
     }
     sessions.set(sessionId, s)
   }
@@ -209,20 +213,57 @@ export const RuleInjectorPlugin: Plugin = async ({ client }) => ({
           })
         } else if (rule.contentPatterns && content && contentMatchesAny(content, rule.contentPatterns)) {
           state.readByAI = false
-          await client.session.prompt({
-            path: { id: sessionId },
-            body: {
-              noReply: true,
-              parts: [
-                {
-                  type: "text",
-                  text: `[rule-injector] ${rule.name}: ${rule.filePath} で定義されたパターンに該当するコードを検出しました — 該当ルールを再読してください`,
-                },
-              ],
-            },
-          })
+          if (rule.name === "security") {
+            session.securityContentMatched = true
+            await client.session.prompt({
+              path: { id: sessionId },
+              body: {
+                noReply: true,
+                parts: [
+                  {
+                    type: "text",
+                    text: `[rule-injector] security: セキュリティ関連コード（login/auth/token/password 等）を検出しました。実装完了後は必ず @security-auditor（監査モード）を呼び出してレビューを受けてください。これは必須手順です。`,
+                  },
+                ],
+              },
+            })
+          } else {
+            await client.session.prompt({
+              path: { id: sessionId },
+              body: {
+                noReply: true,
+                parts: [
+                  {
+                    type: "text",
+                    text: `[rule-injector] ${rule.name}: ${rule.filePath} で定義されたパターンに該当するコードを検出しました — 該当ルールを再読してください`,
+                  },
+                ],
+              },
+            })
+          }
         }
       }
+    }
+  },
+  "session.idle": async (input) => {
+    const sessionId = (input as any)?.sessionID
+    if (!sessionId) return
+    const s = sessions.get(sessionId)
+    if (!s) return
+    if (s.securityContentMatched && !s.securityAuditInjected) {
+      s.securityAuditInjected = true
+      await client.session.prompt({
+        path: { id: sessionId },
+        body: {
+          noReply: true,
+          parts: [
+            {
+              type: "text",
+              text: `[rule-injector] security: このターンでセキュリティ関連コードを検出しました。@security-auditor（監査モード）を呼び出してセキュリティレビューを実施してください。これは必須手順です。`,
+            },
+          ],
+        },
+      })
     }
   },
 })
