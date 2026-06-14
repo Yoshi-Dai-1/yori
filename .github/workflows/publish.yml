@@ -20,5 +20,6 @@ jobs:
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
+      - run: npm ci
       - name: Release
         run: npx semantic-release
