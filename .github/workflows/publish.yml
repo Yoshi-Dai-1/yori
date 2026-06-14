@@ -15,13 +15,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - name: Get OIDC token for npm
-        id: oidc
+      - name: Exchange GitHub OIDC token for npm token
+        id: exchange
         run: |
-          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          OIDC_TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" | jq -r '.value')
-          echo "id-token=$TOKEN" >> "$GITHUB_OUTPUT"
+          NPM_TOKEN=$(curl -s -X POST "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/@yoshi-dai%2fyori" \
+            -H "Authorization: Bearer $OIDC_TOKEN")
+          echo "auth_token=$(echo "$NPM_TOKEN" | jq -r '.token')" >> "$GITHUB_OUTPUT"
       - name: Publish
         run: npm publish --access public
         env:
-          NPM_ID_TOKEN: ${{ steps.oidc.outputs.id-token }}
+          NODE_AUTH_TOKEN: ${{ steps.exchange.outputs.auth_token }}
+          NPM_CONFIG_USERCONFIG: ""
