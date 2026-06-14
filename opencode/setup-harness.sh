@@ -1,11 +1,17 @@
 #!/bin/bash
 # setup-harness.sh
-# dev-standardsのテンプレートを新プロジェクトにコピーする
+# yori のハーネステンプレートを新プロジェクトにコピーする
 #
 # 使い方：
-#   1. このスクリプトを新プロジェクトのルートに配置する
-#   2. dev-standardsのパスを設定する（DEV_STANDARDS_PATH）
-#   3. ./setup-harness.sh を実行する
+#   curl 方式（推奨）:
+#     bash <(curl -s https://raw.githubusercontent.com/yoshi-dai/yori/main/opencode/setup-harness.sh)
+#
+#   npm 方式:
+#     npx @yoshi-dai/yori
+#
+#   git clone 方式:
+#     git clone https://github.com/yoshi-dai/yori.git
+#     cd ターゲットプロジェクト && bash ../yori/opencode/setup-harness.sh
 #
 # 実行後に必要な作業（人間が行う）：
 #   1. docs/project-definition.md をAIと対話しながら記入する
@@ -16,22 +22,47 @@
 
 set -e
 
-# ========== 設定 ==========
-DEV_STANDARDS_PATH="${DEV_STANDARDS_PATH:-../dev-standards}"
-# ==========================
+# ========== yori のパスを解決 ==========
+# 優先順位:
+#   1. YORI_PATH 環境変数（明示指定）
+#   2. DEV_STANDARDS_PATH 環境変数（後方互換）
+#   3. このスクリプトからの相対パス（git clone / npm 方式）
+#   4. 自動クローン（curl 方式）
+SCRIPT_DIR=""
+if [ -n "$0" ] && [ "$0" != "bash" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)" || SCRIPT_DIR=""
+fi
+
+if [ -n "$YORI_PATH" ]; then
+  YORI_SRC="$YORI_PATH"
+elif [ -n "$YORI_SRC" ]; then
+  YORI_SRC="$YORI_SRC"
+elif [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/snippets/agents/AGENTS.md" ]; then
+  YORI_SRC="$SCRIPT_DIR"
+else
+  YORI_TMP=$(mktemp -d)
+  echo "📦 yori をダウンロードしています..."
+  git clone --depth 1 https://github.com/yoshi-dai/yori.git "$YORI_TMP" 2>/dev/null || {
+    echo "❌ yori のダウンロードに失敗しました"
+    echo "   YORI_PATH 環境変数でパスを指定してください"
+    exit 1
+  }
+  YORI_SRC="$YORI_TMP/opencode"
+fi
+# ======================================
 
 echo "🔧 ハーネスのセットアップを開始します..."
-echo "   dev-standards: $DEV_STANDARDS_PATH"
+echo "   yori: $YORI_SRC"
 echo ""
 
-# dev-standardsの存在確認
-if [ ! -d "$DEV_STANDARDS_PATH" ]; then
-  echo "❌ dev-standards が見つかりません: $DEV_STANDARDS_PATH"
-  echo "   DEV_STANDARDS_PATH 環境変数でパスを指定してください"
+# 配布元の存在確認
+if [ ! -d "$YORI_SRC" ]; then
+  echo "❌ yori が見つかりません: $YORI_SRC"
+  echo "   YORI_PATH 環境変数でパスを指定してください"
   exit 1
 fi
 
-SNIPPETS="$DEV_STANDARDS_PATH/snippets"
+SNIPPETS="$YORI_SRC/snippets"
 
 # .opencode/ ディレクトリ作成
 mkdir -p .opencode/{instructions,skills,agents,plugins,usage}
@@ -42,7 +73,7 @@ mkdir -p docs
 # decisions/ ディレクトリ作成（ADR・技術選定・スキル化候補の記録先）
 mkdir -p decisions
 if [ ! -f "decisions/skill-candidates.md" ]; then
-  cp "$DEV_STANDARDS_PATH/decisions/skill-candidates.md" decisions/skill-candidates.md
+  cp "$YORI_SRC/decisions/skill-candidates.md" decisions/skill-candidates.md
   echo "✅ decisions/skill-candidates.md をコピーしました"
 fi
 
@@ -279,21 +310,21 @@ if [ ! -f ".opencode/standards/principles/.local/README.md" ]; then
   cat > ".opencode/standards/principles/.local/README.md" << 'LOCALREADME'
 # プロジェクト固有の上書き（principles/）
 
-このディレクトリに置かれたファイルは、同名の dev-standards ファイルより優先されます。
-dev-standards 側の同名ファイルが更新されても上書きされません。
+このディレクトリに置かれたファイルは、同名の yori ファイルより優先されます。
+yori 側の同名ファイルが更新されても上書きされません。
 
 使い方：
 1. `.opencode/standards/principles/<file>.md` を編集
 2. 同じファイル名で `.opencode/standards/principles/.local/<file>.md` に保存
 3. 編集後にこのディレクトリの同名ファイルを参照するようにする
 
-例：dev-standards の `security-requirements.md` をプロジェクト固有の
+例：yori の `security-requirements.md` をプロジェクト固有の
 リスクプロファイルに合わせて上書きしたい場合
 1. `.opencode/standards/principles/.local/security-requirements.md` を作成
 2. 内容をカスタマイズ
 3. プロジェクト内の他のファイルからこの .local 版を参照する
 
-注意：dev-standards 側の更新内容を取り込みたい場合は手動マージが必要です。
+注意：yori 側の更新内容を取り込みたい場合は手動マージが必要です。
 LOCALREADME
   echo "ℹ️  .opencode/standards/principles/.local/README.md を作成しました（プロジェクト固有の上書き機構）"
 fi
@@ -302,7 +333,7 @@ if [ ! -f ".opencode/standards/architectures/.local/README.md" ]; then
   cat > ".opencode/standards/architectures/.local/README.md" << 'LOCALREADME'
 # プロジェクト固有の上書き（architectures/）
 
-このディレクトリに置かれたファイルは、同名の dev-standards ファイルより優先されます。
+このディレクトリに置かれたファイルは、同名の yori ファイルより優先されます。
 詳細は `.opencode/standards/principles/.local/README.md` を参照。
 LOCALREADME
 fi
@@ -310,7 +341,7 @@ fi
 # principles/ のマージコピー
 DIFF_COUNT=0
 NEW_COUNT=0
-for SRC_FILE in "$DEV_STANDARDS_PATH/principles/"*.md; do
+for SRC_FILE in "$YORI_SRC/principles/"*.md; do
   [ -f "$SRC_FILE" ] || continue
   FNAME=$(basename "$SRC_FILE")
   TARGET=".opencode/standards/principles/$FNAME"
@@ -330,7 +361,7 @@ for SRC_FILE in "$DEV_STANDARDS_PATH/principles/"*.md; do
 done
 
 # architectures/ のマージコピー
-for SRC_FILE in "$DEV_STANDARDS_PATH/architectures/"*.md; do
+for SRC_FILE in "$YORI_SRC/architectures/"*.md; do
   [ -f "$SRC_FILE" ] || continue
   FNAME=$(basename "$SRC_FILE")
   TARGET=".opencode/standards/architectures/$FNAME"
@@ -348,15 +379,15 @@ done
 
 # tech-decision テンプレートは強制コピー（テンプレートは編集対象外）
 if [ ! -f ".opencode/standards/tech-decision.md.template" ]; then
-  cp "$DEV_STANDARDS_PATH/snippets/tech-decision.md.template" .opencode/standards/tech-decision.md.template
+  cp "$YORI_SRC/snippets/tech-decision.md.template" .opencode/standards/tech-decision.md.template
 fi
 
 if [ "$DIFF_COUNT" -gt 0 ]; then
   echo "ℹ️  差分があるファイルは上書きされませんでした。"
   echo "   反映方法："
-  echo "   A) 差分を確認してプロジェクトに取り込む：diff \$DEV_STANDARDS_PATH/principles/X.md .opencode/standards/principles/X.md"
+  echo "   A) 差分を確認してプロジェクトに取り込む：diff \$YORI_SRC/principles/X.md .opencode/standards/principles/X.md"
   echo "   B) プロジェクト固有の差分を保持：.opencode/standards/principles/.local/X.md にコピー"
-  echo "   C) dev-standards の最新版で強制上書き：rm .opencode/standards/principles/X.md && setup-harness.sh 再実行"
+   echo "   C) yori の最新版で強制上書き：rm .opencode/standards/principles/X.md && setup-harness.sh 再実行"
   echo "   合計 ${DIFF_COUNT} ファイルに差分があります"
 fi
 echo "✅ standards/ をマージコピーしました（新規 ${NEW_COUNT} / 差分保持 ${DIFF_COUNT}）"
@@ -376,7 +407,7 @@ STALE_REF=$(grep -rE "(^|[^/])principles/[a-z_-]+\.md" .opencode/standards/ 2>/d
 STALE_REF_ARCH=$(grep -rE "(^|[^/])architectures/[a-z_-]+\.md" .opencode/standards/ 2>/dev/null | grep -v ".opencode/standards/architectures/" | wc -l | tr -d ' ')
 if [ "$STALE_REF" -gt 0 ] || [ "$STALE_REF_ARCH" -gt 0 ]; then
   echo "⚠️  旧形式の相互参照が ${STALE_REF} 件（principles）+ ${STALE_REF_ARCH} 件（architectures）残っています"
-  echo "    dev-standards 側で修正してから再実行してください"
+  echo "    yori 側で修正してから再実行してください"
 fi
 echo "✅ .opencode/standards/ をコピーしました"
 echo "   （principles/ 全ファイル・architectures/ 全ファイル・tech-decision テンプレート）"
@@ -708,7 +739,7 @@ if [ -f ".gitignore" ]; then
   if ! grep -q "handoff-artifact.md" .gitignore; then
     # handoff-artifact と standards/ は必ずgitignore
     # handoff-artifact: セッション固有・個人の引き継ぎ情報
-    # standards/: dev-standards のコピー（チームで共有する場合は .gitignore から外す）
+    # standards/: yori のコピー（チームで共有する場合は .gitignore から外す）
     echo "" >> .gitignore
     echo "# ハーネス（セッション固有・自動生成）" >> .gitignore
     echo ".opencode/handoff-artifact.md" >> .gitignore
@@ -887,7 +918,7 @@ if [ $VALIDATION_FAILED -eq 0 ]; then
 else
   echo ""
   echo "⚠️  上記の問題を修正してから次のステップに進んでください"
-  echo "   再実行: DEV_STANDARDS_PATH=$DEV_STANDARDS_PATH bash $DEV_STANDARDS_PATH/setup-harness.sh"
+  echo "   再実行: DEV_STANDARDS_PATH=$YORI_SRC bash $YORI_SRC/setup-harness.sh"
 fi
 
 echo ""

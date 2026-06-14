@@ -172,11 +172,11 @@ component/  部品スコープの割り当て
 
 | レイヤー | 担当 | ファイル |
 |---------|------|---------|
-| デザイン値の正本 | dev-standards 契約 | `design/token-ssot.json` |
+| デザイン値の正本 | yori 契約 | `design/token-ssot.json` |
 | デザイン生成 | Open Design | Design System（Skill が参照） |
-| 検証 | dev-standards 契約 + OD CLI | evaluator / `pnpm tools-dev` |
+| 検証 | yori 契約 + OD CLI | evaluator / `pnpm tools-dev` |
 
 - Open Design の Design System は token-ssot.json の**外部入力ソース**として利用できる。OD で生成したデザインから値を抽出して token-ssot.json に転記する
 - OD の CLI 検証コマンド（`pnpm tools-dev`）は DESIGN.md 編集後の整合検証として使用できる
-- Open Design の Skill（132種）と dev-standards の subagents（evaluator 等）は独立した機能。OD Skill はデザイン生成に、dev-standards の evaluator は品質検証に使う
-- OD を使う場合も `design/component-map.json` は dev-standards の契約として維持する。OD の生成物をコンポーネントに起こすときの名対応は component-map.json で管理する
+- Open Design の Skill（132種）と yori の subagents（evaluator 等）は独立した機能。OD Skill はデザイン生成に、yori の evaluator は品質検証に使う
+- OD を使う場合も `design/component-map.json` は yori の契約として維持する。OD の生成物をコンポーネントに起こすときの名対応は component-map.json で管理する

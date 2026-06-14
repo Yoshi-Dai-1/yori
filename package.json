@@ -1,0 +1,17 @@
+{
+  "name": "@yoshi-dai/yori",
+  "version": "1.0.0",
+  "description": "yori - AI co-development harness framework",
+  "bin": {
+    "yori": "./cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yoshi-dai/yori.git"
+  },
+  "license": "MIT",
+  "files": [
+    "cli.js",
+    "opencode/"
+  ]
+}

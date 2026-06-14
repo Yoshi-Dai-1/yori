@@ -10,7 +10,7 @@ import { join } from "path"
  * いずれかが問題を検出したらコミットをブロックする。
  *
  * 設計思想：
- * - AI の判断に依存せず、コードで強制する（dev-standards の中核原則）
+ * - AI の判断に依存せず、コードで強制する（yori の中核原則）
  * - 子セッションを使用するためメインセッションのコンテキストを消費しない
  * - @code-reviewer の委譲（HIGH以下は @security-auditor）を解決する
  * - 問題なし = commit 通過、問題あり = Error() で commit ブロック + 結果を注入
