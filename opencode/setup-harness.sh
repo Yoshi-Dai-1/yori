@@ -4,13 +4,13 @@
 #
 # 使い方：
 #   curl 方式（推奨）:
-#     bash <(curl -s https://raw.githubusercontent.com/yoshi-dai/yori/main/opencode/setup-harness.sh)
+#     bash <(curl -s https://raw.githubusercontent.com/Yoshi-Dai-1/yori/main/opencode/setup-harness.sh)
 #
 #   npm 方式:
 #     npx @yoshi-dai/yori
 #
 #   git clone 方式:
-#     git clone https://github.com/yoshi-dai/yori.git
+#     git clone https://github.com/Yoshi-Dai-1/yori.git
 #     cd ターゲットプロジェクト && bash ../yori/opencode/setup-harness.sh
 #
 # 実行後に必要な作業（人間が行う）：
@@ -42,7 +42,7 @@ elif [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/snippets/agents/AGENTS.md" ]; the
 else
   YORI_TMP=$(mktemp -d)
   echo "📦 yori をダウンロードしています..."
-  git clone --depth 1 https://github.com/yoshi-dai/yori.git "$YORI_TMP" 2>/dev/null || {
+  git clone --depth 1 https://github.com/Yoshi-Dai-1/yori.git "$YORI_TMP" 2>/dev/null || {
     echo "❌ yori のダウンロードに失敗しました"
     echo "   YORI_PATH 環境変数でパスを指定してください"
     exit 1

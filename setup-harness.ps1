@@ -22,7 +22,9 @@ if (-not $wslExists) {
 }
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$wslPath = $scriptDir.Replace('\', '/').Replace('C:', '/mnt/c')
+$driveLetter = (Get-Item $scriptDir).PSDrive.Root.TrimEnd('\')
+$wslPath = $scriptDir.Replace('\', '/') -replace "$driveLetter", "/mnt/$($driveLetter.ToLower())"
 
 Write-Host "📦 WSL 経由で setup-harness.sh を実行します..." -ForegroundColor Cyan
-& wsl bash "$wslPath/opencode/setup-harness.sh"
+# スクリプトは opencode/ 配下にあるので YORI_PATH を設定して WSL に渡す
+& wsl bash -c "YORI_PATH='$wslPath/opencode' bash '$wslPath/opencode/setup-harness.sh'"

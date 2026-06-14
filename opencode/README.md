@@ -23,10 +23,24 @@ setup-harness.sh でテンプレートをコピーして、
 
 ```bash
 # ターゲットプロジェクトのルートで実行
-bash <(curl -s https://raw.githubusercontent.com/yoshi-dai/yori/main/opencode/setup-harness.sh)
+bash <(curl -s https://raw.githubusercontent.com/Yoshi-Dai-1/yori/main/opencode/setup-harness.sh)
 ```
 
 スクリプトが自動的に yori リポジトリを一時クローンし、テンプレートを展開します。
+
+> **Windows での実行について**：
+> 上記 `bash` コマンドは WSL2（Windows Subsystem for Linux）または Git Bash が必要です。
+>
+> **WSL2 を使用する場合（推奨）**：
+> ```
+> wsl --install            # 初回のみ（管理者 PowerShell）
+> ```
+> その後、WSL 内の bash で curl/npm/git clone の各方式を実行してください。
+>
+> **Git Bash を使用する場合**：
+> Git for Windows をインストール後、Git Bash ターミナルで curl/npm/git clone の各方式を実行してください。
+>
+> **npm 方式の場合**：`npx @yoshi-dai/yori` は、Windows では自動的に `setup-harness.ps1`（WSL2 ラッパー）を起動します。
 
 ### 方式 B：npm
 
@@ -37,7 +51,7 @@ npx @yoshi-dai/yori
 ### 方式 C：git clone
 
 ```bash
-git clone https://github.com/yoshi-dai/yori.git
+git clone https://github.com/Yoshi-Dai-1/yori.git
 cd ターゲットプロジェクト
 bash ../yori/opencode/setup-harness.sh
 ```
