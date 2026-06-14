@@ -16,6 +16,10 @@
 - Lint: なし（Markdown ファイルのみ）
 - Setup: `bash opencode/setup-harness.sh`（ターゲットプロジェクトで実行）
 
+## Commit Convention
+
+コミットメッセージは conventional commits 形式（`fix:`, `feat:`, `feat!:`, `chore:`, `docs:`）に従うこと。semantic-release がコミットメッセージから次バージョンを自動判定するため。
+
 ## Architecture
 
 ### ディレクトリ構造
