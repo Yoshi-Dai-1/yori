@@ -16,4 +16,5 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+      - run: npm --version && npm whoami 2>&1 || echo "whoami failed"
       - run: npx npm@latest publish --access public
