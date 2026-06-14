@@ -12,9 +12,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
-      - run: npm install -g npm@latest
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      - run: npm publish --access public
+      - run: npx npm@latest publish --access public
