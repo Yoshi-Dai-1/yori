@@ -230,7 +230,7 @@ AIが修正方法を推測なしで実行できるようになる。
 | 言語 | リンター（アーキテクチャ違反・バグ検出） | フォーマッター（スタイル統一） |
 |------|----------------------------------------|-----------------------------|
 | JavaScript / TypeScript | ESLint（`no-restricted-imports`・`eslint-plugin-boundaries`） | Prettier |
-| Python | Ruff / Flake8 | Ruff / Black |
+| Python | Ruff | Ruff |
 | Rust | Clippy | rustfmt |
 | Go | staticcheck / golangci-lint | gofmt（標準） |
 | Ruby | RuboCop | RuboCop |

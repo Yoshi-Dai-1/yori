@@ -2,6 +2,10 @@
 
 `Package.swift` はプロジェクト固有のため自動作成しない。
 
+**バージョン管理：** `.swift-version` でランタイムバージョンを固定する。
+ARCHITECTURE.md に記録された Swift バージョンを `.swift-version` に書き込む。
+未記録の場合は Swift ツールチェーンのデフォルトバージョンを使う。
+
 **インストールを実行する（OS別）：**
 ```bash
 # macOS

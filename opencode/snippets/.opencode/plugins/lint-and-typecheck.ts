@@ -16,6 +16,11 @@ import type { Plugin } from "@opencode-ai/plugin"
 
 const exists = async ($: any, cmd: string): Promise<boolean> => {
   const name = cmd.split(/\s+/)[0]
+  if (!name) return false
+  if (name.includes("/")) {
+    const r = await $`test -f ${name}`.nothrow().quiet()
+    return r.exitCode === 0
+  }
   const r = await $`which ${name}`.nothrow().quiet()
   return r.exitCode === 0
 }
@@ -81,9 +86,13 @@ export const LintAndTypecheckPlugin: Plugin = async ({ $, client }) => {
       let lang = ""
 
       // --- JS/TS ---
+      // npm install --save-dev で node_modules/.bin/ にインストールされるツールを優先
       if (/\.(ts|tsx|js|jsx|mts|cts|mjs|cjs)$/.test(fp)) {
         lang = "JS/TS"
-        const e1 = await formatFile($, "prettier --write", fp, attempt)
+        const prettierCmd = (await $`test -f node_modules/.bin/prettier`.nothrow().quiet()).exitCode === 0
+          ? "node_modules/.bin/prettier --write"
+          : "prettier --write"
+        const e1 = await formatFile($, prettierCmd, fp, attempt)
         if (e1) errors.push("format: " + e1)
 
         if (pmPrefix) {
@@ -95,18 +104,23 @@ export const LintAndTypecheckPlugin: Plugin = async ({ $, client }) => {
       }
 
       // --- Python ---
-      // ★ P1-2 修正：mypy をファイル単位 + --follow-imports=silent に変更
-      // 旧：`mypy .`（プロジェクト全体・大規模では10秒以上）
-      // 新：`mypy --follow-imports=silent ${fp}`（単一ファイル・依存は型推論）
+      // .venv/bin/ 内のツールのみを使用する（グローバルにはフォールバックしない）
+      // _python.md / stack-setup.md が仮想環境作成 + ツールインストールを保証する
       if (/\.py$/.test(fp)) {
         lang = "Python"
-        const e1 = await formatFile($, "ruff format", fp, attempt)
-        if (e1) errors.push("pyFormat: " + e1)
-        const e2 = await lintFile($, "ruff check", fp, attempt)
-        if (e2) errors.push("pyLint: " + e2)
-        if (await exists($, "mypy")) {
+        const pyRuff = (await $`test -f .venv/bin/ruff`.nothrow().quiet()).exitCode === 0
+          ? ".venv/bin/ruff" : null
+        if (pyRuff) {
           attempt.n++
-          const r3 = await $`mypy --follow-imports=silent --no-incremental ${fp}`.nothrow().quiet()
+          const r1 = await $`${pyRuff} format ${fp}`.nothrow().quiet()
+          if (r1.exitCode !== 0) errors.push("pyFormat: " + r1.text.substring(0, 2000))
+          attempt.n++
+          const r2 = await $`${pyRuff} check ${fp}`.nothrow().quiet()
+          if (r2.exitCode !== 0) errors.push("pyLint: " + r2.text.substring(0, 4000))
+        }
+        if (await $`test -f .venv/bin/mypy`.nothrow().quiet().then(r => r.exitCode === 0)) {
+          attempt.n++
+          const r3 = await $`.venv/bin/mypy --follow-imports=silent --no-incremental ${fp}`.nothrow().quiet()
           if (r3.exitCode !== 0) errors.push("pyType: " + r3.text.substring(0, 4000))
         }
       }
@@ -135,11 +149,14 @@ export const LintAndTypecheckPlugin: Plugin = async ({ $, client }) => {
       }
 
       // --- Ruby ---
+      // Gemfile.lock が存在する場合、bundle exec 経由でプロジェクトローカルツールを優先
       if (/\.rb$/.test(fp)) {
         lang = "Ruby"
-        const e1 = await formatFile($, "rubocop --autocorrect-all --no-color", fp, attempt)
+        const rp = (await $`test -f Gemfile.lock`.nothrow().quiet()).exitCode === 0
+          ? "bundle exec " : ""
+        const e1 = await formatFile($, `${rp}rubocop --autocorrect-all --no-color`, fp, attempt)
         if (e1) errors.push("rbFormat: " + e1)
-        const e2 = await lintFile($, "rubocop --no-color", fp, attempt)
+        const e2 = await lintFile($, `${rp}rubocop --no-color`, fp, attempt)
         if (e2) errors.push("rbLint: " + e2)
       }
 

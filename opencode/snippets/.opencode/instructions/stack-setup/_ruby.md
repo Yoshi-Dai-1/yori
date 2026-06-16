@@ -2,6 +2,14 @@
 
 `Gemfile` はプロジェクト固有のため自動作成しない。
 
+**バージョン管理：** `.ruby-version` でランタイムバージョンを固定する。
+ARCHITECTURE.md に記録された Ruby バージョンを `.ruby-version` に書き込む：
+```
+3.3
+```
+（バージョンは ARCHITECTURE.md に記録されたバージョンを優先する。
+未記録の場合は上記デフォルト値を使い、後で変更できると案内する）
+
 **インストールを実行する（全OS対応）：**
 ```bash
 gem install rubocop

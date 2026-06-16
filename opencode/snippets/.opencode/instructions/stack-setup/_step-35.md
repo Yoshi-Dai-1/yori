@@ -18,13 +18,26 @@
   4. AGENTS.md の `## Code Style` セクションを ARCHITECTURE.md の確定値から転記する（「ARCHITECTURE.md より転記」とコメントを付ける）
      ただし「展開なし」モードの場合は転記内容を提示するのみとし、ファイルへの書き込みは行わない
 
-**ブロックB：必須ファイルの確認・記録**
+**ブロックB：必須ファイルの確認・記録 + ランタイムバージョンの決定**
 - 実行条件：言語またはフレームワークが新たに確定・変更された
 - 実行内容：
   1. `directory-structure.md` の「AIが自律実行する必須ファイルの確認」セクションに従い、必須ファイルをWeb検索で確認する
   2. クラウド・アーキテクチャ・業種が ARCHITECTURE.md に記入済みであれば追加検索する
   3. 検索結果を情報源通知テンプレートで人間に通知する
   4. 確認した必須ファイルを ARCHITECTURE.md の「技術スタック」セクション末尾に記録する（SSOT）
+  5. **ランタイムバージョンの決定（人間に判断を委ねない。通知のみ）：**
+     - 言語に応じて最新安定板をWeb検索する：
+       - Node.js: `Node.js LTS release [現在年]`
+       - Python: `Python latest stable version [現在年]`
+       - Go: `Go latest stable version [現在年]`
+       - Rust: `Rust latest stable version [現在年]`
+       - Ruby: `Ruby latest stable version [現在年]`
+     - 検索結果を ARCHITECTURE.md の「技術スタック」に記録する（SSOT）
+     - 人間に通知する：「[言語] [バージョン] を使用します。月次運用の依存更新チェックで対応します。」
+  6. **バージョン管理ファイルの整合性確認：**
+     - Step 2 で作成されたバージョン管理ファイル（`.python-version` / `.nvmrc` / `rust-toolchain.toml` / 等）の内容が ARCHITECTURE.md に記録されたバージョンと一致するか確認する
+     - 一致しない場合、ARCHITECTURE.md のバージョンで上書きする（デフォルト値のまま未編集のため、上書きは安全）
+     - Python プロジェクトの場合、`pyproject.toml` の `target-version`（`[tool.ruff]` セクション）も決定したバージョンに合わせて更新する（例：Python 3.13 → `"py313"`）
 
 **ブロックC：フレームワーク固有設計の深掘り**
 - 実行条件：ARCHITECTURE.md の「フレームワーク」行に具体的なフレームワーク名が記入されている
@@ -32,9 +45,14 @@
   1. 以下の検索クエリを実行する
      - `[フレームワーク名] official project structure best practices [現在年]`
      - `[フレームワーク名] official coding conventions [現在年]`
+     - `[フレームワーク名] [最新バージョン] official documentation [現在年]`
      - バージョンが記載されている場合：`[フレームワーク名] [バージョン] migration guide [現在年]`（破壊的変更の確認）
+     - ランタイムバージョンも併せて確認：`[フレームワーク名] [バージョン] compatible Node.js/Python/Go version [現在年]`
   2. 検索結果を情報源通知テンプレートで人間に通知する
   3. フレームワーク固有の設計パターン・制約（ルーティング規約・ファイル命名強制・コンポーネント構成規約）を ARCHITECTURE.md の「アーキテクチャ固有設計」セクションに追記する
+   4. ブロックB で決定したランタイムバージョンとフレームワークの互換性を確認する。問題がある場合：
+      - ARCHITECTURE.md のランタイムバージョンを修正する（SSOT）
+      - ブロックB step 6 と同様にバージョン管理ファイル（`.python-version` / `.nvmrc` / 等）も修正後のバージョンで上書きする
 
 **ブロックD：コンプライアンス要件の自律深掘り**
 - 実行条件：ARCHITECTURE.md の「法的・コンプライアンス」セクション、および `docs/project-definition.md` の「業界固有の規制」行の**両方を確認**し、どちらかに「なし」以外の値が記入されている

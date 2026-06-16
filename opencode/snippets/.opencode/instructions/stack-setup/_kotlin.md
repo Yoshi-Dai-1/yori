@@ -2,6 +2,9 @@
 
 プロジェクト固有の情報（groupId・artifactId・version）が必要なため自動作成しない。
 
+**バージョン管理：** JVM ランタイムバージョンはビルド設定ファイル（`build.gradle.kts` / `pom.xml`）の `java.toolchain` / `maven-compiler-plugin` で固定する。
+`gradle init` または `mvn archetype:generate` 実行後に、ARCHITECTURE.md に記録された JVM バージョンに合わせてビルド設定を編集する。
+
 **インストールを実行する（OS別、上から順に試す）：**
 ```bash
 # macOS

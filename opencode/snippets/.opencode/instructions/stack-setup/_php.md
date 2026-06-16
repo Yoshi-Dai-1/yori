@@ -5,6 +5,10 @@
 
 プロジェクト固有の情報（ベンダー名・パッケージ名・description）が必要なため自動作成しない。
 
+**バージョン管理：** `composer.json` の `require.php` フィールドで PHP バージョンを固定する。
+`composer init` 実行後に、ARCHITECTURE.md に記録された PHP バージョンに合わせて `composer.json` の `require.php` を編集する。
+例：`"php": ">=8.2"`
+
 **インストールを実行する（全OS対応）：**
 ```bash
 # プロジェクトローカル（優先）

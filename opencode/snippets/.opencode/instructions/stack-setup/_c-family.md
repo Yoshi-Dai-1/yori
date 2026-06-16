@@ -32,6 +32,17 @@ winget install LLVM.LLVM
 
 プロジェクト固有の情報が必要なため自動作成しない。
 
+**バージョン管理：** `global.json` で .NET SDK バージョンを固定する。
+ARCHITECTURE.md に記録された .NET バージョンから以下のテンプレートで作成する：
+```json
+{
+  "sdk": {
+    "version": "8.0.0"
+  }
+}
+```
+（バージョンは ARCHITECTURE.md に記録されたバージョンを優先する。未記録の場合はインストール済み SDK の最新安定版を使う）
+
 **インストール（全OS対応）：** .NET SDK に `dotnet format` が標準で含まれているため、追加インストール不要。
 .NET SDK 未インストールの場合は `https://dotnet.microsoft.com/download` から各OS向けにインストールする。
 
