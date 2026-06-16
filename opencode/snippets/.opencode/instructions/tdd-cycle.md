@@ -28,11 +28,8 @@ AGENTS.md の TDD Cycle セクションを補完する詳細手順。
 
 ## テストコードの生成（TDDサイクルのStep2）
 
-`@test-generator` を呼び出す。テストの種類に応じて以下を生成する：
-
-- ユニットテスト: 関数・クラス単位の動作確認
-- 結合テスト: モジュール間の連携確認
-- E2Eテスト: ユーザーフロー全体の確認（必要な場合のみ）
+`@test-generator` を呼び出す。
+テストの種類・優先順位・命名規則は `.opencode/standards/principles/test-strategy.md` および `.opencode/standards/principles/naming-conventions.md` を参照すること。ユニットテストを基本とし、必要な場合のみ結合テスト・E2Eテストを追加する。
 
 ## バグ修正時のルール
 

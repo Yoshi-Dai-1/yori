@@ -94,6 +94,35 @@ shared/form-components/
 言語別表にない言語は、その言語の標準テスティングフレームワークの規約に従う。
 ARCHITECTURE.md の「命名規則」セクションが常に最優先される。
 
+### テスト種別の命名規則
+
+テストファイルがユニット・結合・E2Eのいずれに該当するかをファイル名またはディレクトリ配置で区別する。
+**ユニットテストがデフォルト**であり、結合テスト・E2Eテストのみ明示的なマーカーを付ける。
+コード品質監査（`@code-quality-auditor`）はこの規則に基づいてピラミッド比率を計算する。
+
+| 言語 | ユニットテスト（デフォルト） | 結合テスト | E2Eテスト |
+|------|---------------------------|-----------|----------|
+| JavaScript / TypeScript | 標準パターン（colocation） | `*.integration.test.ts` または `integration/` | `*.e2e.test.ts` または `e2e/` |
+| React (TSX/JSX) | 標準パターン（colocation） | `*.integration.test.tsx` または `integration/` | `*.e2e.test.tsx` または `e2e/` |
+| Python | 標準パターン（colocation） | `integration/test_*.py` または `test_integration_*.py` | `e2e/test_*.py` または `test_e2e_*.py` |
+| Go | 標準パターン（same package） | `integration/*_test.go` | `e2e/*_test.go` |
+| Rust | inline `#[cfg(test)]`（ソースファイル内） | `tests/*.rs` | `tests/e2e/*.rs` |
+| Java | `src/test/java/` の標準パターン | `*IT.java` / `*IntegrationTest.java` | `e2e/*Test.java` |
+| Kotlin | 標準パターン | `*IntegrationTest.kt` / `*IT.kt` | `e2e/*Test.kt` |
+| C# | 標準パターン（別プロジェクト） | `*IntegrationTests.cs` | `*E2ETests.cs` |
+| Ruby | 標準パターン（`spec/` または `test/`） | `spec/integration/` または `test/integration/` | `spec/e2e/` または `test/e2e/` |
+| Swift | 標準パターン（`*Tests.swift`） | `*IntegrationTests.swift` | `*E2ETests.swift` |
+| C / C++ | 標準パターン（colocation） | `*_integration_test.cpp` / `*_integration_test.c` | `*_e2e_test.cpp` / `*_e2e_test.c` |
+| PHP | 標準パターン（`*Test.php`） | `*IntegrationTest.php` | `*E2ETest.php` |
+
+**分類ルール**:
+1. ディレクトリ名またはファイル名に `e2e` を含む → E2E
+2. ディレクトリ名またはファイル名に `integration` または `IT` を含む → 結合テスト
+3. Rust プロジェクトの場合、`tests/` ディレクトリ直下（`tests/e2e/` を除く）のファイルは結合テスト
+4. 上記以外で標準テストパターンに一致する → ユニットテスト
+
+**注: Rust の inline unit test（`#[cfg(test)]`）はファイルとして存在しないため、ファイル数での比率計測から除外する。その場合「ユニットテストはソースファイル内に inline で記述されているためファイル数での計測は不正確」と注釈する。**
+
 ---
 
 ## 命名の意図を伝えるパターン
