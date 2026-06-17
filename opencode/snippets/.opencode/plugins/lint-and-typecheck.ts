@@ -14,6 +14,11 @@ import type { Plugin } from "@opencode-ai/plugin"
  * ツールのインストールは stack-setup.md（ルール層）が担当する。
  */
 
+const fileExists = async ($: any, fp: string): Promise<boolean> => {
+  const r = await $`test -f ${fp}`.nothrow().quiet()
+  return r.exitCode === 0
+}
+
 const exists = async ($: any, cmd: string): Promise<boolean> => {
   const name = cmd.split(/\s+/)[0]
   if (!name) return false
@@ -60,6 +65,18 @@ async function formatFile(
   return r.exitCode === 0 ? null : r.text.substring(0, 2000)
 }
 
+async function runTest(
+  $: any,
+  cmd: string,
+  tracker?: { n: number },
+): Promise<string | null> {
+  const name = cmd.split(/\s+/)[0]
+  if (name && !name.includes("/") && !(await exists($, name))) return null
+  if (tracker) tracker.n++
+  const r = await $`timeout 60 ${cmd}`.nothrow().quiet()
+  return r.exitCode === 0 ? null : r.text.substring(0, 4000)
+}
+
 export const LintAndTypecheckPlugin: Plugin = async ({ $, client }) => {
   // ★ P1-2 修正：Package Manager 検出を Plugin init 時に1回だけ実行
   // 優先順位：pnpm > npm > bun > yarn（2026年現在のシェアとパフォーマンスに基づく）
@@ -100,6 +117,14 @@ export const LintAndTypecheckPlugin: Plugin = async ({ $, client }) => {
           if (e2) errors.push("typecheck: " + e2)
           const e3 = await lintFile($, `${pmPrefix} lint`, fp, attempt)
           if (e3) errors.push("lint: " + e3)
+          // test (single file)
+          const testFp = fp.replace(/\.(ts|tsx|js|jsx|mts|cts|mjs|cjs)$/, '.test.$1')
+          const specFp = fp.replace(/\.(ts|tsx|js|jsx|mts|cts|mjs|cjs)$/, '.spec.$1')
+          const targetTestFp = (await fileExists($, testFp)) ? testFp : (await fileExists($, specFp)) ? specFp : ""
+          if (targetTestFp) {
+            const e4 = await runTest($, `${pmPrefix} test -- ${targetTestFp} 2>&1`, attempt)
+            if (e4) errors.push("test: " + e4)
+          }
         }
       }
 
@@ -122,6 +147,22 @@ export const LintAndTypecheckPlugin: Plugin = async ({ $, client }) => {
           attempt.n++
           const r3 = await $`.venv/bin/mypy --follow-imports=silent --no-incremental ${fp}`.nothrow().quiet()
           if (r3.exitCode !== 0) errors.push("pyType: " + r3.text.substring(0, 4000))
+        }
+        // test (single file)
+        const pyDir = fp.includes("/") ? fp.substring(0, fp.lastIndexOf("/") + 1) : ""
+        const pyBase = fp.split("/").pop()?.replace(/\.py$/, "") || ""
+        const pyTestCandidates = [
+          pyDir + "test_" + pyBase + ".py",
+          pyDir + pyBase + "_test.py",
+          pyDir + pyBase + ".test.py",
+        ]
+        let pyTestFp = ""
+        for (const c of pyTestCandidates) {
+          if (await fileExists($, c)) { pyTestFp = c; break }
+        }
+        if (pyTestFp && (await fileExists($, ".venv/bin/pytest"))) {
+          const e4 = await runTest($, `.venv/bin/pytest ${pyTestFp} -v --tb=short 2>&1`, attempt)
+          if (e4) errors.push("pyTest: " + e4)
         }
       }
 
@@ -158,6 +199,18 @@ export const LintAndTypecheckPlugin: Plugin = async ({ $, client }) => {
         if (e1) errors.push("rbFormat: " + e1)
         const e2 = await lintFile($, `${rp}rubocop --no-color`, fp, attempt)
         if (e2) errors.push("rbLint: " + e2)
+        // test (single file)
+        const rbSpecFp = fp.replace(/\.rb$/, '_spec.rb')
+        const rbTestFp = fp.replace(/\.rb$/, '_test.rb')
+        const isRbSpec = await fileExists($, rbSpecFp)
+        const isRbTest = await fileExists($, rbTestFp)
+        if (isRbSpec) {
+          const e3 = await runTest($, `${rp}rspec ${rbSpecFp} --format=progress 2>&1`, attempt)
+          if (e3) errors.push("rbTest: " + e3)
+        } else if (isRbTest) {
+          const e3 = await runTest($, `${rp}ruby -I. ${rbTestFp} 2>&1`, attempt)
+          if (e3) errors.push("rbTest: " + e3)
+        }
       }
 
       // --- Kotlin ---
