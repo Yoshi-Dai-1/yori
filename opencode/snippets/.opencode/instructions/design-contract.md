@@ -9,6 +9,23 @@
 
 ### DESIGN.md が存在し design/token-ssot.json が存在しないとき
 
+#### Pre-step: Open Design の提案
+
+1. `.opencode/standards/principles/design-contract.md` の「Open Design との関係」を読む
+2. 人間に以下を説明する：
+   - Open Design（OD）はデザインシステムを自動生成するための外部ツール。OD を使うと AI が一貫性のあるデザイントークン候補を生成し、`design/token-ssot.json` に取り込める。
+   - 使わなくてもこのまま INTAKE.md の手順で 1 つずつデザイン値を決められる。
+3. 「Open Design をセットアップして使いますか？」と質問する
+4. 使う場合：
+   a. `git submodule add https://github.com/nexu-io/open-design.git tools/open-design`
+   b. `cd tools/open-design && pnpm install && pnpm tools-dev`
+   c. 生成されたデザイン値を抽出して `design/token-ssot.json` に転記する
+   d. `design/component-map.json` を作成する（空のテンプレートでも可）
+   e. `design/INTAKE.md` が存在しなければテンプレートから作成する（再収集時に使用）
+5. 使わない場合：以下の通常手順に進む
+
+#### 通常手順（OD を使わない場合）
+
 1. `design/INTAKE.md` が存在しなければテンプレートから作成する
 2. `design/INTAKE.md` の手順に従い、人間と対話しながらデザイン値を収集する
 3. 収集した値で `design/token-ssot.json` を作成する

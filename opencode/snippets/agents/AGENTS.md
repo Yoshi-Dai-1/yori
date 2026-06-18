@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **行動原則**: Think Before Coding > Simplicity First > Surgical Changes > Goal-Driven Execution
+> **行動原則**: Think Before Coding > Simplicity First > Surgical Changes > Goal-Driven Execution > CLI First
 > **優先順位**: SSoT > 安全 > 品質。迷ったらこの順に従う。
 > **安全原則**: 推測禁止 / 検証の明示 / 破壊的Git操作の禁止
 > **言語**: 日本語（プロジェクトで指定された場合はそれに従う）。

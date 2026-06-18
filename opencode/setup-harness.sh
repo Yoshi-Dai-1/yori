@@ -137,33 +137,6 @@ else
   HAS_UI_FLAG=false
 fi
 
-# ===== Open Design のセットアップ（UIありプロジェクトのみ・任意）=====
-HAS_OPEN_DESIGN=false
-if [ "$HAS_UI_FLAG" = true ]; then
-  echo ""
-  read -r -p "Open Design を使いますか？（https://github.com/nexu-io/open-design） [y/N]: " USE_OPEN_DESIGN
-  if [[ "$USE_OPEN_DESIGN" =~ ^[Yy]$ ]]; then
-    HAS_OPEN_DESIGN=true
-    echo "ℹ️  Open Design のセットアップ手順："
-    echo ""
-    echo "   1. Open Design をプロジェクトに追加:"
-    echo "      git submodule add https://github.com/nexu-io/open-design.git tools/open-design"
-    echo "      または npm でインストール（パッケージが公開されている場合）:"
-    echo "      npm install -D @nexu-io/open-design"
-    echo ""
-    echo "   2. デーモンを起動:"
-    echo "      cd tools/open-design && pnpm install && pnpm tools-dev"
-    echo ""
-    echo "   3. DESIGN.md の「10. Design Tool Integration」を参照して設定を完了する"
-    echo ""
-    echo "   詳細は Open Design のドキュメントを参照してください。"
-    echo "   この案内は .opencode/standards/principles/design-contract.md の「Open Design との関係」セクションにも記載されています。"
-    echo ""
-    echo "✅ Open Design のセットアップ案内を表示しました（後から .opencode/standards/principles/design-contract.md を参照）"
-  else
-    echo "ℹ️  Open Design はスキップしました"
-  fi
-fi
 
 # ===== .opencode/ 内のファイルをコピー =====
 # coding-conventions
@@ -941,12 +914,7 @@ if [ "$HAS_UI_FLAG" = true ]; then
   echo "    → ARCHITECTURE.md の内容をもとにAIが一緒に埋めてくれる"
   echo ""
 fi
-if [ "$HAS_OPEN_DESIGN" = true ]; then
-  echo "  Step 2.5a：Open Design のセットアップを完了する"
-  echo "    → 上記の案内に従い Open Design をインストールする"
-  echo "    → 完了後、DESIGN.md の「10. Design Tool Integration」を参照"
-  echo ""
-fi
+
 echo "  Step 3：AGENTS.md を記入する（AIと対話）"
 echo "    → AGENTS.md の Project Overview のコメント内にある対話プロンプトを使う"
 echo "    → ARCHITECTURE.md の内容をもとにAIが一緒に埋めてくれる"

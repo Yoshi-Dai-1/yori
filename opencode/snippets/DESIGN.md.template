@@ -246,7 +246,8 @@ font-feature-settings: "palt" 1;
 - `design/token-ssot.json` の外部ソースとして Design System ファイルを利用
 - CLI による整合検証
 
-セットアップ手順は `setup-harness.sh` の実行時に対話形式で案内される。
+セットアップ手順はデザインフェーズ開始時に `.opencode/instructions/design-contract.md` の
+Pre-step（Open Design の提案）に従い案内される。
 インストール後の詳細は Open Design のドキュメントを参照。
 
 ### Penpot を使う場合

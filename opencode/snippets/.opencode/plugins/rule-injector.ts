@@ -63,6 +63,7 @@ const RULES: RuleDef[] = [
 interface RuleSessionState {
   injected: boolean
   readByAI: boolean
+  reminded: boolean
 }
 
 interface SessionState {
@@ -71,6 +72,7 @@ interface SessionState {
   rules: Map<string, RuleSessionState>
   securityContentMatched: boolean
   securityAuditInjected: boolean
+  cliFirstPrompted: boolean
 }
 
 const sessions = new Map<string, SessionState>()
@@ -84,6 +86,7 @@ function getSession(sessionId: string): SessionState {
       rules: new Map(),
       securityContentMatched: false,
       securityAuditInjected: false,
+      cliFirstPrompted: false,
     }
     sessions.set(sessionId, s)
   }
@@ -93,7 +96,7 @@ function getSession(sessionId: string): SessionState {
 function getRuleState(session: SessionState, ruleName: string): RuleSessionState {
   let rs = session.rules.get(ruleName)
   if (!rs) {
-    rs = { injected: false, readByAI: false }
+    rs = { injected: false, readByAI: false, reminded: false }
     session.rules.set(ruleName, rs)
   }
   return rs
@@ -151,6 +154,24 @@ export const RuleInjectorPlugin: Plugin = async ({ client }) => ({
           getRuleState(session, rule.name).readByAI = true
         }
       }
+
+      // CLI First 原則の事前注入（.env.example / project-definition.md 読込時）
+      if (!session.cliFirstPrompted && /\.env\.example$|project-definition\.md$/.test(fp)) {
+        session.cliFirstPrompted = true
+        await client.session.prompt({
+          path: { id: sessionId },
+          body: {
+            noReply: true,
+            parts: [
+              {
+                type: "text",
+                text: `[rule-injector] cli-first: 外部サービスのセットアップは CLI 経由で行ってください。CLI の存在確認（command -v）→ ヘルプ確認（--help）→ 公式ドキュメント調査（webfetch）の順で進めます。ブラウザ上の Dashboard 操作は CLI が未サポートの場合のみ提案します。`,
+              },
+            ],
+          },
+        })
+      }
+
       return
     }
 
@@ -197,8 +218,8 @@ export const RuleInjectorPlugin: Plugin = async ({ client }) => ({
               ],
             },
           })
-        } else if (!state.readByAI) {
-          state.readByAI = false
+        } else if (!state.readByAI && !state.reminded) {
+          state.reminded = true
           await client.session.prompt({
             path: { id: sessionId },
             body: {

@@ -20,6 +20,7 @@ permission:
 コードベース全体の品質を診断します。
 個別のバグ・セキュリティ問題ではなく、品質の劣化トレンドを評価します。
 コードの変更は行いません。診断と報告のみ行います。
+CLI優先: 確認・操作には CLI ツールを使用する。ブラウザ操作は CLI が未対応の場合のみ提案する。
 
 診断基準は `.opencode/standards/principles/code-quality.md` の6軸（可読性・保守性・テスト可能性・複雑性・一貫性・依存関係の健全性）に従う。
 診断前に `.opencode/standards/principles/code-quality.md` を読み、品質の定義と劣化サインを確認してから実施する。
