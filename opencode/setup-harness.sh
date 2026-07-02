@@ -95,6 +95,12 @@ fi
 
 SNIPPETS="$YORI_SRC/snippets"
 
+# Git リポジトリの初期化（未初期化の場合のみ自動実行）
+if [ ! -d ".git" ]; then
+  git init
+  echo "✅ Git リポジトリを初期化しました / Git repository initialized"
+fi
+
 # .opencode/ ディレクトリ作成
 mkdir -p .opencode/{instructions,skills,agents,plugins,usage}
 
@@ -864,8 +870,6 @@ HOOKEOF
   git update-index --chmod=+x .git/hooks/pre-commit 2>/dev/null || true
   echo "✅ .git/hooks/pre-commit を設定しました（$PATTERNS_JSON から動的生成）"
   echo "   人間のコミットも機密情報から保護。パターン更新は同 JSON を編集して setup-harness.sh 再実行"
-else
-  echo "ℹ️  .git ディレクトリが見つかりません。git init 後に setup-harness.sh を再実行してください。"
 fi
 
 echo "🔍 セットアップの検証中..."
