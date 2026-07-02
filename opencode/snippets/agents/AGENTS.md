@@ -125,7 +125,8 @@ git add -A && git commit -m "[生成したメッセージ]"
 ## Session Protocol
 
 **セッション開始時**：
-1. `.opencode/handoff-artifact.md` を確認 → 存在すれば読んで文脈復元（`## Security Status` も確認）。なければ `AGENTS.md` + `ARCHITECTURE.md` を読む
+0. **初期プロジェクト検出**: `docs/project-definition.md` が存在しないかテンプレート状態（空セクションが多い）の場合、人間に確認の上プロジェクト定義から作成を開始する。project-definition.md 完成後、アーキテクチャ選定（`_how-to-choose.md`）・ARCHITECTURE.md 記入・AGENTS.md 更新まで連鎖的に実行する。完了後 Step 1 へ進む。
+1. `.opencode/handoff-artifact.md` を確認 → 存在すれば読んで文脈復元（`## Security Status` も確認）。なければ `AGENTS.md` + `ARCHITECTURE.md` を読む。`.opencode/.handoff-trigger` が存在する場合 → 前回の handoff が未完了。build-log.md 等から文脈復元し、handoff スキルの生成を促す
 2. `docs/tasks.json` の未完了タスク（`"passes": false`）を確認
 3. `docs/working/` 内の各 `<group>/plan.md` を読み未完了タスクの文脈を復元
 4. **Smoke Test**: Dev コマンドが定義されており実装が存在する場合のみ実行（コードなし・APIのみ・CLIはスキップ）。ビルドエラーは修復を優先
@@ -133,9 +134,8 @@ git add -A && git commit -m "[生成したメッセージ]"
 6. Current Task と `.opencode/project-context.md` の「現在のタスク」を現在の状態に更新する
 7. **Plugin 正常性チェック**: `.opencode/plugins/*.ts` が存在しプロジェクト名が埋まっているのに `bun` 未インストールの場合 → インストールを提案
 8. **月次診断期限チェック**: `docs/quality-scorecard.md` の最終診断日が30日以上前（または不存在）なら診断実施を提案
-9. **build-log 確認**: `docs/build-log.md` に `（更新待ち）` が残っている場合 → 前回の handoff が未完了。handoff スキルによる更新を促す
 
-**セッション終了時**：`handoff.ts` Plugin（`session.deleted`）が `.opencode/handoff-artifact.md` のテンプレートを自動生成し、`docs/build-log.md` に日付行を追記する。詳細な引き継ぎは handoff スキル（「今日はここまで」と伝える）が自動起動する。handoff スキル実行済みの場合（`<!-- HANDOFF_FILLED -->` マーカーあり）、Pluginは既存ファイルを上書きしない。
+**セッション終了時**：`handoff.ts` Plugin が `session.idle`（30分デバウンス + noReply）で trigger file を書き込み AI に handoff 生成を依頼する。明示的な終了時は handoff スキルが complete handoff を生成し Build Log に追記する。`<!-- HANDOFF_FILLED -->` があれば Plugin は発火しない（重複防止）。
 
 ## Report Format
 

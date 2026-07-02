@@ -1,69 +1,65 @@
 import type { Plugin } from "@opencode-ai/plugin"
 
-export const HandoffPlugin: Plugin = async ({ $ }) => ({
-  "session.deleted": async () => {
-    const now = new Date()
-    const datetimeStr = now.toISOString().replace("T", " ").substring(0, 16)
+const HANDOFF_PATH = ".opencode/handoff-artifact.md"
+const TRIGGER_PATH = ".opencode/.handoff-trigger"
+const DEBOUNCE_MS = 30 * 60 * 1000
 
-    const handoffPath = ".opencode/handoff-artifact.md"
-    const dateStr = datetimeStr.substring(0, 10)
+export const HandoffPlugin: Plugin = async ({ client, $ }) => {
+  let lastIdleTime = 0
 
-    // handoff スキル実行済み（HANDOFF_FILLED マーカーあり）の場合は上書きしない
-    const existing =
-      await $`test -f ${handoffPath} && grep -q "<!-- HANDOFF_FILLED -->" ${handoffPath}`
-        .nothrow()
-        .quiet()
-    if (existing.exitCode === 0) {
-      return
+  return {
+    "session.idle": async (event) => {
+      const now = Date.now()
+      if (now - lastIdleTime < DEBOUNCE_MS) return
+      lastIdleTime = now
+
+      const filled = await $`test -f ${HANDOFF_PATH} && grep -q "<!-- HANDOFF_FILLED -->" ${HANDOFF_PATH}`
+        .nothrow().quiet()
+      if (filled.exitCode === 0) return
+
+      const sessionId = event?.sessionID
+      if (!sessionId) return
+
+      const datetimeStr = new Date().toISOString().replace("T", " ").substring(0, 16)
+
+      const gitResult = await $`git status --porcelain`.nothrow().quiet()
+      const gitDisplay = gitResult.exitCode === 0
+        ? gitResult.text.trim()
+          ? gitResult.text.trim().split("\n").map((l: string) => l.substring(3)).join("\n")
+          : "（変更なし）"
+        : "（git管理外）"
+
+      // Write trigger file as fallback signal
+      await Bun.write(TRIGGER_PATH, `sessionId=${sessionId}\ndatetime=${datetimeStr}\n`)
+
+      // Inject handoff generation instruction (noReply = no visible UX impact)
+      await client.session.prompt({
+        path: { id: sessionId },
+        body: {
+          noReply: true,
+          parts: [{
+            type: "text",
+            text: [
+              "---handoff---",
+              "セッションが長時間アイドル状態です。handoff を生成してください。",
+              `日時: ${datetimeStr}`,
+              `Git変更:`,
+              gitDisplay,
+              "",
+              "1. 会話履歴から以下を要約して .opencode/handoff-artifact.md に write_file で保存（既存は上書き）",
+              "   - 前のセッションの状態（取り組んでいた機能・完了部分・途中・次にやること）",
+              "   - 重要な決定事項",
+              "   - 未解決の問題",
+              "   - Security Status（対応レベル・適用規制・未対応要件・完了実装・脆弱性状態）",
+              "   - 変更したファイル",
+              "2. 末尾に <!-- HANDOFF_FILLED --> を含める",
+              "3. docs/build-log.md に日付行を追記",
+              "4. .opencode/.handoff-trigger ファイルが存在する場合は削除",
+              "---handoff---",
+            ].join("\n")
+          }]
+        }
+      })
     }
-
-    const gitResult = await $`git status --porcelain`.nothrow().quiet()
-    const isGitRepo = gitResult.exitCode === 0
-    const gitDisplay = isGitRepo
-      ? gitResult.text.trim()
-        ? gitResult.text.trim().split("\n").map((l: string) => l.substring(3)).join("\n")
-        : "（変更なし）"
-      : "（git管理外）"
-
-    await Bun.write(
-      handoffPath,
-      [
-        "# Handoff Artifact",
-        `# 更新日時: ${datetimeStr}`,
-        "# このファイルは次のセッション開始時にコンテキストとして渡す",
-        "# 内容が空欄の場合は次のセッション開始時に handoff スキルを使って内容を記入する",
-        "",
-        "## 前のセッションの状態",
-        "",
-        "取り組んでいた機能:",
-        "完了した部分:",
-        "途中で止まっている部分:",
-        "次にやるべきこと:",
-        "",
-        "## 重要な決定事項",
-        "",
-        "",
-        "## 未解決の問題",
-        "",
-        "",
-        "## Security Status",
-        "",
-        "対応レベル:",
-        "適用される規制・標準:",
-        "未対応のセキュリティ要件:",
-        "完了したセキュリティ実装:",
-        "依存ライブラリの脆弱性状態:",
-        "",
-        "## 変更したファイル",
-        "",
-        gitDisplay,
-        "",
-      ].join("\n"),
-    )
-
-    // build-log.md に日付行を追記（handoff スキルが置換するための待機行）
-    await $`printf "\n| ${dateStr} | （更新待ち） | - |" >> docs/build-log.md`
-      .nothrow()
-      .quiet()
-  },
-})
+  }
+}

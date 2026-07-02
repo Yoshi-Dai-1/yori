@@ -10,7 +10,11 @@ description: |
   「サービスを終了したい」「閉鎖する」「廃止する」「アーカイブしたい」
   Make sure to use this skill even when the user does not say "handoff"
   explicitly — any context reset, development pause, session end, or session resumption
-  qualifies. Do NOT use for release preparation (use release-prep instead).
+  qualifies. Also trigger when all OpenCode Todos are completed
+  (the AI knows from its own todowrite tool calls that all Todos are done).
+  Also trigger when `.opencode/.handoff-trigger`
+  exists (indicates handoff was not completed in the previous session).
+  Do NOT use for release preparation (use release-prep instead).
 ---
 
 <!-- template-version: 1.0.0, template-status: active -->
@@ -22,6 +26,8 @@ description: |
 - 長期停止・別の人への引き継ぎ前
 - 「再開したい」「前回の続きから」など、前セッションの文脈を復元するとき
 - 本番リリース後（状態の記録として）
+- **OpenCode Todo 全完了時**: 会話履歴上の Todo がすべて完了状態になったとき（ユーザーが続ける場合は発動しない）
+- **`.opencode/.handoff-trigger` 存在時**: 前セッションで handoff が未完了のマーカーがあるとき（セッション開始時に自動検出）
 
 このスキルを使わないタイミング：
 - 本番リリースの準備中（→ release-prep を使う）
@@ -73,27 +79,33 @@ description: |
    - 最終スキャン：[YYYY-MM-DD] / 結果：[クリーン / HIGH N件 / CRITICAL N件]
    - 自動監視：[Dependabot設定済み / CI組み込み済み / 未設定]
 
+   ## 変更したファイル
+
+   [Git status に表示された変更ファイル一覧。なければ「なし」]
+
    <!-- HANDOFF_FILLED -->
    ```
 
    末尾の `<!-- HANDOFF_FILLED -->` は必ず含める（次セッション開始時に「前回の引き継ぎが完了済み」と判断するためのマーカー）。
+   注意：上記フォーマットのセクション名（`## ` で始まる行）は変更・削除・追加しないこと。
 
-2. **Build Log の最終行を更新する**
+2. **Build Log に行を追記する**
    `docs/build-log.md` を read_file で読み込む。
-   最終行が `| YYYY-MM-DD | （更新待ち） | - |` の形式の場合、
-   その行を実際の内容で置換して write_file で保存する：
+   末尾に新しい行を追記する（追記のみ。既存の行は変更しない）：
    ```
    | YYYY-MM-DD | [完了した内容の概要] | [未解決があれば記載。なければ「なし」] |
    ```
-   最終行が「（更新待ち）」でない場合（handoff SKILL が2回呼ばれた等）は新しい行を追記する。
    `docs/build-log.md` が存在しない場合は作成してから内容行を追記する。
    このログはセッション間の意思決定の経緯・試行錯誤の積み上げ履歴。
    `handoff-artifact.md`（スナップショット：毎回上書き）とは役割が異なる。
 
-3. **Current Taskを更新する**
+3. **Trigger File を削除する**
+   `.opencode/.handoff-trigger` が存在する場合は削除する（handoff 完了を示す）。
+
+4. **Current Taskを更新する**
    次のセッションで最初に取り組むタスクを AGENTS.md の Current Task（Next 欄）に記録する。
 
-4. **Security Status を確認・引き継ぐ（自律実行）**
+5. **Security Status を確認・引き継ぐ（自律実行）**
    handoff-artifact.md の `## Security Status` を読み、以下を自律的に実行する：
    - 未対応のセキュリティ要件がある場合 → セッション開始直後に人間に報告する
    - 依存ライブラリの最終スキャンが7日以上前の場合 → `npm audit` / `pip-audit` を実行して結果を報告する
@@ -148,14 +160,14 @@ description: |
 
 ### 条件付き実行
 
-5. **EOL（サービス終了・アーカイブ）の処理（条件実行）**
+6. **EOL（サービス終了・アーカイブ）の処理（条件実行）**
 
    このステップを実行する条件を確認する：
 
    条件：トリガーが「サービスを終了したい」「閉鎖する」「廃止する」「アーカイブしたい」
    のいずれかを含む
    → 該当しない：このステップを完全にスキップする
-   → 該当する：Workflow 1〜4 を先に完了させた後、以下を実行する
+    → 該当する：常時実行の全ステップ（1〜5）を先に完了させた後、以下を実行する
 
    **Step 1：プロジェクト性質の確認**
 

@@ -1,179 +1,179 @@
 # yori
 
-AI とともに開発するためのハーネスエンジニアリングのナレッジベース。
-あらゆるプロジェクト種別に横断的に適用できる設計思想・テンプレート・原則を集積する。
+[English](README.md) | [日本語](README.ja.md)
+
+A harness engineering knowledge base for AI co-development.
+Collects design principles, templates, and patterns applicable across all project types.
 
 ```
-yori（このリポジトリ）
-  = ハーネスの設計図・テンプレート集
+yori (this repository)
+  = Harness blueprint & template collection
 
-各プロジェクトの .opencode/
-  = 実際に機能するハーネス本体
+Each project's .opencode/
+  = The actual working harness
 
-yori をプロジェクトに「配置」しても機能しない。
-setup-harness.sh でテンプレートをコピーして、
-プロジェクト固有の情報を記入することで初めて機能する。
+Simply "placing" yori in a project does nothing.
+The harness only starts working after running setup-harness.sh
+to copy templates and filling in project-specific information.
 ```
 
 ---
 
-## クイックスタート
+## Quick Start
 
-### 方式 A：curl（Node.js 不要・推奨）
+### Method A: curl (no Node.js required, recommended)
 
 ```bash
-# ターゲットプロジェクトのルートで実行
+# Run in your target project root
 bash <(curl -s https://raw.githubusercontent.com/Yoshi-Dai-1/yori/main/opencode/setup-harness.sh)
 ```
 
-スクリプトが自動的に yori リポジトリを一時クローンし、テンプレートを展開します。
+The script automatically clones yori temporarily and expands the templates.
 
-> **Windows での実行について**：
-> 上記 `bash` コマンドは WSL2（Windows Subsystem for Linux）または Git Bash が必要です。
+> **Windows notes**:
+> The `bash` command above requires WSL2 (Windows Subsystem for Linux) or Git Bash.
 >
-> **WSL2 を使用する場合（推奨）**：
+> **WSL2 (recommended)**:
 > ```
-> wsl --install            # 初回のみ（管理者 PowerShell）
+> wsl --install            # first time only (admin PowerShell)
 > ```
-> その後、WSL 内の bash で curl/npm/git clone の各方式を実行してください。
+> Then run curl/npm/git clone inside the WSL bash shell.
 >
-> **Git Bash を使用する場合**：
-> Git for Windows をインストール後、Git Bash ターミナルで curl/npm/git clone の各方式を実行してください。
+> **Git Bash**:
+> Install Git for Windows, then run curl/npm/git clone from Git Bash terminal.
 >
-> **npm 方式の場合**：`npx @yoshi-dai/yori` は、Windows では自動的に `setup-harness.ps1`（WSL2 ラッパー）を起動します。
+> **npm method**: `npx @yoshi-dai/yori` automatically launches `setup-harness.ps1` (WSL2 wrapper) on Windows.
 
-### 方式 B：npm
+### Method B: npm
 
 ```bash
 npx @yoshi-dai/yori
 ```
 
-### 方式 C：git clone
+### Method C: git clone
 
 ```bash
 git clone https://github.com/Yoshi-Dai-1/yori.git
-cd ターゲットプロジェクト
+cd your-target-project
 bash ../yori/opencode/setup-harness.sh
 ```
 
 ---
 
-## 新プロジェクト開始時の手順
+## New Project Setup
 
-### Step 0：ターゲットプロジェクトでセットアップスクリプトを実行する
+### Step 0: Run the setup script in your target project
 
-上記いずれかの方式で `opencode/setup-harness.sh` を実行します。
-実行後、以下のファイルが作成/コピーされます：
+Run `opencode/setup-harness.sh` via any of the methods above.
+After execution, the following files are created/copied:
 
-- `AGENTS.md`：プロジェクトのエントリポイント（60〜200行）
-- `docs/`：プロジェクト定義・運用手順書・各種テンプレート
-- `.opencode/`：ハーネス本体（instructions/ / skills/ / plugins/ / agents/）
-- `.opencode/standards/`：yori の参照ドキュメント（principles/ / architectures/）
-- `opencode.json`：OpenCode 設定ファイル
+- `AGENTS.md`: Project entry point (60-200 lines)
+- `docs/`: Project definition, operations manual, various templates
+- `.opencode/`: Harness body (instructions/ / skills/ / plugins/ / agents/)
+- `.opencode/standards/`: yori reference documents (principles/ / architectures/)
+- `opencode.json`: OpenCode configuration file
 - `.env`, `.env.example`, `.editorconfig`
-- `.git/hooks/pre-commit`：機密情報コミット防止フック
+- `.git/hooks/pre-commit`: Secrets prevention hook
 
-**再実行は安全です**：プロジェクト固有ファイルは上書きされません。
-`.opencode/standards/` は常に最新の yori に更新されます。
+**Re-running is safe**: Project-specific files are not overwritten.
+`.opencode/standards/` is always updated to the latest yori.
 
-### Step 1：`docs/project-definition.md` を記入する
+### Step 1: Open the project in OpenCode
 
-AI と対話しながら記入します。.opencode/standards/principles/project-definition-guide.md の対話プロンプトを AI に渡してください。
+Open the target project folder in OpenCode and tell the AI to start a new session.
 
-### Step 2：`ARCHITECTURE.md` を記入する
+### Step 2: Follow the AI's guidance
 
-### Step 3：`AGENTS.md` を記入する
-
-### Step 4：`opencode.json` の設定を確認する
-
-詳細は `opencode/setup-harness.sh` 実行後の案内を参照してください。
+The AI will automatically guide you through project definition, architecture, and design setup. Answer the AI's questions about your project, and it will fill in `docs/project-definition.md`, `ARCHITECTURE.md`, `AGENTS.md`, and `.opencode/project-context.md` for you.
 
 ---
 
-## ディレクトリ構成
+## Directory Structure
 
 ```
 yori/
   opencode/
-    setup-harness.sh       セットアップスクリプト
-    README.md              このファイル
-    principles/            汎用原則（harness-engineering, security, code-quality 等）
-    architectures/          プロジェクト種別ごとの構成パターン
-    decisions/              判断の記録・ADR
-    snippets/               テンプレート集
-      agents/               AGENTS.md テンプレート・サブエージェント定義
-      .opencode/            ハーネス雛形（instructions/ / skills/ / plugins/）
-      docs/                 ドキュメント雛形
+    setup-harness.sh       Setup script
+    README.md              Setup guide (English)
+    README.ja.md           Setup guide (Japanese)
+    principles/            Universal principles (harness-engineering, security, code-quality, etc.)
+    architectures/         Architecture patterns by project type
+    decisions/             Decision records / ADRs
+    snippets/              Template collection
+      agents/              AGENTS.md template + subagent definitions
+      .opencode/           Harness skeleton (instructions/ / skills/ / plugins/)
+      docs/                Document templates
 ```
 
 ---
 
-## セットアップ後のプロジェクト構成
+## Post-Setup Project Structure
 
 ```
-ターゲットプロジェクト/
-  AGENTS.md                 エントリポイント（60〜200行）
-  ARCHITECTURE.md           アーキテクチャ定義
-  opencode.json             OpenCode 設定
+target-project/
+  AGENTS.md                 Entry point (60-200 lines)
+  ARCHITECTURE.md           Architecture definition
+  opencode.json             OpenCode configuration
   docs/
-    project-definition.md   プロジェクト定義
-    operations.md           運用手順書
-    quality-scorecard.md    品質スコアカード
-    build-log.md            ビルドログ
-    working/                作業ディレクトリ
+    project-definition.md   Project definition
+    operations.md           Operations manual
+    quality-scorecard.md    Quality scorecard
+    build-log.md            Build log
+    working/                Working directory
   .opencode/
-    instructions/           ルールファイル（イベント駆動で注入）
-    plugins/                TypeScript Plugin（自動ガードレール）
-    skills/                 プロジェクトスコープのスキル
-    agents/                 サブエージェント定義
-    config/                 SSoT ファイル（secret-patterns, skills.lock）
-    standards/              yori のコピー（principles/ / architectures/）
-      principles/.local/    プロジェクト固有の上書き用
-      architectures/.local/ プロジェクト固有の上書き用
-    handoff-artifact.md     セッション間引き継ぎ
-    project-context.md      プロジェクト文脈
-    coding-conventions.md   コーディング規約
-  .env                      環境変数（値は人間のみ入力）
-  .env.example              環境変数テンプレート（コミット対象）
-  .editorconfig             エディタ間コードスタイル統一
-  .git/hooks/pre-commit     機密情報コミット防止フック
+    instructions/           Rule files (event-driven injection)
+    plugins/                TypeScript plugins (automatic guardrails)
+    skills/                 Project-scoped skills
+    agents/                 Subagent definitions
+    config/                 SSoT files (secret-patterns.json / skills.lock.yaml)
+    standards/              yori copy (principles/ / architectures/)
+      principles/.local/    Project-specific overrides
+      architectures/.local/ Project-specific overrides
+    adr-index.md            ADR Index (auto-generated by monthly diagnosis)
+    handoff-artifact.md     Cross-session handoff
+    project-context.md      Project context
+    coding-conventions.md   Coding conventions
+  .env                      Environment variables (human-only input)
+  .env.example              Environment variable template (committed)
+  .editorconfig             Cross-editor code style consistency
+  .git/hooks/pre-commit     Secrets prevention hook
 ```
 
 ---
 
-## 前提条件
+## Prerequisites
 
-- **Bun**: `.opencode/plugins/` の TypeScript プラグインを実行するために必要。
-  未インストールの場合は [bun.sh](https://bun.sh) の手順に従ってインストールする。
-- **git**: セットアップスクリプトの実行と pre-commit フックの設定に必要。
+- **Bun**: Required to run TypeScript plugins in `.opencode/plugins/`.
+  If not installed, follow the instructions at [bun.sh](https://bun.sh).
+- **git**: Required for the setup script and pre-commit hooks.
 
-## 最低限のセットアップ
+## Minimum Setup
 
-yori のセットアップが完了したら、以下の 4ファイルを AI と対話しながら記入します：
+After yori setup is complete, open the project in OpenCode and start a session. The AI will automatically guide you through the setup:
 
-1. `docs/project-definition.md` — プロジェクトの目的・要件・制約
-2. `ARCHITECTURE.md` — 技術スタック・層のルール
-3. `AGENTS.md` — プロジェクト名・コマンド・禁止事項
-4. `.opencode/project-context.md` — 軽量な文脈補完
+1. `docs/project-definition.md` — Project purpose, requirements, and constraints
+2. `ARCHITECTURE.md` — Tech stack and layer rules
+3. `AGENTS.md` — Project name, commands, and prohibitions
+4. `.opencode/project-context.md` — Lightweight context completion
 
-この 4ステップが完了して初めてハーネスとして機能し始めます。
-
----
-
-## ハーネスの育て方
-
-- **instructions/**: AI から同じ指摘を 2回受けたら追加
-- **skills/**: 同じ作業が 3回以上発生したらスキル化
-- **月次診断**: 「月次診断して」と伝えるだけで自動実行
-- **本番リリース**: 「本番に出したい」と伝えるだけで準備を案内
-
-詳細は `.opencode/standards/principles/harness-engineering.md` を参照。
+The harness only starts functioning after these are complete.
 
 ---
 
-## 更新ルール
+## How to Grow the Harness
 
-- `opencode/principles/` を変更した場合は各プロジェクトの `.opencode/standards/` を再コピーする
-- `opencode/architectures/` はプロジェクト経験に基づいて随時更新する
-- `opencode/decisions/` は削除しない
-- `opencode/snippets/` の設定ファイルは動作確認したものだけを入れる
+- **instructions/**: Add a rule file when AI makes the same point twice
+- **skills/**: Formalize into a skill when the same task occurs 3+ times
+- **Monthly diagnosis**: Just say "run monthly diagnosis" and it runs automatically
+- **Production release**: Just say "I want to ship to production" and it guides you through preparation
+
+See `.opencode/standards/principles/harness-engineering.md` for details.
+
+---
+
+## Update Rules
+
+- After changing `opencode/principles/`, re-copy `.opencode/standards/` in each project
+- Update `opencode/architectures/` based on project experience as needed
+- Never delete `opencode/decisions/`
+- Only include verified configuration files in `opencode/snippets/`

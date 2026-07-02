@@ -43,4 +43,4 @@ session-context.md 冒頭に以下のコメントを追加：
 | 優先度 | 案 | 方法 |
 |--------|----|------|
 | 1 | 更新script（案B） | `.design-notes/update-context.sh` を作成。AIはscript経由でのみ更新。ファイル直接編集を禁止 |
-| 2 | Plugin新設（案C） | `.opencode/plugins/session-context.ts` を新設。`session.deleted` で発火。handoff.ts とのイベント競合に注意 |
+| 2 | Plugin新設（案C） | `.opencode/plugins/session-context.ts` を新設。`session.idle` で発火。handoff.ts とのイベント競合に注意 |

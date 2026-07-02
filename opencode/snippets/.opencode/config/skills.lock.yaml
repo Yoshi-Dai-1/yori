@@ -1,32 +1,19 @@
-# 外部スキル バージョンロックファイル
+# ハーネス リソースマニフェスト
 #
-# P1-4 修正（2026-06）：外部リポジトリのコミットハッシュを固定し、
-# 任意の main ブランチ更新による破壊を防ぐ。
+# yori_version: setup-harness.sh 実行時に自動記入される
+# external_skills: 同梱スキル + 後からインストールされた外部スキル
+#   - 同梱スキル（find-skills / skill-creator）: 静的エントリ（setup-harness.sh）
+#   - 動的スキル: lockfile-record.ts Plugin がインストール検出時に自動追記
+#     検出パターン: npx skills add / git clone / git submodule add / cp -r / _install.sh
+#   - バージョン管理は各エコシステムに委ねる（lock は記録のみ）
 #
-# 使い方：
-# 1. 新しいバージョンを取り込みたいとき
-#    cd /tmp && git clone <source>
-#    cd <source> && git log --oneline -10
-#    動作確認したコミットハッシュをこのファイルに記入
-# 2. setup-harness.sh を再実行してロックを反映
-#
-# コミットハッシュの入手先：
-#   find-skills: https://github.com/vercel-labs/skills/commits/main
-#   skill-creator: https://github.com/anthropics/skills/commits/main
-#
-# 動作確認済みのハッシュに更新してください（初期値は2026-06-01時点）。
+# このファイルは setup-harness.sh + lockfile-record.ts Plugin によって
+# 自動管理される。手動編集は不要。
+
+yori_version: ""
 
 external_skills:
   find-skills:
     source: https://github.com/vercel-labs/skills.git
-    # commit が空文字の場合、setup-harness.sh は GitHub の最新 main ブランチを使用する。
-    # そのため setup のたびに異なるバージョンが入る可能性がある。
-    # 特定バージョンに固定したい場合は、動作確認したコミットハッシュを記入する。
-    # 未固定でも動作に問題はないが、再現性を重視する場合は固定を推奨。
-    commit: ""
-
   skill-creator:
     source: https://github.com/anthropics/skills.git
-    # commit が空文字の場合、setup-harness.sh は GitHub の最新 main ブランチを使用する。
-    # 再現性を確保したい場合は、動作確認済みのコミットハッシュに書き換える。
-    commit: ""

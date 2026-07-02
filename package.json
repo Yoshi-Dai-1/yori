@@ -1,7 +1,7 @@
 {
   "name": "@yoshi-dai/yori",
   "version": "1.5.0",
-  "description": "yori - AI co-development harness framework",
+  "description": "yori - AI co-development harness framework (AIエージェントとともに開発するためのハーネスフレームワーク)",
   "bin": {
     "yori": "./cli.js"
   },
@@ -12,7 +12,10 @@
   "license": "MIT",
   "files": [
     "cli.js",
-    "opencode/"
+    "setup-harness.ps1",
+    "opencode/",
+    "README.md",
+    "README.ja.md"
   ],
   "scripts": {
     "commit": "cz"

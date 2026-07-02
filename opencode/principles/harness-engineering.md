@@ -66,9 +66,9 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
       architectures/     アーキテクチャパターン集
       tech-decision.md.template  技術選定記録のテンプレート
 
-# .opencode/skills/ にダウンロードされるスキル（プロジェクトスコープ）
-  find-skills            外部スキルの検索・インストール（vercel-labs/skills）
-  skill-creator          スキルの作成・改善・eval（anthropics/skills）
+# .opencode/skills/ にコピーされるスキル（プロジェクトスコープ・初回使用時に自動ダウンロード）
+  find-skills（stub）   外部スキルの検索・インストール（vercel-labs/skills）
+  skill-creator（stub） スキルの作成・改善・eval（anthropics/skills）
 ```
 
 ---
@@ -371,7 +371,7 @@ docs/
 
 | 仕組み | スコープ | ライフサイクル | 目的 |
 |--------|----------|----------------|------|
-| `handoff-artifact.md` | **セッション** | `session.deleted` で再生成（毎回上書き） | 前セッションの文脈を次セッションに渡す |
+| `handoff-artifact.md` | **セッション** | `session.idle`（30分デバウンス）+ noReply で AI 生成（毎回上書き） | 前セッションの文脈を次セッションに渡す |
 | `docs/working/<group>/` | **タスク** | タスク完了まで保持 | 複数タスクの状態を互いに干渉させない |
 
 ### 使い方を判断する基準

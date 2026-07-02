@@ -1,71 +1,75 @@
 # yori
 
+[English](README.md) | [日本語](README.ja.md)
+
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![npm version](https://img.shields.io/npm/v/@yoshi-dai/yori)](https://www.npmjs.com/package/@yoshi-dai/yori)
 [![GitHub Stars](https://img.shields.io/github/stars/Yoshi-Dai-1/yori?style=flat)](https://github.com/Yoshi-Dai-1/yori)
 
-AI エージェントとともに開発するためのハーネスエンジニアリングのナレッジベース。
+> **A harness engineering knowledge base for AI co-development.**
+> Embed design principles, rules, and decision records into your project so AI agents reason autonomously — without you repeating instructions every session.
 
-**ハーネス**とは、AI エージェントの行動をガイドする外部構造（ルール・プラグイン・判断記録の総称）。AI に指示を書くのではなく、AI が自律的に判断・推論できる設計をプロジェクトに組み込む。
+A **harness** is an external structure (rules + plugins + decision records) that guides AI agent behavior. Instead of telling AI what to do each session, you embed the guidance into the project itself.
 
-`yori`（このリポジトリ）自体がハーネスの設計図・テンプレート集。`opencode/setup-harness.sh` を実行することで各プロジェクトに実際のハーネスが展開される。
+`yori` (this repository) is the blueprint and template collection of the harness. Run `opencode/setup-harness.sh` in your target project to deploy a working harness.
 
 ## Why yori
 
-- AI の出力品質がセッションごとにばらつく
-- AI に都度同じ指示を繰り返す
-- AI が過去の判断を忘れる
-- コンテキスト満杯時に AI が手を抜く（context anxiety）
-- AI が機密情報をコミットしてしまう
-- プロジェクトの知識が人間の頭の中だけにある
+- AI output quality varies session by session
+- Repeating the same instructions to AI every time
+- AI forgets past decisions
+- AI cuts corners when context window is full (context anxiety)
+- AI commits secrets accidentally
+- Project knowledge trapped in human heads
 
 ## Quick Start
 
 ```bash
-# ターゲットプロジェクトのルートで実行（推奨）
+# Run in your target project root (recommended)
 bash <(curl -s https://raw.githubusercontent.com/Yoshi-Dai-1/yori/main/opencode/setup-harness.sh)
 ```
 
-他のセットアップ方法（npm / git clone）は [opencode/README.md](opencode/README.md) を参照。
+See [opencode/README.md](opencode/README.md) for alternative setup methods (npm / git clone).
 
-セットアップスクリプトがテンプレートを展開し、4 ファイル（docs/project-definition.md / ARCHITECTURE.md / AGENTS.md / .opencode/project-context.md）を記入するだけでハーネスが機能し始める。
+After setup, open the project in OpenCode and start a session. The AI will automatically guide you through project definition, architecture, and design setup.
 
 ## Features
 
-| カテゴリ | 数量 | 説明 |
+| Category | Count | Description |
 |---|---|---|
-| Principles | 23 | ハーネス工学・セキュリティ・コード品質・テスト戦略などの汎用原則 |
-| Architectures | 13 | プロジェクト種別ごとの構成パターン（Web API / CLI / library 等） |
-| Plugins | 16 | TypeScript によるイベント駆動ガードレール（秘密情報防止・診断・環境チェック・lint 等） |
-| Instructions | 10 | セッションイベントに応じて注入されるルールファイル |
-| Subagents | 9 | 特定タスクに特化したエージェント定義 |
-| ADRs | 4 | アーキテクチャ判断の記録（Architecture Decision Records） |
+| Principles | 23 | Universal principles: harness engineering, security, code quality, test strategy, etc. |
+| Architectures | 13 | Architecture patterns by project type (Web API / CLI / monorepo / mobile / etc.) |
+| Plugins | 17 | TypeScript event-driven guardrails (secrets prevention, diagnostics, env check, lint, skill tracking, etc.) |
+| Instructions | 10 | Rule files injected on session events |
+| Subagents | 9 | Agent definitions specialized for specific tasks |
+| ADRs | 4 | Architecture Decision Records |
 
-## プロジェクト構造
+## Project Structure
 
 ```
 yori/
-  opencode/                 ハーネス設計図・テンプレート集（setup-harness.sh で配布）
-    principles/             汎用原則
-    architectures/          構成パターン
-    decisions/              判断の記録（ADR）
-    snippets/               テンプレート集（配布物）
-    setup-harness.sh        セットアップスクリプト
-    README.md               ハーネスのセットアップ手順
-  AGENTS.md                 yori 開発用エージェント定義
-  README.md                 このファイル（yori プロジェクト概要）
-  package.json              npm パッケージ定義
-  cli.js                    npm 公開用エントリポイント
-  setup-harness.ps1         Windows (WSL2) ラッパー
-  .releaserc.json           semantic-release 設定
+  opencode/                 Harness blueprint & templates (distributed by setup-harness.sh)
+    principles/             Universal principles
+    architectures/          Architecture patterns
+    decisions/              Decision records (ADR)
+    snippets/               Templates (distribution)
+    setup-harness.sh        Setup script
+    README.md               Harness setup instructions
+  AGENTS.md                 yori's own agent definition (not distributed)
+  README.md                 Project overview (English)
+  README.ja.md              Project overview (Japanese)
+  package.json              npm package definition
+  cli.js                    npm CLI entry point
+  setup-harness.ps1         Windows (WSL2) wrapper
+  .releaserc.json           semantic-release config
   .github/                  GitHub Actions / Issue templates
-  .design-notes/            設計メモ（yori 開発用・コピー対象外）
+  .design-notes/            Design memos (yori-internal, not distributed)
 ```
 
-## 関連リンク
+## Links
 
-- [opencode/README.md](opencode/README.md) — ハーネスのセットアップ手順・新プロジェクト開始手順
-- [AGENTS.md](AGENTS.md) — yori 開発用のエージェント定義
+- [opencode/README.md](opencode/README.md) — Harness setup & new project guide
+- [AGENTS.md](AGENTS.md) — yori's agent definition for development
 - [LICENSE](LICENSE) — MIT License
 
 ## License

@@ -26,7 +26,7 @@ const RULES: RuleDef[] = [
     filePath: ".opencode/instructions/security.md",
     filePattern: /\.(ts|js|tsx|jsx|py|go|rs|java|kt|c|cpp|cs|rb|swift|php)$|docs\/project-definition\.md$|AGENTS\.md$|package\.json$|requirements.*\.txt$|.*\.toml$|Gemfile$|composer\.json$|pubspec\.yaml$|.*\.csproj$|packages\.config$|go\.mod$|pom\.xml$|build\.gradle.*$/,
     contentPatterns: [
-      /login/i, /auth/i, /signin/i, /password/i, /token/i, /session/i,
+      /login/i, /auth/i, /signin/i, /password/i, /session/i, /(?:auth|access|refresh|session|csrf)[\s_-]?token/i,
       /jwt/i, /oauth/i, /api[_-]?key/i, /secret/i, /bearer/i,
       /authorization/i, /webhook/i, /credit/i, /card/i, /stripe/i,
       /payment/i, /billing/i, /charge/i, /checkout/i,

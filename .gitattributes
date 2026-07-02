@@ -1,0 +1,21 @@
+# スクリプト・設定ファイルは常に LF 改行（CRLF で shebang が壊れるのを防ぐ）
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.env* text eol=lf
+.editorconfig text eol=lf
+.gitattributes text eol=lf
+.gitignore* text eol=lf
+
+# Markdown（クロスプラットフォームのエディタ互換のため LF）
+*.md text eol=lf
+
+# TypeScript / JSON（ツールチェーンが LF 前提）
+*.ts text eol=lf
+*.json text eol=lf
+*.jsonc text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# バイナリ・ロックファイルはそのまま
+package-lock.json binary

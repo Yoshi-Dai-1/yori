@@ -53,7 +53,7 @@ description: |
 → `.opencode/standards/principles/production-deployment.md` のDDDセクション参照
 
 **スキル化候補**：このセッション中に同じ種類の作業が3回以上発生した場合、
-`decisions/skill-candidates.md` に記録して人間に報告する。
+`.opencode/usage/skill-candidates.md` に記録して人間に報告する。
 
 ## 品質診断の戦略選択
 

@@ -79,5 +79,5 @@ OpenCode ランタイムで以下を確認:
 ## 関連ファイル
 
 - `snippets/.opencode/plugins/harness-health.ts`: per-session sliding window 実装
-- `.design-notes/plugin-events.md`: `session.deleted` の代替案（別文脈）
+- `.design-notes/plugin-events.md`: `session.deleted` → `session.idle` + noReply への改訂経緯
 - `principles/subagents.md`: サブエージェントの設計思想

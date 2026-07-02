@@ -33,5 +33,5 @@
 
 保存後は `/スキル名` コマンドで呼び出せる状態になる。AGENTS.md への追記は不要。
 
-> **skill-creator について**：`setup-harness.sh` 実行時に `.opencode/skills/` にダウンロードされる。
+> **skill-creator について**：初回使用時に AI が自動ダウンロードする（stub + _install.sh 方式）。
 > スキルの新規作成・改善・eval・descriptionの最適化まで一貫して対応する。

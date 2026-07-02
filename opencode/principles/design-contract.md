@@ -159,9 +159,9 @@ component/  部品スコープの割り当て
 }
 ```
 
-`design/token-ssot.json` を作成するときは `$DEV_STANDARDS_PATH/snippets/design/token-ssot.json.template` をコピーして使用する。
-`design/component-map.json` を作成するときは `$DEV_STANDARDS_PATH/snippets/design/component-map.json.template` をコピーして使用する。
-`design/INTAKE.md` を作成するときは `$DEV_STANDARDS_PATH/snippets/design/INTAKE.md.template` をコピーして使用する。
+`design/token-ssot.json` を作成するときは `$YORI_PATH/snippets/design/token-ssot.json.template` をコピーして使用する。
+`design/component-map.json` を作成するときは `$YORI_PATH/snippets/design/component-map.json.template` をコピーして使用する。
+`design/INTAKE.md` を作成するときは `$YORI_PATH/snippets/design/INTAKE.md.template` をコピーして使用する。
 
 ---
 

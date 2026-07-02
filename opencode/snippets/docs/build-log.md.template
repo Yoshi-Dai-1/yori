@@ -5,8 +5,4 @@ handoff スキル・evaluator が自動追記する。
 
 ## ログ書式
 
-通常行：
 `| YYYY-MM-DD | [完了内容] | [未解決] |`
-
-handoff スキル実行前の待機行（handoff.ts Plugin が自動作成）：
-`| YYYY-MM-DD | （更新待ち） | - |`
