@@ -38,10 +38,10 @@ bash <(curl -s https://raw.githubusercontent.com/Yoshi-Dai-1/yori/main/opencode/
 |---|---|---|
 | Principles | 23 | ハーネス工学・セキュリティ・コード品質・テスト戦略などの汎用原則 |
 | Architectures | 13 | プロジェクト種別ごとの構成パターン（Web API / CLI / library 等） |
-| Plugins | 17 | TypeScript によるイベント駆動ガードレール（秘密情報防止・診断・環境チェック・lint・スキル自動記録 等） |
-| Instructions | 10 | セッションイベントに応じて注入されるルールファイル |
+| Plugins | 18 | TypeScript によるイベント駆動ガードレール（秘密情報防止・診断・環境チェック・lint・スキル自動記録 等） |
+| Instructions | 9 | セッションイベントに応じて注入されるルールファイル |
 | Subagents | 9 | 特定タスクに特化したエージェント定義 |
-| ADRs | 4 | アーキテクチャ判断の記録（Architecture Decision Records） |
+| ADRs | 3 | アーキテクチャ判断の記録（Architecture Decision Records） |
 
 ## プロジェクト構造
 
@@ -53,7 +53,8 @@ yori/
     decisions/              判断の記録（ADR）
     snippets/               テンプレート集（配布物）
     setup-harness.sh        セットアップスクリプト
-    README.md               ハーネスのセットアップ手順
+    README.md               ハーネスのセットアップ手順（英語）
+    README.ja.md            ハーネスのセットアップ手順（日本語）
   AGENTS.md                 yori 開発用エージェント定義
   README.md                 プロジェクト概要（英語）
   README.ja.md              プロジェクト概要（日本語）
@@ -61,7 +62,7 @@ yori/
   cli.js                    npm 公開用エントリポイント
   setup-harness.ps1         Windows (WSL2) ラッパー
   .releaserc.json           semantic-release 設定
-  .github/                  GitHub Actions / Issue templates
+  .github/                  GitHub Actions ワークフロー
   .design-notes/            設計メモ（yori 開発用・コピー対象外）
 ```
 

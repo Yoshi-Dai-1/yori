@@ -102,7 +102,11 @@ yori/
     snippets/               テンプレート集
       agents/               AGENTS.md テンプレート・サブエージェント定義
       .opencode/            ハーネス雛形（instructions/ / skills/ / plugins/）
+      design/               デザイントークン雛形
       docs/                 ドキュメント雛形
+      opencode.json         OpenCode 設定テンプレート
+      .editorconfig         エディタ間コードスタイル統一
+      .env.example          環境変数テンプレート
 ```
 
 ---

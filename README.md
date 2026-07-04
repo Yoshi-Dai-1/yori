@@ -39,10 +39,10 @@ After setup, open the project in OpenCode and start a session. The AI will autom
 |---|---|---|
 | Principles | 23 | Universal principles: harness engineering, security, code quality, test strategy, etc. |
 | Architectures | 13 | Architecture patterns by project type (Web API / CLI / monorepo / mobile / etc.) |
-| Plugins | 17 | TypeScript event-driven guardrails (secrets prevention, diagnostics, env check, lint, skill tracking, etc.) |
-| Instructions | 10 | Rule files injected on session events |
+| Plugins | 18 | TypeScript event-driven guardrails (secrets prevention, diagnostics, env check, lint, skill tracking, etc.) |
+| Instructions | 9 | Rule files injected on session events |
 | Subagents | 9 | Agent definitions specialized for specific tasks |
-| ADRs | 4 | Architecture Decision Records |
+| ADRs | 3 | Architecture Decision Records |
 
 ## Project Structure
 
@@ -54,7 +54,8 @@ yori/
     decisions/              Decision records (ADR)
     snippets/               Templates (distribution)
     setup-harness.sh        Setup script
-    README.md               Harness setup instructions
+    README.md               Harness setup instructions (English)
+    README.ja.md            Harness setup instructions (Japanese)
   AGENTS.md                 yori's own agent definition (not distributed)
   README.md                 Project overview (English)
   README.ja.md              Project overview (Japanese)
@@ -62,7 +63,7 @@ yori/
   cli.js                    npm CLI entry point
   setup-harness.ps1         Windows (WSL2) wrapper
   .releaserc.json           semantic-release config
-  .github/                  GitHub Actions / Issue templates
+  .github/                  GitHub Actions workflows
   .design-notes/            Design memos (yori-internal, not distributed)
 ```
 

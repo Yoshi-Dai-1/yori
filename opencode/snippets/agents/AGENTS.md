@@ -6,7 +6,7 @@
 > **言語**: 日本語（プロジェクトで指定された場合はそれに従う）。
 > **SSoT**: このファイルが全エージェント・全自動化ツールの共通規範。詳細ルールは `.opencode/instructions/` に分離し、Plugin がイベント駆動で注入する。
 
-<!-- 記入方法: .opencode/agents/agents-fill-guide.md を読む -->
+<!-- 記入方法: .opencode/instructions/agents-fill-guide.md を読む -->
 
 ## Project Overview
 

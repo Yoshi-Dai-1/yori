@@ -102,7 +102,11 @@ yori/
     snippets/              Template collection
       agents/              AGENTS.md template + subagent definitions
       .opencode/           Harness skeleton (instructions/ / skills/ / plugins/)
+      design/              Design token templates
       docs/                Document templates
+      opencode.json        OpenCode config template
+      .editorconfig        Cross-editor code style consistency
+      .env.example         Environment variable template
 ```
 
 ---

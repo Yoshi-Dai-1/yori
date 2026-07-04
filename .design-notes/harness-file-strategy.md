@@ -131,9 +131,15 @@ yori の修正・改善時に新規ファイルや既存ファイルの戦略を
 
 ### 全ファイル（code-quality.md, code-review.md, design-contract.md, directory-structure.md, naming-conventions.md, network-resilience.md, security.md, stack-setup.md, tdd-cycle.md, `_shared/*.md`, `_template.md`, およびサブファイル群）
 - **戦略**: C
-- **元**: `snippets/.opencode/instructions/`（再帰的 `find`）
-- **行**: 154-163
+- **元**: `snippets/.opencode/instructions/`（再帰的 `find`、`_fill-guide.md` は除外）
+- **行**: 195-204
 - **理由**: AI エージェントの思考と判断を制御するルール定義。yori が提供する定義であり、プロジェクトが直接編集することは稀（カスタマイズは AGENTS.md や project-context.md で行う）。バグ修正や新ルールの追加を再実行で反映させる必要がある。
+
+### `agents-fill-guide.md`
+- **戦略**: C
+- **元**: `snippets/.opencode/instructions/_fill-guide.md`
+- **行**: 122-127（別コピー処理）
+- **理由**: AGENTS.md 記入ガイド。`_fill-guide.md` から `agents-fill-guide.md` にリネームして配置。AI が参照するため `.opencode/instructions/` に置く（エージェント定義ではない）。yori 開発者のみが更新する。
 
 ---
 
@@ -142,20 +148,14 @@ yori の修正・改善時に新規ファイルや既存ファイルの戦略を
 ### サブエージェント: planner.md, evaluator.md, code-reviewer.md, security-designer.md, security-auditor.md, test-generator.md, codebase-investigator.md, resilience-checker.md, code-quality-auditor.md
 - **戦略**: C
 - **元**: `snippets/agents/subagents/*.md`
-- **行**: 183-188
+- **行**: 225-227
 - **理由**: AI エージェント種別定義（OpenCode Markdown agent 仕様）。ツールアクセス・プロンプト・振る舞いを定義する。プロジェクトが編集することは稀。yori の改善を反映させる。
 
 ### 共有ファイル: `_shared/*.md`
 - **戦略**: C
 - **元**: `snippets/agents/_shared/*.md`
-- **行**: 192-202
-- **理由**: エージェント間共有テンプレート。同上。
-
-### `agents-fill-guide.md`
-- **戦略**: C
-- **元**: `snippets/agents/_fill-guide.md`
-- **行**: 89-94
-- **理由**: AGENTS.md 記入ガイド。yori 開発者のみが更新する。プロジェクトは編集しない。
+- **行**: 235-239
+- **理由**: エージェント間共有テンプレート。`mode: subagent + hidden: true` frontmatter により Tab 対象から除外。同上。
 
 ---
 

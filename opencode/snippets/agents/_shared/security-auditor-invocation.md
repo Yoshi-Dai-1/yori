@@ -1,3 +1,7 @@
+---
+mode: subagent
+hidden: true
+---
 # @security-auditor 呼び出し形式
 
 **目的**: 依存ライブラリスキャン結果を @security-auditor に渡すためのデータ契約。

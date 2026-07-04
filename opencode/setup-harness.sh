@@ -119,11 +119,11 @@ else
   echo "ℹ️  AGENTS.md は既に存在します（上書き保護）"
 fi
 
-# ===== AGENTS.md 記入ガイドのコピー（自動ロードされない位置、常に最新版を反映） =====
-if [ -f "$SNIPPETS/agents/_fill-guide.md" ]; then
-  mkdir -p .opencode/agents
-  cp "$SNIPPETS/agents/_fill-guide.md" .opencode/agents/agents-fill-guide.md
-  echo "✅ .opencode/agents/agents-fill-guide.md をコピーしました（AGENTS.md 記入時にAIが参照）"
+# ===== AGENTS.md 記入ガイドのコピー（常に最新版を反映） =====
+if [ -f "$SNIPPETS/.opencode/instructions/_fill-guide.md" ]; then
+  mkdir -p .opencode/instructions
+  cp "$SNIPPETS/.opencode/instructions/_fill-guide.md" .opencode/instructions/agents-fill-guide.md
+  echo "✅ .opencode/instructions/agents-fill-guide.md をコピーしました（AGENTS.md 記入時にAIが参照）"
 fi
 
 # ===== ARCHITECTURE.md のコピー =====
@@ -191,7 +191,10 @@ fi
 
 # instructions テンプレート（常に最新版を反映）
 # 含まれるルール：code-quality.md / code-review.md / design-contract.md / directory-structure.md / naming-conventions.md / network-resilience.md / network-resilience/*.md / security.md / security/*.md / stack-setup.md / stack-setup/*.md / tdd-cycle.md / _shared/*.md / _template.md
+# 除外：_fill-guide.md（AGENTS.md 記入ガイドは別のコピー処理で agents-fill-guide.md にリネームして配置）
 while IFS= read -r -d '' RULE_FILE; do
+  BASENAME=$(basename "$RULE_FILE")
+  [[ "$BASENAME" == "_fill-guide.md" ]] && continue
   REL_PATH="${RULE_FILE#"$SNIPPETS"/.opencode/instructions/}"
   REL_PATH="${REL_PATH#/}"
   TARGET=".opencode/instructions/$REL_PATH"
