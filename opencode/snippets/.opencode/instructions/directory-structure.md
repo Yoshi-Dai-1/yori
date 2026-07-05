@@ -13,13 +13,13 @@
 
 1. `.opencode/standards/principles/directory-structure.md` を読み、アーキテクチャパターンに合致する構成かを確認する
 2. 依存の方向・凝集度・深さの原則を満たしているか確認する
-3. ARCHITECTURE.md の「ディレクトリ構成」セクションに新しいディレクトリを追記する
+3. ARCHITECTURE.md の「## ディレクトリ構成」セクションのコードブロック内ツリーに新しいディレクトリを追記する
 
 ### ディレクトリ構成を変更するとき
 
 1. `.opencode/standards/principles/directory-structure.md` を読み、変更後の構成が原則を満たしているか確認する
 2. 依存の方向ルール（上位層→下位層のみ）に違反していないか確認する
-3. 変更を ARCHITECTURE.md の「ディレクトリ構成」セクションに反映する
+3. 変更後のツリーを ARCHITECTURE.md の「## ディレクトリ構成」セクションのコードブロックに反映する
 
 ---
 

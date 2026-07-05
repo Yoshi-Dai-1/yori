@@ -75,7 +75,7 @@ git add -A && git commit -m "[生成したメッセージ]"
 
 ### 設定：「AI が自律実行」の場合
 
-1. **TDD フロー完了直後**（`tdd-with-ai.md` Step 8）。TDD 使用時はこの条件のみ。
+1. **TDD フロー完了直後**（`.opencode/standards/principles/tdd-with-ai.md` Step 8）。TDD 使用時はこの条件のみ。
 2. **人間の明示指示（「コミットして」）直後**（TDD 非使用時のみ）。
 
 ### 設定：「AI が提案・人間が実行」の場合
@@ -125,8 +125,8 @@ git add -A && git commit -m "[生成したメッセージ]"
 ## Session Protocol
 
 **セッション開始時**：
-0. **初期プロジェクト検出**: `docs/project-definition.md` が存在しないかテンプレート状態（空セクションが多い）の場合、人間に確認の上プロジェクト定義から作成を開始する。project-definition.md 完成後、アーキテクチャ選定（`_how-to-choose.md`）・ARCHITECTURE.md 記入・AGENTS.md 更新まで連鎖的に実行する。完了後 Step 1 へ進む。
-1. `.opencode/handoff-artifact.md` を確認 → 存在すれば読んで文脈復元（`## Security Status` も確認）。なければ `AGENTS.md` + `ARCHITECTURE.md` を読む。`.opencode/.handoff-trigger` が存在する場合 → 前回の handoff が未完了。build-log.md 等から文脈復元し、handoff スキルの生成を促す
+0. **初期プロジェクト検出**: `docs/project-definition.md` が存在しないかテンプレート状態（空セクションが多い）の場合、まずプロジェクトフォルダ内の既存ファイル（コード・設定・.git）を確認し、CLI で外部リソース（GAS・DB・デプロイ先等）の状況も確認する。確認後、人間と対話しながらプロジェクト定義を作成する。project-definition.md 完成後、アーキテクチャ選定（`.opencode/standards/architectures/_how-to-choose.md`）・ARCHITECTURE.md 記入・AGENTS.md 更新まで連鎖的に実行する。完了後 Step 1 へ進む。
+1. `ARCHITECTURE.md` + `docs/project-definition.md` を読む（SSoT）。`.opencode/handoff-artifact.md` が存在する場合は併せて読んで文脈復元（`## Security Status` も確認）。`.opencode/.handoff-trigger` が存在する場合 → 前回の handoff が未完了。build-log.md 等から文脈復元し、handoff スキルの生成を促す
 2. `docs/tasks.json` の未完了タスク（`"passes": false`）を確認
 3. `docs/working/` 内の各 `<group>/plan.md` を読み未完了タスクの文脈を復元
 4. **Smoke Test**: Dev コマンドが定義されており実装が存在する場合のみ実行（コードなし・APIのみ・CLIはスキップ）。ビルドエラーは修復を優先
@@ -134,6 +134,9 @@ git add -A && git commit -m "[生成したメッセージ]"
 6. Current Task と `.opencode/project-context.md` の「現在のタスク」を現在の状態に更新する
 7. **Plugin 正常性チェック**: `.opencode/plugins/*.ts` が存在しプロジェクト名が埋まっているのに `bun` 未インストールの場合 → インストールを提案
 8. **月次診断期限チェック**: `docs/quality-scorecard.md` の最終診断日が30日以上前（または不存在）なら診断実施を提案
+
+**セッション中**：
+- 要件変更の検出と反映：人間が目標変更を示した場合、または指示が `docs/project-definition.md` の Must/Won't と矛盾する場合、`.opencode/instructions/requirements-change.md` の手順に従う。変更の適用は必ず人間の承認を得てから行う
 
 **セッション終了時**：`handoff.ts` Plugin が `session.idle`（30分デバウンス + noReply）で trigger file を書き込み AI に handoff 生成を依頼する。明示的な終了時は handoff スキルが complete handoff を生成し Build Log に追記する。`<!-- HANDOFF_FILLED -->` があれば Plugin は発火しない（重複防止）。
 
