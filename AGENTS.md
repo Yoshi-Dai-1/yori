@@ -40,11 +40,14 @@ yori/
 ### データフロー（OpenCode における実動作）
 
 ```
-AGENTS.md（ターゲットプロジェクトの常時コンテキスト）
-  ＋ opencode.json → instructions[]
-    ├── instructions/*.md（セッション開始時にLLMに注入）
-    │     ↓ 参照
-    └── principles/（詳細ドキュメント）
+AGENTS.md（ランタイム常時注入）
+  ＋ opencode.json instructions[]
+    ├── ARCHITECTURE.md（常時注入）
+    └── docs/project-definition.md（常時注入）
+
+instructions/*.md（rule-injector.ts がコード編集時にイベント駆動注入）
+  ↓ 参照
+principles/（詳細ドキュメント）
 
 plugins/*.ts（コードによるガードレール。イベント駆動・自動実行）
   ←→ instructions/（補完関係：コード強制 × マークダウン思考ガイド）

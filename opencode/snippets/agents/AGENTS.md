@@ -125,8 +125,8 @@ git add -A && git commit -m "[生成したメッセージ]"
 ## Session Protocol
 
 **セッション開始時**：
-0. **初期プロジェクト検出**: `docs/project-definition.md` が存在しないかテンプレート状態（空セクションが多い）の場合、まずプロジェクトフォルダ内の既存ファイル（コード・設定・.git）を確認し、CLI で外部リソース（GAS・DB・デプロイ先等）の状況も確認する。確認後、人間と対話しながらプロジェクト定義を作成する。project-definition.md 完成後、アーキテクチャ選定（`.opencode/standards/architectures/_how-to-choose.md`）・ARCHITECTURE.md 記入・AGENTS.md 更新まで連鎖的に実行する。完了後 Step 1 へ進む。
-1. `ARCHITECTURE.md` + `docs/project-definition.md` を読む（SSoT）。`.opencode/handoff-artifact.md` が存在する場合は併せて読んで文脈復元（`## Security Status` も確認）。`.opencode/.handoff-trigger` が存在する場合 → 前回の handoff が未完了。build-log.md 等から文脈復元し、handoff スキルの生成を促す
+0. **初期プロジェクト検出**: `docs/project-definition.md` が存在しないかテンプレート状態（空セクションが多い）の場合、まずプロジェクトフォルダ内の既存ファイル（コード・設定・.git）を確認し、CLI で外部リソース（GAS・DB・デプロイ先等）の状況も確認する。確認後、人間と対話しながらプロジェクト定義を作成する。project-definition.md 完成後、アーキテクチャ選定（`.opencode/standards/architectures/_how-to-choose.md`）・ARCHITECTURE.md 記入・AGENTS.md 更新まで連鎖的に実行する。完了後、人間に「新規セッションを開始してください」と促す。以降は新規セッションで作業を継続する。
+1. `ARCHITECTURE.md` + `docs/project-definition.md` は opencode.json の instructions によりコンテキストにある（Read 不要）。`.opencode/handoff-artifact.md` が存在する場合のみ Read して文脈復元（`## Security Status` も確認）。`.opencode/.handoff-trigger` が存在する場合 → 前回の handoff が未完了。build-log.md 等から文脈復元し、handoff スキルの生成を促す
 2. `docs/tasks.json` の未完了タスク（`"passes": false`）を確認
 3. `docs/working/` 内の各 `<group>/plan.md` を読み未完了タスクの文脈を復元
 4. **Smoke Test**: Dev コマンドが定義されており実装が存在する場合のみ実行（コードなし・APIのみ・CLIはスキップ）。ビルドエラーは修復を優先
