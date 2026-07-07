@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **行動原則**: Think Before Coding > Simplicity First > Surgical Changes > Goal-Driven Execution > CLI First
+> **行動原則**: Think Before Coding > Simplicity First > Surgical Changes > Goal-Driven Execution
 > **優先順位**: SSoT > 安全 > 品質。迷ったらこの順に従う。
 > **安全原則**: 推測禁止 / 検証の明示 / 破壊的Git操作の禁止
 > **言語**: 日本語（プロジェクトで指定された場合はそれに従う）。
@@ -125,7 +125,7 @@ git add -A && git commit -m "[生成したメッセージ]"
 ## Session Protocol
 
 **セッション開始時**：
-0. **初期プロジェクト検出**: `docs/project-definition.md` が存在しないかテンプレート状態（空セクションが多い）の場合、まずプロジェクトフォルダ内の既存ファイル（コード・設定・.git）を確認し、CLI で外部リソース（GAS・DB・デプロイ先等）の状況も確認する。確認後、人間と対話しながらプロジェクト定義を作成する。project-definition.md 完成後、アーキテクチャ選定（`.opencode/standards/architectures/_how-to-choose.md`）・ARCHITECTURE.md 記入・AGENTS.md 更新まで連鎖的に実行する。完了後、人間に「新規セッションを開始してください」と促す。以降は新規セッションで作業を継続する。
+0. **初期プロジェクト検出**: `docs/project-definition.md` が存在しないかテンプレート状態（空セクションが多い）の場合、まずプロジェクトフォルダ内の既存ファイル（コード・設定・.git）を確認し、CLI で外部リソース（GAS・DB・デプロイ先等）の状況も確認する（`.opencode/instructions/cli-first.md` の手順に従う）。確認後、人間と対話しながらプロジェクト定義を作成する。project-definition.md 完成後、アーキテクチャ選定（`.opencode/standards/architectures/_how-to-choose.md`）・ARCHITECTURE.md 記入・AGENTS.md 更新まで連鎖的に実行する。完了後、人間に「新規セッションを開始してください」と促す。以降は新規セッションで作業を継続する。
 1. `.opencode/handoff-artifact.md` が存在する場合のみ Read して文脈復元（`## Security Status` も確認）。`.opencode/.handoff-trigger` が存在する場合 → 前回の handoff が未完了。build-log.md 等から文脈復元し、handoff スキルの生成を促す
 2. `docs/tasks.json` の未完了タスク（`"passes": false`）を確認
 3. `docs/working/` 内の各 `<group>/plan.md` を読み未完了タスクの文脈を復元

@@ -42,6 +42,7 @@ yori/
 ```
 AGENTS.md（ランタイム常時注入）
   ＋ opencode.json instructions[]
+    ├── .opencode/instructions/cli-first.md（常時注入）
     ├── ARCHITECTURE.md（常時注入）
     └── docs/project-definition.md（常時注入）
 

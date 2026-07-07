@@ -217,7 +217,7 @@ AGENTS.md を軽量に保つための仕組み。
 ### 作用の流れ
 
 ```
-Session開始（instructions: AGENTS.md のみ）
+Session開始（instructions: AGENTS.md / cli-first.md / ARCHITECTURE.md / project-definition.md）
   ↓
 AI: アーキテクチャ設計・プロジェクト設定（コードは未記述）
   ↓
@@ -263,6 +263,6 @@ AI が自己回復し、規約を読んでから再試行する。
 
 ### 初期状態
 
-`opencode.json` の `instructions` フィールドは `AGENTS.md` のみを読み込む。
-`instructions/` 配下のルールファイル（および `.opencode/coding-conventions.md`）はセッション開始時には一切読み込まれず、
+`opencode.json` の `instructions` フィールドは 4ファイル（`AGENTS.md` / `.opencode/instructions/cli-first.md` / `ARCHITECTURE.md` / `docs/project-definition.md`）を読み込む。
+`cli-first.md` を除く `instructions/` 配下のルールファイル（および `.opencode/coding-conventions.md`）はセッション開始時には読み込まれず、
 この Plugin が初回ブロックまたは noReply 注入でイベント駆動する。

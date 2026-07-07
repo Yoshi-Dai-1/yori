@@ -72,7 +72,6 @@ interface SessionState {
   rules: Map<string, RuleSessionState>
   securityContentMatched: boolean
   securityAuditInjected: boolean
-  cliFirstPrompted: boolean
 }
 
 const sessions = new Map<string, SessionState>()
@@ -86,7 +85,6 @@ function getSession(sessionId: string): SessionState {
       rules: new Map(),
       securityContentMatched: false,
       securityAuditInjected: false,
-      cliFirstPrompted: false,
     }
     sessions.set(sessionId, s)
   }
@@ -153,23 +151,6 @@ export const RuleInjectorPlugin: Plugin = async ({ client }) => ({
         if (isReadOfRule(fp, rule.filePath)) {
           getRuleState(session, rule.name).readByAI = true
         }
-      }
-
-      // CLI First 原則の事前注入（.env.example / project-definition.md 読込時）
-      if (!session.cliFirstPrompted && /\.env\.example$|project-definition\.md$/.test(fp)) {
-        session.cliFirstPrompted = true
-        await client.session.prompt({
-          path: { id: sessionId },
-          body: {
-            noReply: true,
-            parts: [
-              {
-                type: "text",
-                text: `[rule-injector] cli-first: 外部サービスのセットアップは CLI 経由で行ってください。CLI の存在確認（command -v）→ ヘルプ確認（--help）→ 公式ドキュメント調査（webfetch）の順で進めます。ブラウザ上の Dashboard 操作は CLI が未サポートの場合のみ提案します。`,
-              },
-            ],
-          },
-        })
       }
 
       return
