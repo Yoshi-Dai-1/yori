@@ -8,6 +8,57 @@
 
 <!-- 記入方法: .opencode/instructions/agents-fill-guide.md を読む -->
 
+## 初期セットアップ（初回セッションのみ）
+
+<!-- このセクションが存在することが「初回セッション」のシグナル。完了後は全文を削除する -->
+<!-- 注意: このセクション実行中は「## Session Protocol」のセッション開始時手順を実行しない。このセクションの手順を最優先する -->
+
+`docs/project-definition.md` が未記入（空セクションが多い）の場合のみ実行する。
+
+### 0-a. 状況確認（CLI 状態確認のみ）
+
+プロジェクトフォルダ内の既存ファイルを確認し、
+CLI で外部リソース（DB・API・クラウドサービス等）の状態を確認する。
+`.opencode/instructions/cli-first.md` の手順に従う。
+
+- ✅ **許可**: 状態確認とそれに必要な認証（一覧表示・ログ取得・ヘルスチェック等）
+- ❌ **禁止**: プロジェクトのソースコードとなるファイルのローカル取得・作成・編集
+   — これらはプロジェクト定義完了後の後続セッションで行う
+
+確認結果を人間に報告する。
+
+### 0-b. プロジェクト定義の作成（対話）
+
+`.opencode/standards/principles/project-definition-guide.md` の
+5項目（Why → Who → What Must/Won't → Constraint → Security/Risk → DoD）を
+1つずつ質問し、回答を `docs/project-definition.md` に記入する。
+
+- Won't は必ず1つ以上引き出す
+- Security/Risk はスキップしない
+
+### 0-c. 自己検証（ゲート）
+
+`docs/project-definition.md` の全セクションが埋まっているか確認する。
+空セクションが残っている → 0-b に戻る。
+全セクション完了 → 0-d に進む。
+
+### 0-d. アーキテクチャ選定 → ARCHITECTURE.md 記入
+
+`.opencode/standards/architectures/_how-to-choose.md` で
+アーキテクチャを選定し、`ARCHITECTURE.md` を記入する。
+
+### 0-e. AGENTS.md の Project Overview / Commands / Subagents を更新
+
+`docs/project-definition.md` と `ARCHITECTURE.md` を参照して、
+プロジェクト名・目的・コマンド・依存の方向を記入する。
+Subagents のプレースホルダーコメントが解決済みなら削除する。
+
+### 0-f. 完了処理
+
+1. この「## 初期セットアップ（初回セッションのみ）」セクション全文を削除する
+2. 人間に「新規セッションを開始してください」と促す
+3. 以降の実作業は新規セッションで継続する
+
 ## Project Overview
 
 [プロジェクト名]：[何のためのプロジェクトか1〜2文。技術スタックとバージョンも含める]
@@ -125,7 +176,6 @@ git add -A && git commit -m "[生成したメッセージ]"
 ## Session Protocol
 
 **セッション開始時**：
-0. **初期プロジェクト検出**: `docs/project-definition.md` が存在しないかテンプレート状態（空セクションが多い）の場合、まずプロジェクトフォルダ内の既存ファイル（コード・設定・.git）を確認し、CLI で外部リソース（GAS・DB・デプロイ先等）の状況も確認する（`.opencode/instructions/cli-first.md` の手順に従う）。確認後、人間と対話しながらプロジェクト定義を作成する。project-definition.md 完成後、アーキテクチャ選定（`.opencode/standards/architectures/_how-to-choose.md`）・ARCHITECTURE.md 記入・AGENTS.md 更新まで連鎖的に実行する。完了後、人間に「新規セッションを開始してください」と促す。以降は新規セッションで作業を継続する。
 1. `.opencode/handoff-artifact.md` が存在する場合のみ Read して文脈復元（`## Security Status` も確認）。`.opencode/.handoff-trigger` が存在する場合 → 前回の handoff が未完了。build-log.md 等から文脈復元し、handoff スキルの生成を促す
 2. `docs/tasks.json` の未完了タスク（`"passes": false`）を確認
 3. `docs/working/` 内の各 `<group>/plan.md` を読み未完了タスクの文脈を復元
