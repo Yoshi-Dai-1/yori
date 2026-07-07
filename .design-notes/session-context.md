@@ -16,8 +16,10 @@
 - `opencode/snippets/opencode.json.template`: `instructions` に `cli-first.md` を追加（4ファイル構成）
 - `opencode/snippets/agents/AGENTS.md`: header から「> CLI First」を削除（冗長解消）、Step 0 に cli-first.md 参照を追記
 - `opencode/snippets/.opencode/plugins/rule-injector.ts`: 不要になった cli-first ブロック（L158-173）と `cliFirstPrompted` プロパティを削除
-- `AGENTS.md`（yori ルート）: データフロー図に cli-first.md を追加
-- コミット: 未 commit
+- `AGENTS.md`（yori ルート）: データフロー図に cli-first.md を追加、後に対象外注釈を削除
+- `opencode/snippets/.opencode/plugins/README.md`: 4ファイル構成に更新（L220, L266-268）
+- `opencode/snippets/.opencode/instructions/cli-first.md`: 但し書き「未記載のサービス・ツールにも適用」を追記
+- コミット: `49cc4ed`（push 済み）
 
 ### アーキテクチャ上の決定
 - CLI First を AGENTS.md ヘッダの行動原則リストから削除し、専用の `instructions/cli-first.md` に分離
