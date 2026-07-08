@@ -1,7 +1,7 @@
 # Monthly Diagnosis 手順詳細
 
 このファイルは `live-operation` スキルの `## Monthly Checklist` セクションで参照される。
-内容は `live-operation/SKILL.md` から切り出したもので、**SKILL.md 側から参照されたときに読む**。
+内容は `.opencode/skills/live-operation/SKILL.md` から切り出したもので、**SKILL.md 側から参照されたときに読む**。
 
 ---
 
@@ -18,7 +18,7 @@
 2. 「品質スコア履歴」テーブルの当月列を追加・更新する（既存の列定義・テーブル書式は変更しない）
 3. 「月次診断サマリー」セクションに当月ブロックを先頭に追加する（他のセクションは編集しない）
 4. write_file で保存する
-（ファイルが存在しない場合は、`quality-scorecard.md` を新規作成する）
+（ファイルが存在しない場合は、`docs/quality-scorecard.md` を新規作成する）
 
 依存ライブラリの脆弱性スキャンを実行する（言語別コマンドは `.opencode/instructions/security/_web-search.md` の対応表に従う）
 
@@ -30,7 +30,7 @@
 
 `@security-auditor` 完了後、結果とスキャン結果を以下の両方に記録する：
 
-1. `handoff-artifact.md` の `## Security Status`（スナップショット：毎回上書き）
+1. `.opencode/handoff-artifact.md` の `## Security Status`（スナップショット：毎回上書き）
    - 検出された問題は深刻度（CRITICAL/HIGH/MEDIUM/LOW）とともに「未対応のセキュリティ要件」に追記する
    - 依存ライブラリの脆弱性スキャン結果を「依存ライブラリの脆弱性状態」に更新する
    - 問題がなければ「最終スキャン：[日付] / 結果：クリーン」に更新する
@@ -40,7 +40,7 @@
    - 「監査履歴」テーブルに新しい行を追加する（既存の列定義・テーブル書式は変更しない）
    - 「月次監査サマリー」セクションに当月ブロックを先頭に追加する（他のセクションは編集しない）
    - write_file で保存する
-   （ファイルが存在しない場合は、`security-audit-log.md` を新規作成する）
+   （ファイルが存在しない場合は、`docs/security-audit-log.md` を新規作成する）
 
 商用プロジェクトの場合は追加で：
 `.opencode/standards/principles/commercial-operations.md` の月次確認項目を実施する。

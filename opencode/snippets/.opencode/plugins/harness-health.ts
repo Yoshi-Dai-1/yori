@@ -45,6 +45,14 @@ const EDIT_VOLUME_WINDOW_MS = 10 * 60 * 1000  // 10分
 const EDIT_VOLUME_THRESHOLD = 20  // 10分で 20 回
 const LOOP_WINDOW_MS = 5 * 60 * 1000  // 5分
 const LOOP_THRESHOLD = 3  // 同一ファイルを5分以内に3回編集
+
+// 初期セットアップ中に反復編集されるファイル群
+// 自己修正ループではなくワークフロー起因の編集なので LOOP 検出から除外する
+const SETUP_PATHS = [
+  'docs/project-definition.md',
+  'ARCHITECTURE.md',
+  'AGENTS.md',
+]
 const PASS_RATE_THRESHOLD = 0.5
 const MIN_TASKS_FOR_ALERT = 5
 const SESSION_TTL_MS = 30 * 60 * 1000  // 30分無操作で stale 判定
@@ -141,6 +149,8 @@ export const HarnessHealthPlugin: Plugin = async ({ client }) => {
       // シグナル2：同一ファイルの連続編集（セッション単位）
       // セッション単位なので、親セッションの編集がサブエージェントの
       // 同一ファイル検知を巻き込むことはない
+      // 初期セットアップ中のファイルはワークフロー起因の編集として除外
+      if (SETUP_PATHS.some((p) => fp.includes(p))) return
       const sameFileRecent = stats.edits.filter(
         (e) => e.fp === fp && now - e.timestamp < LOOP_WINDOW_MS,
       )

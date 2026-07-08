@@ -71,7 +71,7 @@
 
 ## 非機能要件との適合
 
-<!-- non-functional-requirements.md の観点で確認 -->
+<!-- .opencode/standards/principles/non-functional-requirements.md の観点で確認 -->
 
 ```
 パフォーマンス：

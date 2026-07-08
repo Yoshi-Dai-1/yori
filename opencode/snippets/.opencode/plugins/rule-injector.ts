@@ -64,7 +64,10 @@ interface RuleSessionState {
   injected: boolean
   readByAI: boolean
   reminded: boolean
+  lastInjectedAt: number
 }
+
+const RULE_COOLDOWN_MS = 10 * 60 * 1000  // 同一ルールの再発報を抑制するクールダウン（10分）
 
 interface SessionState {
   conventionsOffered: boolean
@@ -94,7 +97,7 @@ function getSession(sessionId: string): SessionState {
 function getRuleState(session: SessionState, ruleName: string): RuleSessionState {
   let rs = session.rules.get(ruleName)
   if (!rs) {
-    rs = { injected: false, readByAI: false, reminded: false }
+    rs = { injected: false, readByAI: false, reminded: false, lastInjectedAt: 0 }
     session.rules.set(ruleName, rs)
   }
   return rs
@@ -183,8 +186,13 @@ export const RuleInjectorPlugin: Plugin = async ({ client }) => ({
 
         const state = getRuleState(session, rule.name)
 
+        // クールダウン中はスキップ（同一ルールの連続発報を抑制）
+        const now = Date.now()
+        if (state.lastInjectedAt > 0 && now - state.lastInjectedAt < RULE_COOLDOWN_MS) continue
+
         if (!state.injected) {
           state.injected = true
+          state.lastInjectedAt = now
           state.readByAI = false
           const tag = rule.contentPatterns ? "（内容依存・該当時のみ）" : ""
           await client.session.prompt({
@@ -201,6 +209,7 @@ export const RuleInjectorPlugin: Plugin = async ({ client }) => ({
           })
         } else if (!state.readByAI && !state.reminded) {
           state.reminded = true
+          state.lastInjectedAt = now
           await client.session.prompt({
             path: { id: sessionId },
             body: {
@@ -215,6 +224,7 @@ export const RuleInjectorPlugin: Plugin = async ({ client }) => ({
           })
         } else if (rule.contentPatterns && content && contentMatchesAny(content, rule.contentPatterns)) {
           state.readByAI = false
+          state.lastInjectedAt = now
           if (rule.name === "security") {
             session.securityContentMatched = true
             await client.session.prompt({

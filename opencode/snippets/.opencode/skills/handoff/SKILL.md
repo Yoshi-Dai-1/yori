@@ -97,7 +97,7 @@ description: |
    ```
    `docs/build-log.md` が存在しない場合は作成してから内容行を追記する。
    このログはセッション間の意思決定の経緯・試行錯誤の積み上げ履歴。
-   `handoff-artifact.md`（スナップショット：毎回上書き）とは役割が異なる。
+   `.opencode/handoff-artifact.md`（スナップショット：毎回上書き）とは役割が異なる。
 
 3. **Trigger File を削除する**
    `.opencode/.handoff-trigger` が存在する場合は削除する（handoff 完了を示す）。
@@ -106,7 +106,7 @@ description: |
    次のセッションで最初に取り組むタスクを AGENTS.md の Current Task（Next 欄）に記録する。
 
 5. **Security Status を確認・引き継ぐ（自律実行）**
-   handoff-artifact.md の `## Security Status` を読み、以下を自律的に実行する：
+   `.opencode/handoff-artifact.md` の `## Security Status` を読み、以下を自律的に実行する：
    - 未対応のセキュリティ要件がある場合 → セッション開始直後に人間に報告する
    - 依存ライブラリの最終スキャンが7日以上前の場合 → `npm audit` / `pip-audit` を実行して結果を報告する
    - 自動監視が「未設定」の場合 → Dependabot / CI組み込みの設定を提案する
@@ -211,7 +211,7 @@ description: |
 
    **Step 3：チェックリストの確認が完了したら以下を実行する**
 
-   - handoff-artifact.md の「取り組んでいた機能」に「EOL処理」と記録する
+   - `.opencode/handoff-artifact.md` の「取り組んでいた機能」に「EOL処理」と記録する
    - docs/build-log.md に「EOL処理開始」を記録する
    - 人間に「EOLチェックリストの各項目を順番に対応してください。
      完了した項目を教えていただければ、次のステップをサポートします」と伝える

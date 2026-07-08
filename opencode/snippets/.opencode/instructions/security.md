@@ -43,12 +43,12 @@ AGENTS.md の記憶が薄れても以下は常に有効：
 
 - 機密情報（APIキー・パスワード・トークン）をコードにハードコードしない
 - 機密情報をログに出力しない（デバッグログも含む）
-- 変数名・ログ出力・コメントから機密情報の存在・構造を推測させない（`naming-conventions.md` の「セキュア命名ルール」を参照）
+- 変数名・ログ出力・コメントから機密情報の存在・構造を推測させない（`.opencode/standards/principles/naming-conventions.md` の「セキュア命名ルール」を参照）
 - 外部入力をバックエンドでバリデーションせずに使用しない
 - SQLクエリを文字列連結で組み立てない（パラメータバインディングを使う）
 - エラーレスポンスにスタックトレース・内部パス・DB情報を含めない
 - 環境変数を追加したとき `.env.example` へのキー名追記を忘れない
-- 環境変数名は `UPPER_SNAKE_CASE` で、機密情報には `_KEY` / `_SECRET` / `_TOKEN` / `_CREDENTIAL` のいずれかを suffix に付ける（`naming-conventions.md` の「環境変数名の規約」を参照）
+- 環境変数名は `UPPER_SNAKE_CASE` で、機密情報には `_KEY` / `_SECRET` / `_TOKEN` / `_CREDENTIAL` のいずれかを suffix に付ける（`.opencode/standards/principles/naming-conventions.md` の「環境変数名の規約」を参照）
 - `.env.example` が変更されたとき:
   → 追加されたキーが `.env`（存在する場合）に反映されているかチェックする
   → 追加キーに `_KEY`, `_SECRET`, `_TOKEN`, `_CREDENTIAL` suffix が含まれる場合、CI/CD シークレットへの登録が必要であると警告する

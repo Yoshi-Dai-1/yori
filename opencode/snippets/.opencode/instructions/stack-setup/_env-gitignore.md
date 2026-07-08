@@ -94,7 +94,7 @@ override.tf.json
 crash.log
 crash.*.log
 ```
-IaC固有の `.gitignore` 補完は、`iac.md` がアーキテクチャ種別として選択されている場合のみ実行する。
+IaC固有の `.gitignore` 補完は、`.opencode/standards/architectures/iac.md` がアーキテクチャ種別として選択されている場合のみ実行する。
 `*.tfstate` のコミットは機密情報漏洩に直結するため、確認なく補完する。
 
 **Ansible が含まれる場合：**

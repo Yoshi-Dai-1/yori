@@ -500,14 +500,14 @@ project-root/
 
 ### 国際化・ローカライゼーション（i18n）
 
-<!-- 詳細は non-functional-requirements.md「国際化」セクションを参照 -->
+<!-- 詳細は .opencode/standards/principles/non-functional-requirements.md「国際化」セクションを参照 -->
 - 対象言語・地域：[日本語のみ / 多言語展開あり（言語: ___）]
 - タイムゾーン保存：[UTC / Asia/Tokyo]
 - 文字コード：UTF-8統一
 
 ### テスト戦略
 
-<!-- 詳細は non-functional-requirements.md「テスト戦略」セクションを参照 -->
+<!-- 詳細は .opencode/standards/principles/non-functional-requirements.md「テスト戦略」セクションを参照 -->
 - テストフレームワーク：[言語確定時に stack-setup.md ルールが自動設定]
 - ユニットテスト対象：ビジネスロジック・純粋関数
 - インテグレーションテスト対象：APIエンドポイント・DB連携
@@ -624,7 +624,7 @@ project-root/
 
 ## 決定事項のログ
 
-<!-- ADRは decisions/ に、技術選定は snippets/tech-decision.md.template を使う -->
+<!-- ADRは decisions/ に、技術選定は .opencode/standards/tech-decision.md.template を使う -->
 
 | 日付 | 種別 | 決定内容 | 詳細ファイル |
 |------|------|---------|------------|
