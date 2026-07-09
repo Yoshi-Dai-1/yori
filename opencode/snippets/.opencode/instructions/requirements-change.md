@@ -27,7 +27,7 @@ Should/Could は対象外。
      `.opencode/instructions/agents-fill-guide.md` を参照して修正を提案する
    - `ARCHITECTURE.md`：技術スタック・層のルールに影響がある場合、修正を提案する
    - `.opencode/project-context.md`：プロジェクト概要に影響がある場合、修正を提案する
-5. **記録**：変更内容と理由を `decisions/` に記録する（`.opencode/standards/tech-decision.md.template` 参照）
+5. **記録**：変更内容と理由を `decisions/[連番]-[内容を表すslug].md` に記録する（`decisions/000-template.md` をコピーして使用する。技術選定の場合は選定技術の詳細・非機能要件のセクションも記入する）
 6. **報告**：すべての更新内容を報告する
 
 ---

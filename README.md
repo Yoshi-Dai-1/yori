@@ -40,7 +40,7 @@ After setup, open the project in OpenCode and start a session. The AI will autom
 | Principles | 23 | Universal principles: harness engineering, security, code quality, test strategy, etc. |
 | Architectures | 13 | Architecture patterns by project type (Web API / CLI / monorepo / mobile / etc.) |
 | Plugins | 18 | TypeScript event-driven guardrails (secrets prevention, diagnostics, env check, lint, skill tracking, etc.) |
-| Instructions | 10 | Rule files injected on session events |
+| Instructions | 11 | Rule files injected on session events |
 | Subagents | 9 | Agent definitions specialized for specific tasks |
 | ADRs | 3 | Architecture Decision Records |
 
@@ -62,6 +62,9 @@ yori/
   package.json              npm package definition
   cli.js                    npm CLI entry point
   setup-harness.ps1         Windows (WSL2) wrapper
+  .releaserc.json           semantic-release configuration
+  .github/                  GitHub Actions workflows
+  .design-notes/            Design notes (yori development, not distributed)
   .releaserc.json           semantic-release config
   .github/                  GitHub Actions workflows
   .design-notes/            Design memos (yori-internal, not distributed)

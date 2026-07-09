@@ -64,7 +64,6 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
     standards/           yori の参照ドキュメント（setup-harness.sh が自動コピー）
       principles/        開発原則集（tdd-with-ai / security-implementation 等）
       architectures/     アーキテクチャパターン集
-      tech-decision.md.template  技術選定記録のテンプレート
 
 # .opencode/skills/ にコピーされるスキル（プロジェクトスコープ・初回使用時に自動ダウンロード）
   find-skills（stub）   外部スキルの検索・インストール（vercel-labs/skills）

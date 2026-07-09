@@ -110,6 +110,10 @@ mkdir -p docs
 # decisions/ ディレクトリ作成（ADR・技術選定の記録先）
 mkdir -p decisions
 
+# ===== ADR テンプレートのコピー（常に最新版を反映） =====
+cp "$SNIPPETS/docs/adr-template.md" decisions/000-template.md
+echo "✅ decisions/000-template.md をコピーしました（ADR作成用テンプレート）"
+
 # ===== AGENTS.md のコピー =====
 if [ ! -f "AGENTS.md" ]; then
   cp "$SNIPPETS/agents/AGENTS.md" AGENTS.md
@@ -190,7 +194,7 @@ else
 fi
 
 # instructions テンプレート（常に最新版を反映）
-# 含まれるルール：code-quality.md / code-review.md / design-contract.md / directory-structure.md / naming-conventions.md / network-resilience.md / network-resilience/*.md / security.md / security/*.md / stack-setup.md / stack-setup/*.md / tdd-cycle.md / _shared/*.md / _template.md
+# 含まれるルール：cli-first.md / code-quality.md / code-review.md / design-contract.md / directory-structure.md / naming-conventions.md / network-resilience.md / network-resilience/*.md / requirements-change.md / security.md / security/*.md / stack-setup.md / stack-setup/*.md / tdd-cycle.md / _shared/*.md / _template.md
 # 除外：_fill-guide.md（AGENTS.md 記入ガイドは別のコピー処理で agents-fill-guide.md にリネームして配置）
 while IFS= read -r -d '' RULE_FILE; do
   BASENAME=$(basename "$RULE_FILE")
@@ -241,7 +245,7 @@ for SHARED_FILE in "$SNIPPETS/agents/_shared/"*.md; do
 done
 echo "✅ .opencode/agents/_shared/ に共有ファイルをコピーしました"
 
-# standards をコピー（principles/ architectures/ tech-decision テンプレート）
+# standards をコピー（principles/ architectures/）
 # .opencode/standards/ に配置することで、AIがアクセス制限なく参照できる
 # P1-5 修正：マージ戦略を導入。既存ファイルは上書きせず、差分があれば警告。
 #           プロジェクト固有の上書きは .local/ ディレクトリで対応。
@@ -320,9 +324,6 @@ for SRC_FILE in "$YORI_SRC/architectures/"*.md; do
   fi
 done
 
-# tech-decision テンプレート（常に最新版を反映）
-cp "$YORI_SRC/snippets/tech-decision.md.template" .opencode/standards/tech-decision.md.template
-
 if [ "$DIFF_COUNT" -gt 0 ]; then
   echo "ℹ️  principles/architectures/ に ${DIFF_COUNT} ファイルの差分があります / ${DIFF_COUNT} file(s) differ（${SETUP_DIFF_LOG} に記録 / logged）"
 fi
@@ -348,7 +349,7 @@ if [ "$STALE_REF" -gt 0 ] || [ "$STALE_REF_ARCH" -gt 0 ]; then
   echo "    yori 側で修正してから再実行してください"
 fi
 echo "✅ .opencode/standards/ をコピーしました"
-echo "   （principles/ 全ファイル・architectures/ 全ファイル・tech-decision テンプレート）"
+echo "   （principles/ 全ファイル・architectures/ 全ファイル）"
 echo "   ℹ️  チームで共有する場合のみ .gitignore から .opencode/standards/ を外してください"
 
 # TS Plugin ファイルと README をコピー（常に最新版を反映）

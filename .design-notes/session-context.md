@@ -16,7 +16,7 @@
 - `opencode/snippets/.opencode/plugins/rule-injector.ts`: 同一ルールの連続発報を抑制するクールダウン（RULE_COOLDOWN_MS = 10分）を追加
 - 全 broken link 修正（8件）:
   - naming-conventions.md / security.md: `principles/` → `.opencode/standards/principles/`
-  - ARCHITECTURE.md.template / tech-decision.md.template: `non-functional-requirements.md` → 完全パス
+  - ARCHITECTURE.md.template: `non-functional-requirements.md` → 完全パス
   - monthly-diagnosis.md: 相対パス・欠落プレフィックス修正
   - handoff/SKILL.md: `handoff-artifact.md` → `.opencode/handoff-artifact.md`
   - _env-gitignore.md: `iac.md` → `.opencode/standards/architectures/iac.md`

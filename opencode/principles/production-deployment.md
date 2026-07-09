@@ -35,7 +35,7 @@
 
 個人開発の初回本番リリースには Vercel（フロント）+ Fly.io または Render（バック）が現実的。
 
-決定したら `decisions/` に `tech-decision.md.template` で記録する。
+決定したら `decisions/[連番]-[slug].md` に記録する（`decisions/000-template.md` をコピーして使用。技術選定の場合は選定技術の詳細・非機能要件のセクションも記入する）。
 
 ### 環境の分離
 

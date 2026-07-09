@@ -39,7 +39,7 @@ bash <(curl -s https://raw.githubusercontent.com/Yoshi-Dai-1/yori/main/opencode/
 | Principles | 23 | ハーネス工学・セキュリティ・コード品質・テスト戦略などの汎用原則 |
 | Architectures | 13 | プロジェクト種別ごとの構成パターン（Web API / CLI / library 等） |
 | Plugins | 18 | TypeScript によるイベント駆動ガードレール（秘密情報防止・診断・環境チェック・lint・スキル自動記録 等） |
-| Instructions | 10 | セッションイベントに応じて注入されるルールファイル |
+| Instructions | 11 | セッションイベントに応じて注入されるルールファイル |
 | Subagents | 9 | 特定タスクに特化したエージェント定義 |
 | ADRs | 3 | アーキテクチャ判断の記録（Architecture Decision Records） |
 

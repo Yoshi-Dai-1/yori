@@ -624,9 +624,9 @@ project-root/
 
 ## 決定事項のログ
 
-<!-- ADRは decisions/ に、技術選定は .opencode/standards/tech-decision.md.template を使う -->
+<!-- decisions/（decisions/000-template.md）を使用。技術選定の場合は選定技術の詳細・非機能要件セクションも記入 -->
 
 | 日付 | 種別 | 決定内容 | 詳細ファイル |
 |------|------|---------|------------|
-| [日付] | ADR | [アーキテクチャの判断] | decisions/[番号]-[slug].md |
-| [日付] | 技術選定 | [採用技術名] | decisions/[番号]-choose-[技術名].md |
+| YYYY-MM-DD | ADR | [アーキテクチャの判断] | decisions/[番号]-[slug].md |
+| YYYY-MM-DD | 技術選定 | [採用技術名] | decisions/[番号]-choose-[技術名].md |
