@@ -1,6 +1,6 @@
 {
   "name": "@yoshi-dai/yori",
-  "version": "1.10.4",
+  "version": "1.10.5",
   "description": "yori - AI co-development harness framework (AIエージェントとともに開発するためのハーネスフレームワーク)",
   "bin": {
     "yori": "./cli.js"
