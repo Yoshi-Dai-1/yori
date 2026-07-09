@@ -23,7 +23,7 @@ Should/Could は対象外。
    変更を適用せず、要件変更の検出を終了する
 3. **`docs/project-definition.md` 更新**：承認された変更を反映する
 4. **波及チェック**（承認が必要）：以下の各ファイルに更新が必要か確認し、必要な変更を人間に提案する：
-   - `AGENTS.md`：Project Overview・Commands・Architecture に影響がある場合、
+   - `AGENTS.md`：Project Overview・Commands に影響がある場合、
      `.opencode/instructions/agents-fill-guide.md` を参照して修正を提案する
    - `ARCHITECTURE.md`：技術スタック・層のルールに影響がある場合、修正を提案する
    - `.opencode/project-context.md`：プロジェクト概要に影響がある場合、修正を提案する

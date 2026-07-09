@@ -515,9 +515,9 @@ JWT_SECRET            → JWT署名用シークレット
 
 ---
 
-## 命名規則の確定手順（`.opencode/instructions/stack-setup.md` Step 3.5 ブロックA（命名規則の確定・転記）から呼び出される）
+## 命名規則の確定手順（`.opencode/instructions/stack-setup.md` Step 3.5 ブロックA（命名規則の確定）から呼び出される）
 
-このセクションは `.opencode/instructions/stack-setup.md` の Step 3.5 ブロックA（命名規則の確定・転記）が呼び出したときのみ実行する。
+このセクションは `.opencode/instructions/stack-setup.md` の Step 3.5 ブロックA（命名規則の確定）が呼び出したときのみ実行する。
 トリガーと実行タイミングは `.opencode/instructions/stack-setup.md` が管理する。このファイルは手順のみを定義する。
 
 ### 実行内容
@@ -561,27 +561,7 @@ Web検索で公式情報が確認できなかった場合：
   - 確認を推奨する情報源：[言語名] の公式ドキュメント（[ドメイン名]）
 ```
 
-**Step 3：AGENTS.md の `## Code Style` セクションを確定値で上書きする**
-
-`[例:` で始まるすべてのプレースホルダー行を、確認した公式規則の確定値に置き換える。
-「例:」という表記を残さない。選択肢を並べない。1つの確定値のみを書く。
-
-```markdown
-# 置き換え前（プレースホルダー）
-- ディレクトリ名：[例: kebab-case / snake_case]
-- 関数・変数名：[例: camelCase（JS/TS）/ snake_case（Python/Go/Rust）]
-
-# 置き換え後（TypeScript プロジェクトの場合の確定値）
-- ディレクトリ名：kebab-case
-- クラス・型名：PascalCase
-- 関数・変数名：camelCase
-- 定数：UPPER_SNAKE_CASE
-- ファイル名（コンポーネント）：PascalCase.tsx
-- ファイル名（その他）：camelCase.ts
-```
-
-**Step 4：ARCHITECTURE.md の `## 命名規則` セクションに確定値を転記する**
+**Step 3：ARCHITECTURE.md の `## 命名規則` セクションに確定値を転記する**
 
 ARCHITECTURE.md の命名規則テーブルのプレースホルダーを確定値で上書きする。
 参照情報源も同セクションの末尾に記録する。これが SSOT となる。
-以後、AGENTS.md の `## Code Style` は ARCHITECTURE.md から転記した値であることをコメントで明示する。
