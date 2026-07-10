@@ -38,7 +38,7 @@ description: |
 1.5 **バージョニングと CHANGELOG の準備**
 
    ARCHITECTURE.md の「開発プロセス」セクションを read_file で読んで以下を実行する。
-   「開発プロセス」セクションが存在しない場合は ARCHITECTURE.md の対話プロンプトが未完了なので、完了させるよう人間に伝える。
+   「開発プロセス」セクションが存在しない場合は ARCHITECTURE.md の記入が未完了なので、完了させるよう人間に伝える。
 
    **SemVer の適用判断：**
 

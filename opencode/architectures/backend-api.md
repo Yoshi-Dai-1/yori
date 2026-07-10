@@ -156,7 +156,7 @@ tests/
 自動実行され、違反が即座にAIに通知される。
 
 **設定ファイルは ARCHITECTURE.md の層定義が確定した時点で自動生成される。**
-ARCHITECTURE.md の対話プロンプト（Step 5-B2）が各層名・ディレクトリパスを読んで
+ARCHITECTURE.md の記入手順（Step 5-B2）が各層名・ディレクトリパスを読んで
 プロジェクト固有の設定を生成する。以下は生成される設定の構造例。
 
 ### JavaScript / TypeScript の場合（ESLint）

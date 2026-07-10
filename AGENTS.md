@@ -20,6 +20,10 @@
 
 コミットメッセージは conventional commits 形式（`fix:`, `feat:`, `feat!:`, `chore:`, `docs:`）に従うこと。semantic-release がコミットメッセージから次バージョンを自動判定するため。
 
+- subject（1行目）は必須。英語。先頭大文字不要、末尾ピリオド不要
+- body（本文）は常に箇条書き（`- `）で変更内容を列挙する。subject との間に空行を入れる
+- 言語は英語に統一（subject / body ともに）
+
 ## Architecture
 
 ### ディレクトリ構造

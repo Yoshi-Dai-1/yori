@@ -443,6 +443,12 @@ chore: ESLintをv9に更新
 test: useStockDataのユニットテストを追加
 ```
 
+- body（本文）を記述する場合は subject との間に空行を1行入れる
+- body は変更内容を箇条書き（`- `）で列挙する
+- subject の先頭は大文字不要、末尾ピリオド不要
+- コミットメッセージの言語は AGENTS.md の「コミットメッセージ言語」設定に従う
+- subject と body で言語を分ける場合は、AGENTS.md で subject と body それぞれに言語を指定する（書式: `subject=<言語>, body=<言語>`）
+
 ---
 
 ## 禁止パターン

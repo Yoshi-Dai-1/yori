@@ -541,13 +541,13 @@ fi
 
 # .env を作成（.env.example が存在し .env が存在しない場合）
 # ※ P0-4 修正：.env の値推測は AI が行わない方針に変更。
-#    空ファイルを作成し、AGENTS.md Session Protocol Step 4 で
-#    人間に「.env の値を入力してください」と促す。
+#    空ファイルを作成する。AGENTS.md Session Protocol の
+#    `.env` 確認手順で人間に値入力を促す。
 #    AI は .env.example のキー一覧を空値でコピーする処理を行うが、
 #    値そのものは人間のみが入力する。
 if [ -f ".env.example" ] && [ ! -f ".env" ]; then
   touch .env
-  echo "✅ .env を作成しました（Session Protocol Step 4 で AI がキー構造を補完し、値は人間が入力）"
+  echo "✅ .env を作成しました（Session Protocol で AI がキー構造を補完し、値は人間が入力）"
   echo "⚠️  .env は絶対にコミットしないでください（.gitignoreで除外済み）"
 elif [ -f ".env" ]; then
   echo "ℹ️  .env は既に存在します（上書き保護）"
