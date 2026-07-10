@@ -566,7 +566,7 @@ if [ ! -f "docs/project-definition.md" ]; then
 # プロジェクト定義
 
 <!-- このファイルをAIと対話しながら記入する -->
-<!-- 対話プロンプトは .opencode/standards/principles/project-definition-guide.md を参照 -->
+<!-- 記入方法は .opencode/standards/principles/project-definition-guide.md を参照 -->
 
 ## 目的（Why）
 

@@ -1,40 +1,48 @@
 # Session Context
 
-<!-- セッション終了時に上書き更新する（追記しない）。
-     前回の履歴は git log で参照可能。 -->
+## 概要
+yori リポジトリのハーネス設計の継続的改善。ARCHITECTURE.md.template の「AIと対話しながら記入する手順」セクションの一貫性確保を中心に作業。
 
-## Session 4: test-2 動作確認からのフィードバック修正
+## 最新のセッション（2026-07-10）
+### 完了した変更（commit a6b7346）
+- `opencode/snippets/ARCHITECTURE.md.template`:
+  - ガイドセクション名変更: 「AIと対話しながら記入する方法」→「人間とAIが対話しながら記入する手順」
+  - 旧「以下のプロンプトをAIに渡す」コードフェンスを除去し、AI自律実行形式に書き換え
+  - Step 2.5 を Step 2 のサブセクションとして統合（`#### デザイン入口の確認`）
+  - Step 3.8 を Step 4 に繰り上げ、旧 Step 4 を Step 5 に
+  - 「DESIGN.md が存在する場合」分岐に欠落していた `このステップを終了し Step 3 に進む` を追記
+  - 旧「私に」「次へと答えたら」等の一人称・儀礼的表現を「人間に」「人間が承認したら」に変更
+  - Step 4 内のプレースホルダーコメントを旧 Step 3.8 → Step 4 に更新
+  - 開発プロセスセクションのコメントとプレースホルダーを Step 4 に統一
+- `opencode/snippets/.opencode/instructions/_fill-guide.md`:
+  - 「以下のプロンプトをAIに渡す」→「AIがこのファイルを読み」に書き換え
+  - コミットメッセージ言語の決定手順（item 5）を追加
+  - ハードコードされた「日本語」を削除（任意の言語に対応）
+- `opencode/snippets/agents/AGENTS.md`（consumer template）:
+  - 見出しブロックに対話言語・コミットメッセージ言語のフィールドを追加
+  - 0-e を更新: 対話言語は会話から自動 mirror、コミットメッセージ言語は fill-guide 参照
+- `opencode/principles/naming-conventions.md`:
+  - コミットメッセージの body フォーマットルールと言語設定の参照ルールを追加
+- `AGENTS.md`（yori root）:
+  - コミット規則を追加（subject 英語・先頭大文字不要・末尾ピリオド不要 / body 常に箇条書き / 言語英語統一）
+- `opencode/architectures/backend-api.md`:
+  - `対話プロンプト（Step 5-B2）` → `記入手順（Step 5-B2）`
+- `opencode/snippets/.opencode/instructions/stack-setup/_step-36-arch.md`:
+  - `対話プロンプトを通さず` → `記入手順を通さず`
+- `opencode/snippets/.opencode/skills/release-prep/SKILL.md`:
+  - `対話プロンプトが未完了` → `記入が未完了`
+- `opencode/setup-harness.sh`:
+  - `Session Protocol Step 4` → `Session Protocol の \`.env\` 確認手順`（番号参照を除去）
 
-### 完了した変更
-- `opencode/snippets/agents/AGENTS.md`:
-  - 0-d: ADR 自動作成手順を追加
-  - 0-d: 「テンプレート全文を先に読む」を明確化
-  - 0-d: テンプレート指示に従い不要セクションを削除する旨を追記
-  - 0-f: Report Format スキップ注釈を追加
-  - Subagents: `harness-engineering.md` を完全パスに修正
-- `opencode/snippets/.opencode/plugins/harness-health.ts`: 初期セットアップ中ファイル（project-definition.md / ARCHITECTURE.md / AGENTS.md）を LOOP 検出から除外する SETUP_PATHS を追加
-- `opencode/snippets/.opencode/plugins/rule-injector.ts`: 同一ルールの連続発報を抑制するクールダウン（RULE_COOLDOWN_MS = 10分）を追加
-- 全 broken link 修正（8件）:
-  - naming-conventions.md / security.md: `principles/` → `.opencode/standards/principles/`
-  - ARCHITECTURE.md.template: `non-functional-requirements.md` → 完全パス
-  - monthly-diagnosis.md: 相対パス・欠落プレフィックス修正
-  - handoff/SKILL.md: `handoff-artifact.md` → `.opencode/handoff-artifact.md`
-  - _env-gitignore.md: `iac.md` → `.opencode/standards/architectures/iac.md`
-  - resilience-checker.md: `coding-conventions.md` → `.opencode/coding-conventions.md`
-- コミット: 未 commit（本セッションで push 予定）
+### 確認したが修正不要だった事項
+- `対話プロンプト` 残存4件: すべて project-definition-guide.md 関連で、ARCHITECTURE.md とは異なる文脈
+- `agents-fill-guide.md` 参照: setup-harness.sh が `_fill-guide.md` をリネーム配置するため正しい
+- 孤立コードフェンス: なし
+- Step 番号の欠番: なし（1→2→3→4→5）
+- 5件の README + harness-engineering.md: 現在の設計を反映、更新不要
 
-### アーキテクチャ上の決定
-- 初期セットアップ中は harness-health の LOOP 検出をバイパスする（SETUP_PATHS による除外）
-- rule-injector の再発報抑制は session.rules の既存機構を拡張（クールダウン追加、新規 Plugin 不要）
-- broken link の修正方針: すべてプロジェクトルートからの完全パス（`.opencode/` / `docs/` プレフィックス）に統一
-
-### 今回発見された設計上の課題
-- 初期セットアップ（反復書き込み）と通常開発用ガードレール（harness-health 閾値）の競合 → SETUP_PATHS で緩和
-- harness-engineering.md など原則文書への broken link は存在しないが、README への修正反映は不要（高レベル記述のみで矛盾なし）
+### 未解決の課題
+- （なし）
 
 ### 次のセッションでやること
-- test-2（または新しい test-3）で `setup-harness.sh` を再実行し、修正内容を検証
-  - ARCHITECTURE.md の broken link が解消されたか
-  - initial-setup 中の harness-health 誤検出が抑制されたか
-  - rule-injector の重複発報が抑制されたか
-  - ADR が自動生成されるか
+- （任意の継続作業）
