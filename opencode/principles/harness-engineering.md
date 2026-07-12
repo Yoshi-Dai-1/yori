@@ -305,12 +305,10 @@ Compaction ではなく Context Reset を選ぶ。
 
 ### Context Reset の手順
 
-長時間タスクでコンテキストが肥大化したとき：
+長時間タスクでコンテキストが肥大化したとき（Context Anxiety の兆候が見られる場合）：
 
-1. 現在のセッションを終了する前に「handoff-artifact.mdを生成して」と指示する
-2. または `.opencode/plugins/handoff.ts` Plugin（自動有効化）で自動生成する
-3. 新しいセッション開始時に handoff-artifact.md を渡す
-4. 「このファイルを読んで、前の状態から続きを進めてください」と指示する
+handoff スキルが自動生成した `.opencode/handoff-artifact.md` を、
+新しいセッションの Session Protocol step 1 が自動読取する。
 
 ```markdown
 # handoff-artifact.md の内容
@@ -370,7 +368,7 @@ docs/
 
 | 仕組み | スコープ | ライフサイクル | 目的 |
 |--------|----------|----------------|------|
-| `handoff-artifact.md` | **セッション** | `session.idle`（30分デバウンス）+ noReply で AI 生成（毎回上書き） | 前セッションの文脈を次セッションに渡す |
+| `handoff-artifact.md` | **セッション** | handoff スキルが AI 生成（毎回上書き） | 前セッションの文脈を次セッションに渡す |
 | `docs/working/<group>/` | **タスク** | タスク完了まで保持 | 複数タスクの状態を互いに干渉させない |
 
 ### 使い方を判断する基準

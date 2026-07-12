@@ -37,8 +37,7 @@ Should/Could は対象外。
 以下の項目はプロジェクトの成長に伴う技術的・構造的な変化であり、確認なしで更新してよい：
 
 - `ARCHITECTURE.md` の「## ディレクトリ構成」セクション（新しいディレクトリ作成時の追記）
-- `AGENTS.md` の「Current Task」セクション（タスク進捗の反映）
-- `.opencode/project-context.md` の「現在のタスク」（Current Task と同期）
+- `.opencode/project-context.md` の「現在のタスク」
 
 ---
 

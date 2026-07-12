@@ -1,45 +1,45 @@
 ---
 name: handoff
 description: |
-  This skill should be used when handing off work between sessions, pausing
-  development long-term, or resuming after a break. Use this skill whenever
-  the user says: 「本番に出した」「リリースできた」「公開できた」
-  「長期間開発を止める」「別の人に引き継ぐ」「しばらく触らない」
+  Use this skill when ending a development session or pausing work
+  long-term. Call it when the user says: 「本番に出した」「リリースできた」
+  「公開できた」「長期間開発を止める」「別の人に引き継ぐ」「しばらく触らない」
   「今日はここまで」「終わりにする」「セッションを終了する」「一旦ここで止める」
-  「再開したい」「続きをやりたい」「前回の続きから」
   「サービスを終了したい」「閉鎖する」「廃止する」「アーカイブしたい」
-  Make sure to use this skill even when the user does not say "handoff"
-  explicitly — any context reset, development pause, session end, or session resumption
-  qualifies. Also trigger when all OpenCode Todos are completed
+  Make sure to use this skill even when the user does not explicitly say
+  "handoff" — any context reset, development pause, or session end qualifies.
+  Also trigger when all OpenCode Todos are completed
   (the AI knows from its own todowrite tool calls that all Todos are done).
-  Also trigger when `.opencode/.handoff-trigger`
-  exists (indicates handoff was not completed in the previous session).
-  Do NOT use for release preparation (use release-prep instead).
 ---
 
-<!-- template-version: 1.0.0, template-status: active -->
+<!-- template-version: 2.0.0, template-status: active -->
 
 ## When to Use
 
 このスキルを使うべきタイミング：
 - セッションをまたいで作業を引き継ぐとき
 - 長期停止・別の人への引き継ぎ前
-- 「再開したい」「前回の続きから」など、前セッションの文脈を復元するとき
 - 本番リリース後（状態の記録として）
-- **OpenCode Todo 全完了時**: 会話履歴上の Todo がすべて完了状態になったとき（ユーザーが続ける場合は発動しない）
-- **`.opencode/.handoff-trigger` 存在時**: 前セッションで handoff が未完了のマーカーがあるとき（セッション開始時に自動検出）
-
-このスキルを使わないタイミング：
-- 本番リリースの準備中（→ release-prep を使う）
-- 単純な質問・調査タスク（状態保存が不要なとき）
+- **OpenCode Todo 全完了時**: todowrite ツールで管理中の Todo がすべて完了状態になったとき
 
 ## Workflow
+
+### 実行判断
+
+以下のいずれかに該当する場合のみ以降の手順を実行する：
+- 人間が明示的にセッション終了を指示した（description 記載の trigger 句に合致）
+- 全 OpenCode Todo が完了状態になった
+
+上記以外の場合 → 何もせずに return する（スキルの呼び出しを取り消す）。
 
 ### 常時実行
 
 1. **現在の状態を保存する**
    `.opencode/handoff-artifact.md` を以下のフォーマットで write_file で保存する
    （既存の内容は上書きしてよい。毎回最新のスナップショットを保存する）：
+   対応レベルと適用される規制・標準は、`docs/project-definition.md` のプロジェクト性質と
+   `.opencode/standards/principles/security-requirements.md` の判断基準
+   （Step 2：対応レベルの決定・Step 3：適用される法令・標準の特定）から都度導出すること。
 
    ```markdown
    # Handoff Artifact
@@ -60,57 +60,44 @@ description: |
 
    [バグ・疑問点・要確認事項。なければ「なし」]
 
-   ## Security Status
+    ## Security Status
 
-   対応レベル: [Lv.1 / Lv.2 / Lv.3 / Lv.4]（security-requirements.md の判断基準）
+    対応レベル: [Lv.1 / Lv.2 / Lv.3 / Lv.4]
 
-   適用される規制・標準:
-   - [個人情報保護法 / GDPR / PCI DSS / HIPAA / ISMAP / なし]
+    適用される規制・標準:
+    - [個人情報保護法 / GDPR / PCI DSS / HIPAA / ISMAP / なし]
 
-   未対応のセキュリティ要件:
-   - [ ] [要件名]：[理由・対応方法・担当スプリント]
-   （なければ「なし」）
+    未対応のセキュリティ要件:
+    - [ ] [要件名]：[理由・対応方法・担当スプリント]
+    （なければ「なし」）
 
-   完了したセキュリティ実装:
-   - [x] [実装内容]：decisions/[連番]-[slug].md に記録済み
-   （なければ「なし」）
+    完了したセキュリティ実装:
+    - [x] [実装内容]：decisions/[連番]-[slug].md に記録済み
+    （なければ「なし」）
 
-   依存ライブラリの脆弱性状態:
-   - 最終スキャン：[YYYY-MM-DD] / 結果：[クリーン / HIGH N件 / CRITICAL N件]
-   - 自動監視：[Dependabot設定済み / CI組み込み済み / 未設定]
+    依存ライブラリの脆弱性状態:
+    - 最終スキャン：[YYYY-MM-DD] / 結果：[クリーン / HIGH N件 / CRITICAL N件]
+    - 自動監視：
+      - Dependabot / Renovate: [設定済み / 未設定]
+      - CI/CD スキャン（npm audit等）: [組み込み済み / 未設定]
 
-   ## 変更したファイル
+    ## 変更したファイル
 
-   [Git status に表示された変更ファイル一覧。なければ「なし」]
+    [Git status に表示された変更ファイル一覧。なければ「なし」]
 
-   <!-- HANDOFF_FILLED -->
-   ```
-
-   末尾の `<!-- HANDOFF_FILLED -->` は必ず含める（次セッション開始時に「前回の引き継ぎが完了済み」と判断するためのマーカー）。
-   注意：上記フォーマットのセクション名（`## ` で始まる行）は変更・削除・追加しないこと。
+     注意：
+     - 上記フォーマットのセクション名（`## ` で始まる行）は変更・削除・追加しないこと。
+     - 「依存ライブラリの脆弱性状態」の最終スキャン日付は、セッション中にスキャンした場合は
+       新しい日付に更新し、スキャンしなかった場合は旧 artifact の値を引き継ぐこと。
 
 2. **Build Log に行を追記する**
-   `docs/build-log.md` を read_file で読み込む。
-   末尾に新しい行を追記する（追記のみ。既存の行は変更しない）：
+   `docs/build-log.md` が存在しない場合は作成してから、末尾に新しい行を追記する
+   （追記のみ。既存の行は変更しない）：
    ```
    | YYYY-MM-DD | [完了した内容の概要] | [未解決があれば記載。なければ「なし」] |
    ```
-   `docs/build-log.md` が存在しない場合は作成してから内容行を追記する。
-   このログはセッション間の意思決定の経緯・試行錯誤の積み上げ履歴。
+   このログはセッション間の活動履歴。
    `.opencode/handoff-artifact.md`（スナップショット：毎回上書き）とは役割が異なる。
-
-3. **Trigger File を削除する**
-   `.opencode/.handoff-trigger` が存在する場合は削除する（handoff 完了を示す）。
-
-4. **Current Taskを更新する**
-   次のセッションで最初に取り組むタスクを AGENTS.md の Current Task（Next 欄）に記録する。
-
-5. **Security Status を確認・引き継ぐ（自律実行）**
-   `.opencode/handoff-artifact.md` の `## Security Status` を読み、以下を自律的に実行する：
-   - 未対応のセキュリティ要件がある場合 → セッション開始直後に人間に報告する
-   - 依存ライブラリの最終スキャンが7日以上前の場合 → `npm audit` / `pip-audit` を実行して結果を報告する
-   - 自動監視が「未設定」の場合 → Dependabot / CI組み込みの設定を提案する
-   人間からの指示を待たずに実行する。
 
 #### フィードバックループの確認（初回本番リリース時のみ・自律実行）
 
@@ -160,14 +147,14 @@ description: |
 
 ### 条件付き実行
 
-6. **EOL（サービス終了・アーカイブ）の処理（条件実行）**
+3. **EOL（サービス終了・アーカイブ）の処理（条件実行）**
 
    このステップを実行する条件を確認する：
 
    条件：トリガーが「サービスを終了したい」「閉鎖する」「廃止する」「アーカイブしたい」
    のいずれかを含む
    → 該当しない：このステップを完全にスキップする
-    → 該当する：常時実行の全ステップ（1〜5）を先に完了させた後、以下を実行する
+    → 該当する：常時実行の全ステップ（1〜2）を先に完了させた後、以下を実行する
 
    **Step 1：プロジェクト性質の確認**
 
@@ -231,6 +218,8 @@ Next: [内容]
 ### 未解決の問題
 [あれば記載。なければ「なし」]
 
-### 次のセッションで最初にやること
-[具体的な1つのタスク]
+### Security Status
+対応レベル: [Lv.1 / Lv.2 / Lv.3 / Lv.4]
+未対応要件: [あれば記載。なければ「なし」]
+脆弱性: [クリーン / HIGH N件 / CRITICAL N件]
 ```

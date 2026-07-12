@@ -39,7 +39,7 @@ After setup, open the project in OpenCode and start a session. The AI will autom
 |---|---|---|
 | Principles | 23 | Universal principles: harness engineering, security, code quality, test strategy, etc. |
 | Architectures | 13 | Architecture patterns by project type (Web API / CLI / monorepo / mobile / etc.) |
-| Plugins | 18 | TypeScript event-driven guardrails (secrets prevention, diagnostics, env check, lint, skill tracking, etc.) |
+| Plugins | 17 | TypeScript event-driven guardrails (secrets prevention, diagnostics, env check, lint, skill tracking, etc.) |
 | Instructions | 11 | Rule files injected on session events |
 | Subagents | 9 | Agent definitions specialized for specific tasks |
 | ADRs | 3 | Architecture Decision Records |
