@@ -286,9 +286,30 @@
   - 配置は `.opencode/plugins/`（公式の自動ロード対象）
 - 付記: yori 側 `@opencode-ai/plugin` は devDependency `"latest"`（現インストール 1.15.13）。ランタイム 1.17.13 と使用面で互換を確認済みだが、`"latest"` のためインストール時期で型定義がドリフトしうる（軽微な開発衛生面の留意点）
 
+## secrets-guard 残余ギャップ修正（2026-09-08 実施・未コミット）
+
+### 背景（nintei-chosa-form-assistant 調査で発見）
+- テストプロジェクトの初回セッションで、エージェントが .env.example を GAS 向けに編集しようとすると secrets-guard（write/edit ブロック）に弾かれる事象を確認。旧配布物をローカル編集（.env.example 明示許可 + .env$/.envrc$ 追加）で回避しており、**本来の解決先は yori canonical** と判定
+- yori canonical の残ギャップ: `\.env\..+$` が `.env.example` にもマッチ（bun 実測 true）。secrets-guard.ts に例外が無いため .env.example の write/edit が不可。pre-commit フック生成側は `grep -v '\.example$'`（setup-harness.sh:944）で許可済みのため、**プラグイン側のみ未対応**だった
+
+### 変更
+- `opencode/snippets/.opencode/config/secret-patterns.json`: filePatterns に `\.env$`（裸 .env）/ `\.envrc$`（direnv）を追加。_comment に「.env.example は正規表現では除外せず、secrets-guard.ts と pre-commit フックが明示許可」と追記
+- `opencode/snippets/.opencode/plugins/secrets-guard.ts`: `isEnvExampleFile = fp.endsWith(".env.example")` を filePattern 判定から除外（コンテンツ検査ループは維持）
+
+### 検証（全部 PASS）
+- 動作確認（実プラグイン import・write フック6ケース）: `.env.example` 値なし=PASS / `.env.example` 実値あり=BLOCK（コンテンツ検査が維持・秘密漏れなし）/ `.env`=BLOCK / `.envrc`=BLOCK / `.env.production`=BLOCK / `.env.example.production`=BLOCK（endsWith 基準なので許可されない）
+- typecheck: `bunx --bun tsc --noEmit --strict --skipLibCheck --resolveJsonModule --types bun plugins/secrets-guard.ts` → TSC_EXIT=0
+- commit-review 回帰: 29 pass / 0 fail
+- ドキュメント整合: README / plugins/README / harness-engineering に .env パターン列挙なし → 更新不要
+
+### 備考
+- コンテンツ検査が .env.example に残るため、「名前は .env.example だが実値入り」は引き続きブロックされる（テストプロジェクトのローカル patch と同設計）
+- `.env` / `.envrc` の commit 防衛は .gitignore を第一層としつつ、ガード第二層が塞ぐ defense-in-depth
+
 ## 次のセッションでやること
-- commit-review 改修（2026-09-06）+ 5件README 監査修正 C1〜C7（2026-09-07）のコミット可否を人間に確認する（commit/push は人間の指示があるまで実行しない）
-- 既存プロジェクト（nintei-chosa-form-assistant 等）へのハーネス再配布可否を確認（対象プロジェクトからの指示時のみ・自動で手を加えない）。再実行で改修版 commit-review.ts / code-reviewer.md / security-auditor.md が上書き配布され、review-policy.json が新規作成される
+- 【済 2026-09-08】commit-review 改修 + C1〜C7 は `6037088 feat: make commit-review a stateful, policy-driven gate` でコミット・プッシュ済み（2個前。origin/main へ rebase 後に push）
+- 【済 2026-09-08・未コミット】secrets-guard の .env.example ギャップ修正（step 1）。下記「secrets-guard 残余ギャップ修正」参照。コミットは人間の指示があるまでしない
+- nintei-chosa-form-assistant へのハーネス再配布可否 = 調査済み（内容は妥当と判定・不適切修正なし）。再展開（step 2）・初回コミット成立（step 3）の実施可否は人間の指示待ち。再実行で改修版 commit-review.ts / secrets-guard.ts / code-reviewer.md / security-auditor.md が上書き配布され、review-policy.json が新規作成される。config（secret-patterns.json / skills.lock.yaml）は上書き保護のためローカル版が維持される
 - TUI 色修正は「しない」決定済み（必要なら opencode.json の agent.color 明示指定が解）
 - 実機での軽量E2E（ノイズ入り初回 diff → 警告通過 / エビデンス付き HIGH → ブロック → 修正 → 履歴で再計上なし → 通過）は opencode 経由時のみ実施可能。要望があれば次回
 - 前回 nline の変更（ファイル参照バッククォート＋フルパス統一 86ファイル / naming・code-quality 常時化 / API キャスト除去）のコミット可否も未確認のまま残っている

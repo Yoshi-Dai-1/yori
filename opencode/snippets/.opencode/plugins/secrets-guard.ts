@@ -68,7 +68,10 @@ export const SecretsGuardPlugin: Plugin = async ({ client }) => ({
     for (const { filePath: fp, content } of ops) {
       if (!fp) continue
 
-      if (FILE_PATTERN_REGS.some((p) => p.test(fp))) {
+      // 値なしテンプレートの .env.example はコミット対象のため常に許可する
+      // （正規表現では除外せず、ここで明示判定。コンテンツ検査（下記）は引き続き適用する）
+      const isEnvExampleFile = fp.endsWith(".env.example")
+      if (FILE_PATTERN_REGS.some((p) => p.test(fp)) && !isEnvExampleFile) {
         throw new Error(
           `Do not write secret files: ${fp}\n` +
             "Use .env.example for environment variable templates.",
