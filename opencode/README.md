@@ -138,7 +138,7 @@ target-project/
     plugins/                TypeScript plugins (automatic guardrails)
     skills/                 Project-scoped skills
     agents/                 Subagent definitions
-    config/                 SSoT files (secret-patterns.json / skills.lock.yaml)
+    config/                 SSoT files (secret-patterns.json / skills.lock.yaml / review-policy.json)
     standards/              yori copy (principles/ / architectures/)
       principles/.local/    Project-specific overrides
       architectures/.local/ Project-specific overrides

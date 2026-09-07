@@ -165,12 +165,30 @@ export const MyPlugin: Plugin = async ({ client, $ }) => ({
 
 ## `commit-review.ts` 詳細
 
-git commit 実行前に @code-reviewer（一般レビュー + CRITICAL security）と @security-auditor（全severity セキュリティ監査）を並列子セッションで実行し、問題を検出したらコミットをブロックする。
+git commit 実行前に @code-reviewer（一般レビュー）と @security-auditor（全severity セキュリティ監査）を並列子セッションで実行し、判定ポリシーに従ってブロックする。オーケストレータ役であり、サブエージェント同士の委譲は行わない（二重監査を防ぐため）。
 
 ### 発火条件
 
-`tool.execute.before` で bash ツールのコマンド文字列に `git commit` が含まれていることを検出して発火する。
+`tool.execute.before` で bash ツールのコマンド文字列に `git commit` が含まれていることを検出して発火する（`git -C <dir> commit` / `git -c key=val commit` 形式も検出）。
 AI エージェントが bash で `git commit` を実行したときにのみ動作する（人間がターミナルで直接コミットした場合は発火しない）。
+
+フックバイパス操作（`--no-verify` / `core.hooksPath` 変更等）は destructive-op-guard に加えて commit-review 自体もブロックする。
+
+### 判定ポリシー（`.opencode/config/review-policy.json` が SSoT）
+
+- **ブロック**: `[重要度: HIGH/CRITICAL]` に該当する指摘、またはブロック対象クラス（機密情報のハードコード・認証/認可の欠如・インジェクション・機密情報のログ出力）に該当し、**「検証方法」が添えられた**指摘
+- **警告（ブロックしない）**: `warning.severities` に該当する指摘（既定 `MEDIUM/LOW`）、および検証方法のない HIGH/クラス系指摘
+- エビデンス不足の指摘や感覚的懸念が門を止めないことで、ゲートの収束を保証する
+
+### 審査履歴（状態を持つゲート）
+
+- 審査結果は `docs/review-log.md` に記録される（`status: 未解決 / 解消済み / 警告`）
+- 次回コミット時は履歴を読み込み、**未解決指摘の再報告を禁止**し、「【解消確認】/【残存確認】」マーカーで状態を更新する
+- 解消済み指摘は再ブロックされない。同一指摘の無限再ブロックを防ぎ、修正が行われれば確実にコミットへ到達できる
+
+### 依存監査（決定論的・マニフェスト変更時のみ）
+
+`git diff --cached --name-only` に依存マニフェスト（package.json / requirements.txt / go.mod 等）が含まれる場合のみ、対応する監査コマンド（`npm audit --audit-level=high` 等）を実行し、出力を @security-auditor に添付する。毎コミットの監査は行わない（セッション開始時・package-version トリガー・sprint-audit との重複を避ける）。
 
 ### 保護される / されないケース
 
@@ -180,12 +198,13 @@ AI エージェントが bash で `git commit` を実行したときにのみ動
 | 提案・人間実行モードで人間が「実行して」→ AI が bash 実行 | ✅ 発火 | — |
 | 人間が AI の提案をターミナルにコピペして手動実行 | ❌ 発火しない | pre-commit フック（secret patterns のみ） |
 | 人間が直接ターミナルで `git commit` | ❌ 発火しない | pre-commit フック（secret patterns のみ） |
+| 審査エージェント定義（`.opencode/agents/code-reviewer.md` / `security-auditor.md`）の欠落 | ⚠️ 該当審査をスキップ＋毎コミット通知（AI プロンプト + トースト） | 恒久ブロックせず回復へ導く。`code-reviewer.md` 欠落時も `security-auditor` は可能なら継続し監査の穴を最小化 |
 
 ### 補完関係
 
-- **`.opencode/plugins/commit-review.ts`**: LLM によるコードレビュー + セキュリティ監査。広範だが発火条件の制約あり
+- **`.opencode/plugins/commit-review.ts`**: LLM によるコードレビュー + セキュリティ監査（ポリシー＋エビデンス＋履歴で判定）。広範だが発火条件の制約あり
 - **pre-commit フック**: 決定論的パターンマッチ（`.opencode/config/secret-patterns.json`）。範囲は限定されるが常に発火
-- 両者で defense in depth を構成する
+- 両者で defense in depth を構成する。機密のハードコード等の決定論的クラスは pre-commit 側が常に防衛するため、LLM 側の誤分類リスクを相殺する
 
 ### 備考
 
@@ -197,8 +216,8 @@ main ブランチに直接コミットして問題ない。
 
 | トリガー | 現状 | 理由 |
 |---------|------|------|
-| `gh pr create` | AI自己遵守（`_trigger-pr.md`） | PR頻度が低く、`.opencode/plugins/commit-review.ts` が個別コミットを保護 |
-| `git push`（非main） | AI自己遵守（`_trigger-pr.md`） | push 検出は誤検知リスク大（force push は別途 `.opencode/plugins/destructive-op-guard.ts` が保護）
+| `gh pr create` | AI自己遵守（`.opencode/instructions/security/_trigger-pr.md`） | PR頻度が低く、`.opencode/plugins/commit-review.ts` が個別コミットを保護 |
+| `git push`（非main） | AI自己遵守（`.opencode/instructions/security/_trigger-pr.md`） | push 検出は誤検知リスク大（force push は別途 `.opencode/plugins/destructive-op-guard.ts` が保護）
 
 ## `destructive-op-guard.ts` 詳細
 

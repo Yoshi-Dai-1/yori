@@ -138,7 +138,7 @@ yori/
     plugins/                TypeScript Plugin（自動ガードレール）
     skills/                 プロジェクトスコープのスキル
     agents/                 サブエージェント定義
-    config/                 SSoT ファイル（secret-patterns.json / skills.lock.yaml）
+    config/                 SSoT ファイル（secret-patterns.json / skills.lock.yaml / review-policy.json）
     standards/              yori のコピー（principles/ / architectures/）
       principles/.local/    プロジェクト固有の上書き用
       architectures/.local/ プロジェクト固有の上書き用

@@ -1,5 +1,122 @@
 # Session Context
 
+## commit-review ゲート改修（判定収束・冗長排除・競合解消）（2026-09-06 実施・未コミット）
+
+### 背景（設計調査の結論）
+- 競合 C1: 判定語彙が別々（`[重要度: HIGH/LOW]` vs `[重大度: HIGH/MEDIUM/LOW]` vs `[重要度: HIGH/MEDIUM/LOW]`）
+- 競合 C2: ブロック閾値（HIGH vs MEDIUM）・トリガー（tool.execute.tool 毎 vs commit detect）の相違
+- 競合 C3: security-auditor が「リスクなし」判定を審査エージェント対話で isAllClear/続行 分岐に委譲
+- 競合 C4: `—` 誤字・「リスクなし」分岐テキスト（security-auditor.md:62-79 / 142-156）が auditRequestText 設計と不一致（誤操作のリスクがないと虚偽記述）
+- 冗長 R1: 毎コミット全依存監査 (npm audit 等) ×3 場所（セッション開始時 / package-version / commit-review）
+- 冗長 R2: コミット量子の終了時オーケストレーション・セッション開始時プルとも重複
+- 冗長 R3: コード品質 / 規約ゲートの説明は rule-injector と code-quality が担当、commit review は不要（撤去済み）
+- 主因 = 単一確率的 severity 出力に履歴・語彙・検証可能性がない（非収束）
+
+### 設計方針（ユーザー承認済み）
+- ブロック: `[重要度: HIGH/CRITICAL]` またはブロック対象クラス（hardcoded-secret / authz / injection / secret-in-log）該当 **かつ** `検証方法:`（エビデンス）あり。MEDIUM/LOW・エビデンスなしは警告
+- 履歴: `docs/review-log.md` を git コミット対象とする状態ファイル（SSOT）。同一ファイル:行の未解決は再報告禁止、解消は再計上しない。secret 実値は書かない（マスク保証 + pre-commit / secrets-guard の二重防衛）
+- ブートストラップ: 特別分岐なし・履歴SSOTのみ（初回コミットに履歴が含まれるのは自然な挙動）
+- 依存監査: staged diff にマニフェストがあるときだけ実行（セッション開始時 / package-version / sprint-audit と重複しない）
+- 配役: commit-review がオーケストレータ、reviewer=一般・auditor=セキュリティで並列、エージェント間委譲なし
+
+### 変更ファイル
+- 新規: `opencode/snippets/.opencode/config/review-policy.json`（判定 SSoT: severityOrder / block.severities+classes / warning.severities / evidenceRequired / historyFile=docs/review-log.md / historyRecentLines=60 / dependencyAudits 17コマンド）
+- `opencode/snippets/.opencode/plugins/commit-review.ts`: readPolicy（DEFAULT_POLICY フォールバック内蔵）・履歴読込/書込（applyHistory/writeHistory）・ブロック判定・警告キュー・バイパス検出（--no-verify / core.hooksPath / git -C / git -c）・依存監査（マニフェスト変更時のみ）・`【解消確認】/【残存確認】`マーカー処理
+- `opencode/snippets/agents/subagents/code-reviewer.md`: 委譲行削除・`[重要度: CRITICAL/HIGH/MEDIUM/LOW]`+`検証方法:` 統一・read-only 明記
+- `opencode/snippets/agents/subagents/security-auditor.md`: 検証方法追加・「誤操作のリスクがない」虚偽記述是正・依存受渡し明確化
+- `opencode/snippets/.opencode/instructions/security/_risk-severity.md`: SSoT = review-policy.json 参照に一本化
+- `opencode/snippets/.opencode/plugins/README.md`: commit-review セクション更新
+- `opencode/principles/subagents.md`: 「審査エージェントとゲートの設計原則」5条追記（読取専用 / エビデンス / 状態 / クラス判定 / 配役一意化）
+- `opencode/README.md` / `.design-notes/harness-file-strategy.md`: config/ 記述に review-policy.json 追記
+
+### 検証（全部 PASS）
+- 単体テスト 22件 PASS（`/var/folders/2r/4xmj5zsd5736vnnwzp3gj1x40000gn/T/opencode/commit-review-test/commit-review.test.ts`）
+  - analyzeFindings（ブロック/警告/マーカー/クラス/エビデンス）/ applyHistory（解消・行番号ドリフト・二重書き込みなし）/ readPolicy（実配布レイアウト・フォールバック） / isGitCommit・hasHookBypass（-C / -c / --no-verify）
+- typecheck: `bunx --bun tsc --noEmit --strict --skipLibCheck --types bun plugins/*.ts` エラーゼロ
+- review-policy.json は JSON 妥当・検索: 新規 markdown ローカルリンク追加なし（参照先実在性問題なし）
+- 残存 `[重要度: HIGH/...]` は qa-report-format.md（評価テンプレート・ゲートと独立）と code-reviewer/security-auditor（統一後語彙）のみ
+
+### 実装メモ
+- writeHistory/applyHistory の二重書き込みバグを修正（writeHistory は applyHistory の結合済み本文を直接書込）。テストで回帰防止
+- normalizeHistKey で `:行番号` を除去し、同ファイルなら行番号ドリフトでも解消判定
+- テスト用 export: SEV_HEADER_RE / LEGACY_SEV_RE / RESOLVE_RE / REMAIN_RE / HIST_ENTRY_RE / isGitCommit / hasHookBypass / analyzeFindings / applyHistory / writeHistory / normalizeHistKey / readPolicy
+- HIST_ENTRY_RE はクラスラベル `[hardcoded-secret]` 許容形
+- setup-harness.sh L367-375 で config/*.json 配布（overwrite-protect A）→ 新規プロジェクトは自動、既存は手動コピーが必要
+- yori 自身の opencode.json には commit-review 非配線（ハーネス本体のため意図通り）
+
+### 残存リスク（ユーザーに開示済み・受容）
+- 人間のターミナル手動コミットは不発火（pre-commit が秘密のみ保護）
+- LLM の HIGH→MEDIUM 誤分類は決定論レイヤー（pre-commit / マニフェスト時 audit / secrets-guard / sprint-audit）+ 警告キューで相殺
+
+## 5件README + harness-engineering.md 反映監査と修正 C1〜C7（2026-09-07 実施・未コミット）
+
+### 監査（2026-09-07）
+- 対象: ルート README.md / README.ja.md、opencode/README.md / README.ja.md、
+  opencode/snippets/.opencode/plugins/README.md、opencode/principles/harness-engineering.md
+- 既に反映済み: opencode/README.md / plugins/README.md（詳細）/ ルート2件（概要のみ・問題なし）
+- 未反映を検出: opencode/README.ja.md（config 一覧が旧）/ harness-engineering.md（config 一覧・
+  「横断的品質ゲート」節に commit-review 節そのものが無い）
+- 誤字脱字・語彙・マーカー・パスの表記ゆれなし。コア設計（analyzeFindings / HIST_ENTRY_RE /
+  findingToRecord / 配布経路・参照先実在）は整合
+
+### C3 の方針（ユーザー選択 A 採用）
+- warning.severities を「宣言のみの未使用設定」から**判定で実際に参照する**仕様へ変更
+- analyzeFindings: 非ブロック候補は warning.severities に含まれる severity のみ警告記録（SSoT が警告対象を制御）。
+  ブロック候補のエビデンス不足は**降格警告**（warning.severities と無関係に常に警告・ブロック強度を落とさない）
+- policyContext: ハードコード「MEDIUM/LOW は警告扱い」→ `warning.severities` の動的参照に置換
+
+### 変更ファイル
+- `opencode/snippets/.opencode/plugins/commit-review.ts`: 警告分類を warning.severities 参照に改修（C3）・
+  policyContext 動的化・HIST_ENTRY_RE から未使用トークン「経過観察」削除（C5）・
+  path なし指摘が解消上書き対象にならない設計意図のコメント追加（C6）
+- `opencode/snippets/.opencode/config/review-policy.json`: _comment に「警告対象」を追記（SSoT の範囲明記）
+- `opencode/snippets/.opencode/instructions/security/_risk-severity.md`: 「全エージェント」→
+  「審査エージェント（code-reviewer / security-auditor）」（C4）・警告扱いの SSoT 参照を明記
+- `opencode/principles/harness-engineering.md`: 横断的品質ゲートに「### commit-review」節を新設（C1）・
+  config/ SSoT 一覧に review-policy.json 追記（C2）
+- `opencode/README.ja.md`: config/ SSoT 一覧に review-policy.json 追記（EN と一致・C2）
+- `opencode/snippets/.opencode/plugins/README.md`: 警告記述を warning.severities 参照に更新（C3 整合）・
+  `_trigger-pr.md` の裸参照を `.opencode/instructions/security/_trigger-pr.md` にフルパス化（C7）
+
+### 検証（全部 PASS）
+- 単体テスト **25件 PASS / 0 fail（48 expect）**: C3 用に3件追加
+  （SSoT 外 severity は記録されない / 含む severity は警告記録 / エビデンスなし HIGH は SSoT と無関係に降格警告）
+- typecheck: `bunx --bun tsc --noEmit --strict --skipLibCheck --types bun plugins/commit-review.ts`
+  を `opencode/snippets/.opencode/` で実行 → TSC_EXIT=0
+- 新規参照先（_risk-severity.md / review-policy.json / commit-review.ts / _trigger-pr.md）の実在確認済み
+- 「経過観察」「全エージェントが」の残存参照なし
+
+### 変更せず維持
+- qa-report-format.md（@evaluator 用 HIGH/MEDIUM/LOW）は変更しない（ゲートと独立・以前の決定）
+- TUI 色問題は「修正しない」決定維持
+
+## commit-review スキップ通知化（残存観察2・2026-09-07 実施・未コミット）
+
+### 決定（ユーザー確認）
+- 残存観察1（【残存確認】の severity 固定）は**修正しない**。残存観察2のみ修正
+- 残存観察2は「案A 恒久ブロック」ではなく**「案B 通知して継続」**を採用:
+  - 恒久ブロックは初心者をセットアップ失敗と区別できないデッドロックに陥れる（最悪）
+  - 通知（毎コミット・AI + 人間トースト）があれば穴を気づかせつつ回復へ導ける
+  - ハーネス哲学（destructive-op-guard の「復元可能な操作はブロックしない・ヒューマンインザループ」）と整合
+  - 秘密の決定論的保護（pre-commit / secrets-guard）は別レイヤーで残るためトータルの穴は限定的
+
+### 変更内容（従来の `if (!reviewerMd) return` による無音スキップを改めた）
+- **通知**: 審査エージェント定義（code-reviewer.md / security-auditor.md）欠落時は、恒久ブロックせず
+  AI へのプロンプト + トーストで「スキップした」と毎コミット通知（notifySkipped ヘルパー新設）
+- **穴の最小化**: code-reviewer.md が無くても security-auditor は可能なら継続実行（従来はレビュー放棄で
+  監査ごと中止していた）。skipNotices はブロック/通過の両方の最終メッセージにも前置される
+- 両方が欠落しレビュー結果が空のときも、通知してから return
+
+### 対象ファイル
+- `opencode/snippets/.opencode/plugins/commit-review.ts`: 上記改修 + notifySkipped 追加
+- `opencode/snippets/.opencode/plugins/README.md`: 保護される/されないケース表に「審査エージェント定義欠落」行を追加
+- `opencode/principles/harness-engineering.md`: commit-review 節に「欠落時は恒久ブロックせず通知で回復」を追記
+- `.design-notes/session-context.md`: 本ファイル更新
+
+### 検証
+- typecheck: `bunx --bun tsc --noEmit --strict --skipLibCheck --types bun plugins/commit-review.ts` → TSC_EXIT=0
+- 単体テスト 29 pass / 0 fail（61 expect）— 回帰なし
+
 ## ファイル参照のバッククォート＋展開後フルパス統一（2026-08-15 実施・未コミット）
 
 ### 監査
@@ -126,8 +243,55 @@
   3. `AGENTS.md`:117 以外は `ARCHITECTURE.md` 参照は「編集対象」または「0-* 初期セットアップ」中のものであり、注記追加は不要と判断（編集時は Read が正当、初期セットアップはテンプレート全文の refile が目的）
 - v1120test: `.opencode/instructions/code-review.md` は setup 再実行で自動反映（SAME 確認済み）、`AGENTS.md` と `ARCHITECTURE.md` はプロジェクト固有版のため手動反映
 
+## 質疑調査（2026-09-06〜09-07・Q&A 3ラウンドの回答確定）
+
+### Q1: security-auditor-invocation.md は使われなくなったのか
+- **現役**。`opencode/snippets/agents/_shared/security-auditor-invocation.md` は setup-harness.sh L237-246 で `.opencode/agents/_shared/` へ配布され、送信側 `_web-search.md:50`・受信側 `security-auditor.md:58` が参照。CVE検索→監査依頼フロー用で、commit-review の依存監査添付とはトリガーが別
+
+### Q2: review-log.md の書式は定まっているか
+- 書式は code 固定。`findingToRecord`（commit-review.ts L265-272）が統一シリアライズ、`HIST_ENTRY_RE`（L87）がパース。エージェントが直接書かず、プラグインがパース→再出力するため語彙分岐は起きない
+- 蓄積は「追記」でなく**上書き更新**: 各コミット判定で `## <ISO> commit-review` セクション追加 + 既存未解決をその場「解消済み」化。git 管理下で単調成長、ローテーションなし（長期的肥大が残存リスクとして記録済み）
+
+### Q3: subagents.md の配役一意化記述で二重実行は防げるのか
+- 文書上の記述は不変条件であり機械的防御ではない。実際の防御は **task ツール拒否**（`permission: "*": deny`）。README の「サブエージェント同士の委譲は行わない」は権限設定で担保
+- OpenCode 公式では Task ツール + `permission.task` で制御。エンジンはサブエージェント生成を primary に限定しておらず、**task 許可があればサブ→サブ委譲は技術可能**
+- 旧ハーネスに委譲指示（code-reviewer.md:28「HIGH以下は @security-auditor に委ねる」）は存在したが、**実際の二重実行は実行ログで観測していない**（構造診断による指摘）。改修で委譲行は削除済み
+
+### Q4: TUI で build⇔plan の色が変わらない問題
+- **OpenCode のバグではなく仕様**。ソース解析で確定:
+  - `packages/tui/src/context/local.tsx:119-131`: エージェント色はパレット `[secondary, accent, success, warning, primary, error, info]`（7色）から「全可視エージェント一覧の並び順×7の剰余」で自動割当。`agent.color` 未指定時のフォールバック
+  - `packages/opencode/src/agent/agent.ts:316-326`: 一覧は「build(既定)を先頭、あとは名前昇順」でソート
+  - ninteichosa = build + 9サブ + general/plan/explore → **plan が 7 枠後ろに循環し build と同じ色**。素のプロジェクトでは plan=3番目=warning で色が変わる
+- 修正方法: `opencode.json` で `"agent": { "build": {"color": "primary"}, "plan": {"color": "accent"} }` を明示指定（エージェント数非依存）。**修正は行わない決定**（調査のみで終了）
+- グローバル設定（`~/.config/opencode/opencode.json`=mcp open-design のみ / `opencode.jsonc`=$schema のみ）・ninteichosa の opencode.json（instructions のみ）とも色指定なし → フォールバック発動
+
+### Q5: 監査系サブエージェントの役割は明確に分離しているか
+- 役割表（9体）: security-designer=実装前設計 / code-reviewer=実装後一般+ブロッククラス / security-auditor=認証・機密実装後・全severity / code-quality-auditor=月次品質6軸 WARN / resilience-checker=月次・リリース前可用性 / codebase-investigator=調査 / test-generator=TDD / planner=タスク計画 / evaluator=スプリントQA
+- 「完全独立ではなく、実装後コード監査グループ（reviewer/auditor/quality-auditor/resilience-checker）の観点境界には曖昧さあり」と正直に回答。**コミットゲート内は reviewer + auditor の2体限定**にしたことで構造課題は解消済み
+- 全エージェントの明確なマトリクス明文化は「対応不要」決定
+
+### Q6: 改修はテストプロジェクトの問題を解消するか
+- ハーネス**再配布しない限り現状は旧挙動のまま**（ninteichosa の commit-review.ts は改修前の複製）。setup-harness.sh 再実行で plugins (L356-359) / subagents (L229-234) / _shared (L238-243) は常時上書き、config (L367-375) は `if [ ! -f ]` の新規のみ → review-policy.json は新規作成される。**色問題は別要因なので改修では直らない**
+
+### Q7: review-policy.json は harness-file-strategy.md に則っているか（追加調査①）
+- 則っている。`.opencode/config/` 節（L209-215）に review-policy.json を明記済み。戦略 A（上書き保護・`if [ ! -f ]` で新規コピーのみ・L371-372、glob は `*.json *.yaml *.yml`）で配布される
+- 軽微な不整合1点: ドキュメントは「A+E（yori_version のみ sed 更新）」と書くが、sed（L395-410）は **skills.lock.yaml のみ**を対象にする実装。review-policy.json には yori_version フィールドが無いため E は no-op（スキーマを持たない SSoT）。**2026-09-07 に harness-file-strategy.md を行分割して解消済み**（skills.lock.yaml=A+E / secret-patterns.json・review-policy.json=A）。機能影響はゼロ（E が効くべきファイルにのみ E が効いていた）
+- 既存プロジェクト再実行時は: plugins/subagents/_shared/instructions は常時上書き（改修版が届く）、config は A（既存保護・新規のみ追加）、削除は発生しない
+
+### Q8: Plugin は OpenCode 公式に準拠しているか（追加調査②）
+- **準拠**。yori 側 dev 型定義 1.15.13 と ninteichosa ランタイム 1.17.13 の両方で照合:
+  - `Plugin: (input: PluginInput, options?) => Promise<Hooks>`、`PluginInput` に `worktree: string`（両バージョン同型）
+  - `"tool.execute.before"?: (input: {tool, sessionID, callID}, output: {args}) => Promise<void>`（commit-review.ts は `input.tool==="bash"`・`input.sessionID`・`output.args?.command` を使用、throw によるブロックは公式 env-protection 例と同パターン）
+  - SDK: `client.session.create` / `session.prompt`（`body.noReply`）/ `tui.showToast` が 1.17.13 の sdk.gen.d.ts L364 / types.gen.d.ts L2252・L2337 に存在、1.15.13 でも typecheck PASS
+  - 配置は `.opencode/plugins/`（公式の自動ロード対象）
+- 付記: yori 側 `@opencode-ai/plugin` は devDependency `"latest"`（現インストール 1.15.13）。ランタイム 1.17.13 と使用面で互換を確認済みだが、`"latest"` のためインストール時期で型定義がドリフトしうる（軽微な開発衛生面の留意点）
+
 ## 次のセッションでやること
-- 今回の変更（ファイル参照バッククォート＋フルパス統一 86ファイル）と、未コミットの naming/code-quality 常時化・API キャスト除去のコミット可否を人間に確認する（commit/push は人間の指示があるまで実行しない）
+- commit-review 改修（2026-09-06）+ 5件README 監査修正 C1〜C7（2026-09-07）のコミット可否を人間に確認する（commit/push は人間の指示があるまで実行しない）
+- 既存プロジェクト（nintei-chosa-form-assistant 等）へのハーネス再配布可否を確認（対象プロジェクトからの指示時のみ・自動で手を加えない）。再実行で改修版 commit-review.ts / code-reviewer.md / security-auditor.md が上書き配布され、review-policy.json が新規作成される
+- TUI 色修正は「しない」決定済み（必要なら opencode.json の agent.color 明示指定が解）
+- 実機での軽量E2E（ノイズ入り初回 diff → 警告通過 / エビデンス付き HIGH → ブロック → 修正 → 履歴で再計上なし → 通過）は opencode 経由時のみ実施可能。要望があれば次回
+- 前回 nline の変更（ファイル参照バッククォート＋フルパス統一 86ファイル / naming・code-quality 常時化 / API キャスト除去）のコミット可否も未確認のまま残っている
 
 ## 検証メモ（2026-08-13）
 - テストハーネス: `/var/folders/2r/4xmj5zsd5736vnnwzp3gj1x40000gn/T/opencode/archdiag-test/`

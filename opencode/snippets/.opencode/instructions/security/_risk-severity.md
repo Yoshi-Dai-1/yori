@@ -1,5 +1,11 @@
 ## リスク深刻度と対処タイミング
 
+ゲートの判定語彙・ブロック閾値・ブロック対象クラスの**単一の真実（SSoT）は
+`.opencode/config/review-policy.json`**。本ファイルはその解説と対処タイミングを記す。
+review-policy.json を変更した場合は本ファイルの下記表も整合させる。
+
+報告時は審査エージェント（code-reviewer / security-auditor）が `[重要度: CRITICAL / HIGH / MEDIUM / LOW]` 形式で報告する。
+
 リスク深刻度ラベルの定義と4象限との紐付けは
 `.opencode/standards/principles/risk-based-approach.md` の
 「深刻度ラベルの体系と使い分け」を参照。
@@ -22,3 +28,10 @@ LOW（記録して計画的に対処）：
   セキュリティヘッダーの未設定 / レートリミットなし（小規模）/
   依存ライブラリのMEDIUM脆弱性
 ```
+
+ブロック対象（commit-review がコミットを止める指摘）は「HIGH 以上」または
+「ブロック対象クラス（機密情報のハードコード・認証/認可の欠如・インジェクション・
+機密情報のログ出力）に該当」かつ「検証方法（エビデンス）が添えられた」指摘のみ。
+警告扱い（コミットは止めない）は review-policy.json の `warning.severities`
+（既定 `MEDIUM / LOW`）に設定された severity の指摘、およびエビデンスの添えられない
+ブロック対象候補の指摘。警告の範囲を変更したい場合は review-policy.json で行う。

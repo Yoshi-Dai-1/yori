@@ -1,0 +1,38 @@
+{
+  "_comment": "コミット時ゲート（commit-review.ts）と審査サブエージェント（code-reviewer / security-auditor）が参照する判定基準の単一の真実（SSoT）。severity 語彙・ブロック対象・警告対象・エビデンス必須・依存監査対象の変更はこのファイルのみで行う。編集後は setup-harness.sh を再実行してターゲットプロジェクトへ配布する（既存プロジェクトは overwrite-protect のため .opencode/config/review-policy.json へ手動コピーが必要）。",
+  "severityOrder": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+  "block": {
+    "severities": ["CRITICAL", "HIGH"],
+    "classes": [
+      { "class": "hardcoded-secret", "keywords": ["ハードコード", "hardcoded", "平文保存", "機密情報がコード", "秘密鍵がコード", "パスワードがコード", "apiキー", "シークレットをコード"] },
+      { "class": "authz", "keywords": ["認証の欠如", "認可の欠如", "認証欠如", "認可欠如", "認証バイパス", "authentication bypass", "missing authentication", "missing authorization"] },
+      { "class": "injection", "keywords": ["インジェクション", "sqlインジェクション", "sql injection", "コマンドインジェクション", "xss", "パラメータバインディングが", "バインディングされていない"] },
+      { "class": "secret-in-log", "keywords": ["ログに出力", "ログ出力", "ログに秘密", "機密情報をログ", "logging secrets"] }
+    ]
+  },
+  "warning": {
+    "severities": ["MEDIUM", "LOW"]
+  },
+  "evidenceRequired": true,
+  "historyFile": "docs/review-log.md",
+  "historyRecentLines": 60,
+  "dependencyAudits": {
+    "package.json": "npm audit --audit-level=high",
+    "package-lock.json": "npm audit --audit-level=high",
+    "yarn.lock": "npm audit --audit-level=high",
+    "pnpm-lock.yaml": "npm audit --audit-level=high",
+    "bun.lock": "npm audit --audit-level=high",
+    "bun.lockb": "npm audit --audit-level=high",
+    "requirements.txt": "pip-audit",
+    "requirements-dev.txt": "pip-audit",
+    "pyproject.toml": "pip-audit",
+    "go.mod": "govulncheck ./...",
+    "go.sum": "govulncheck ./...",
+    "Cargo.toml": "cargo audit",
+    "Cargo.lock": "cargo audit",
+    "Gemfile": "bundle audit",
+    "Gemfile.lock": "bundle audit",
+    "composer.json": "composer audit",
+    "pubspec.yaml": "dart pub audit"
+  }
+}

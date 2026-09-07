@@ -208,11 +208,17 @@ yori の修正・改善時に新規ファイルや既存ファイルの戦略を
 
 ## `.opencode/config/`（SSoT ファイル）
 
-### secret-patterns.json, skills.lock.yaml
+### skills.lock.yaml
 - **戦略**: A（ファイル全体）+ E（yori_version フィールドのみ）
 - **元**: `snippets/.opencode/config/*.json`, *.yaml, *.yml
 - **行**: 367-385（コピー）, 395-410（yori_version の sed-in-place）
-- **理由**: 単一真実源（SSoT）設定。ユーザーがカスタム secret パターンや外部スキル登録を追加する。ファイル全体は保護し、`yori_version` のみ常に最新に更新する。
+- **理由**: 単一真実源（SSoT）設定。外部スキル登録状態を管理し、配布元 yori のバージョン記録のために `yori_version` のみ常に最新に更新する。E は `yori_version` フィールドを持たないファイルには適用されない（後述2ファイルにはフィールドが無く E は no-op）。
+
+### secret-patterns.json, review-policy.json
+- **戦略**: A（ファイル全体）
+- **元**: `snippets/.opencode/config/*.json`, *.yaml, *.yml
+- **行**: 367-385（コピー）
+- **理由**: 単一真実源（SSoT）設定。ユーザーがカスタム secret パターン・コミット時レビュー判定ポリシー（review-policy.json）を追加する。`yori_version` フィールドを持たないため、E（yori_version の sed-in-place）は適用対象外。
 
 ---
 

@@ -61,7 +61,7 @@ AIエージェントが暴走せずに正しい方向へ進み続けるための
     agents/              サブエージェント定義（@名前で呼び出す）
     plugins/             TypeScript Plugin（イベント駆動の自動ガードレール）
     usage/               使用履歴（GCの判断基準）
-    config/              SSoT ファイル（secret-patterns.json / skills.lock.yaml）
+    config/              SSoT ファイル（secret-patterns.json / skills.lock.yaml / review-policy.json）
     coding-conventions.md  プロジェクト固有のコーディング規約（AIが常に参照）
     project-context.md   プロジェクト文脈・現在のフェーズ（AIがセッション開始時に参照）
     handoff-artifact.md  Context Reset 時の引き継ぎ（スナップショット・毎回上書き）
@@ -285,6 +285,34 @@ CLI の具体的なコマンドは `command -v` / `--help` / `webfetch` で
 
 ハーネスは単発のルールではなく、複数の品質ゲートが横断的に動作する。
 各ゲートは独立して機能し、重複・競合がない設計となっている。
+
+### commit-review（コミット時のコードレビュー + セキュリティ監査ゲート）
+
+**目的**: `git commit` 実行前に @code-reviewer（一般レビュー）と @security-auditor（セキュリティ監査）を
+並列子セッションで実行し、判定ポリシーに従ってブロックする。依存マニフェストが diff に含まれる場合のみ
+npm audit / pip-audit 等の決定的な依存監査も付加する。オーケストレータ役であり、サブエージェント同士の
+委譲は行わない（二重監査を防ぐ）。
+
+**トリガー条件**:
+- `tool.execute.before` で `git commit` を検出（`.opencode/plugins/commit-review.ts`）
+- フックバイパス操作（`--no-verify` / `core.hooksPath` 変更）は commit-review 自体がブロック
+
+**判定**（severity + ブロック対象クラス + エビデンス）:
+- ブロック: `[重要度: HIGH/CRITICAL]` またはブロック対象クラス（機密情報のハードコード・認証/認可の欠如・
+  インジェクション・機密情報のログ出力）に該当し、**「検証方法」が添えられた**指摘
+- 警告（ブロックしない）: review-policy.json の `warning.severities`（既定 `MEDIUM/LOW`）に該当する指摘、
+  およびエビデンスの添えられないブロック候補
+- 審査履歴 `docs/review-log.md`（git管理・状態ファイル）を読み、未解決指摘の「解消」「残存」を確認・記録する。
+  同一指摘の再報告と解消済み指摘の再ブロックを防ぎ、ゲートの収束を保証する（履歴 = 状態を持つゲート）
+- 審査エージェント定義（code-reviewer.md / security-auditor.md）が欠落した場合は恒久ブロックせず、
+  該当審査をスキップして毎コミット通知（AI + トースト）で回復へ導く（設定ミスを恒久ロックにしない）
+
+**SSoT**: `.opencode/config/review-policy.json`
+severity 語彙・ブロック対象・警告対象・エビデンス必須・依存監査対象の変更はこのファイルのみで行う。
+判定語彙の解説は `.opencode/instructions/security/_risk-severity.md`。
+
+**Strategy A**: 上書き保護（`setup-harness.sh` の `config/` コピー）
+プロジェクトが閾値をカスタマイズする可能性があるため、存在しない場合のみコピーする。
 
 ### ls-lint（ファイル名規約の機械的強制）
 
