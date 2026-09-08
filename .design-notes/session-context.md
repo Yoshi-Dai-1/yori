@@ -363,16 +363,50 @@
 - fail-closed 検証: タイムアウトが発生する全経路で必ずブロック（timedOutLabels>0 は early-return を通らず block 分岐に到達）。無期限待機は全子セッション + 全依存監査コマンドで排除
 - **インデックス状態の変化を検出**: 初回編集分（session-context / 005 ADR / review-policy.json / commit-review.ts 初版）が STAGED に。2回目の修正分（ADR 言い回し / commit-review 精査修正 / README・principle 同期）は未ステージ。コミット前に2回目分も `git add` が必要
 - 最終確認（2026-09-08・ユーザー指示）: OpenCode 公式ページ（opencode.ai/docs/plugins）とインストール済み型定義（@opencode-ai/plugin / @opencode-ai/sdk）の両面で準拠確認。`Plugin` 構造・`tool.execute.before`（throw でブロック）・`client`/`$`/`worktree` コンテキスト・自動ロード・`session.create`（parentID/title）・`session.prompt`（parts/system/noReply・path.id）・`tui.showToast`（message/variant）すべて契約一致。`import type` のみの SDK 参照はランタイム依存なし。index はユーザーが手動ステージ（問題なし）→ **ステージはそのまま・コミットは指示待ち**
+- 確定: `538ca0f fix: prevent commit-review from hanging indefinitely on stalled audits` をコミット・プッシュ済み（7ファイル・308+/33-・pre-commit PASS）
+- テストプロジェクト反映（2026-09-08・ユーザー指示）: `.opencode/plugins/commit-review.ts` を yori 正規版で上書き（diff で IDENTICAL 確認・tsc exit=0）、`.opencode/config/review-policy.json` に `reviewTimeoutMs: 900000` 追加（JSON パース OK）。**ステージは未実施（ユーザー管理）**。ゲートは worktree を読むため次回エージェントセッションのコミットから有効。コミット内容に反映するにはこの2ファイルの `git add` が必要
 
 ### 保留
 - テストプロジェクトへは**ユーザー指示があるまで未反映**。反映手順候補: 固定版で上書き（.opencode/config/review-policy.json は手動コピー）→ コミット検証
 
+## commit-review プラグインのロード失敗発見と単一エクスポート化（2026-09-08 実施・yori のコミットは承認待ち）
+
+### 背景（P3 検証で発覚）
+- 有界化版反映後の P3 検証（新規 opencode run でコミット試行）で、ゲートが**一度も発火せず**コミット `11e29af` が成立
+- `--print-logs` ログに `failed to load plugin ... commit-review.ts error="Plugin export is not a function"`（`/var/folders/.../opencode/diag.log` に保存）
+- テストプロジェクトの commit-review.ts がエージェント自己編集（628行）で index と乖離していたため、正規版へ再同期（P1 完了）した後も本エラーは解消しない → 正規版自体に問題
+
+### 原因（バイナリ解析で確定）
+- opencode 1.17.13 のローカルプラグインローダーは `Object.values(module)` を走査し、**非関数エクスポート（RegExp 定数等）を見つけると即 TypeError を throw** する実装（`ck()` / `lk()`: `typeof $ === "function" ? $ : !$.server ? throw "Plugin export is not a function"`）
+- 正規版は `SEV_HEADER_RE` 等の RegExp 定数と多数のヘルパー関数を `export` していた → ロード失敗 → フック未登録 → コミットが素通り
+- 旧 variant（単一エクスポート `export const CommitReviewPlugin` のみ）はロードできていた（旧セッションでゲート発火していた事実と整合）
+
+### 修正（yori canonical）
+- `opencode/snippets/.opencode/plugins/commit-review.ts`: ヘルパー（SEV_HEADER_RE / LEGACY_SEV_RE / RESOLVE_RE / REMAIN_RE / EVIDENCE_RE / HIST_ENTRY_RE / isGitCommit / hasHookBypass / readPolicy / analyzeFindings / findingToRecord / applyHistory / writeHistory）の `export` を全て除去し、**Plugin 関数（CommitReviewPlugin）のみをエクスポート**（旧 variant の成功パターンに一致）
+- secrets-guard.ts は元から単一エクスポートのため影響なし・destructive-op-guard.ts も import なし（コメント参照のみ）を確認
+
+### 検証（全部 PASS）
+- tsc: cr-check で canonical 単体 + 実プロジェクト（tsconfig-real.json）ともに exit=0
+- 実ロード: 新規 opencode run 2回で `failed to load plugin` が消失（`diag3.log` 確認・プロセス正常終了）
+- **実機ゲート検証（P3 合格）**: 新規 run で `git add -A && git commit` → `commit-review-code` / `commit-review-security` の審査サブセッションが起動（04:43:22）→ 両者「問題なし」（レビュー: 13箇所の export 除去は内部使用のみ・外部 import なし / 監査: 問題なし）→ ブロックなしでコミット成立 `1a43c61 chore: verify commit-review gate`
+- review-log.md 未生成は**設計どおり**: writeHistory は `newRecords.length > 0`（指摘/解消/タイムアウト記録があるとき）のみ呼ばれるため、指摘ゼロ経路ではファイルを作らない
+
+### 残タスク
+- **yori canonical のコミット承認待ち**（`fix:` 型。AGENTS.md によりコミットは人間の明示指示時のみ）
+- ブロック経路（指摘あり → ブロック → review-log.md 生成 → 修正後経過で再計上なし）の実機 E2E は未実施（ノイズ入り diff での軽量 E2E が候補）
+- 旧セッション（PID 8309 / 4573 = ses_f8f66ceb...）は未停止のまま（ユーザーが手動停止予定）
+- テストプロジェクトは `1a43c61` でクリーン（verification コミット済み）
+
 ## 次のセッションでやること
 - 【済 2026-09-08】commit-review 改修 + C1〜C7 は `6037088 feat: make commit-review a stateful, policy-driven gate` でコミット・プッシュ済み（2個前。origin/main へ rebase 後に push）
 - 【済 2026-09-08】secrets-guard の .env.example ギャップ修正（step 1）は `9dfc1cc fix: allow .env.example edits...` でコミット・プッシュ済み（v1.15.1 に含まれる）
-- nintei-chosa-form-assistant へのハーネス再展開（step 2）= 2026-09-08 完了（上記「yori v1.15.1 適用」参照）。**初回コミット成立（step 3）のみ人間の指示待ち**。ステージ済み 37 ファイル・検証全部 PASS・コミット可能な状態で保留中
+- 【済 2026-09-08】プラグインロード失敗（非関数エクスポート）の修正と実機ゲート検証 PASS（上記「commit-review プラグインのロード失敗発見...」参照）。テストプロジェクトは `1a43c61` で検証コミット済み
+- **yori canonical のコミット承認待ち**: `opencode/snippets/.opencode/plugins/commit-review.ts`（エクスポート単一化）を `fix:` でコミット・プッシュ（AGENTS.md により明示指示時のみ実施）
+- nintei-chosa-form-assistant へのハーネス再展開（step 2）= 2026-09-08 完了（上記「yori v1.15.1 適用」参照）。初回コミット成立（step 3）は**人間の指示待ち**。ステージ済み 37 ファイル・検証全部 PASS・コミット可能な状態で保留中
 - **commit-review 監査の有界化 + allowlist（上記 2026-09-08 節）のテストプロジェクトへの反映 = 人間の指示待ち**。反映/コミットはユーザー指示があった場合のみ実施
 - secrets-guard 残余ギャップ修正（step 1）の作業メモは上記「secrets-guard 残余ギャップ修正」参照（該当コミット反映済み）
+- 旧セッション（PID 8309 / 4573）の手動停止をユーザーへリマインド
+- ブロック経路の実機 E2E（指摘あり → ブロック → review-log.md 生成 → 同ファイル:行の再計上なし → 通過）は要望があれば次回
 - TUI 色修正は「しない」決定済み（必要なら opencode.json の agent.color 明示指定が解）
 - 実機での軽量E2E（ノイズ入り初回 diff → 警告通過 / エビデンス付き HIGH → ブロック → 修正 → 履歴で再計上なし → 通過）は opencode 経由時のみ実施可能。要望があれば次回
 - 前回 nline の変更（ファイル参照バッククォート＋フルパス統一 86ファイル / naming・code-quality 常時化 / API キャスト除去）のコミット可否も未確認のまま残っている
@@ -391,3 +425,35 @@
   2. principle「使い方」フロー（コア表2nd → 言語別3rd）が優先チェーンと逆順 → 言語別(2) → 基本コア表(3) → 確定手順(4) に揃えた
   3. `_step-35.md:15` の `naming-conventions.md` 曖昧参照 → `.opencode/standards/principles/naming-conventions.md` を明記。principle「確定手順」ヘッダも `_step-35.md` を明記
   4. instruction:92 の「principle の」曖昧参照 → フルパス化
+## Step 0〜4 実施（2026-09-08・yori canonical のコミット承認待ち）
+
+### Step 0（履歴整理・テストプロジェクト）
+- `git reset --soft 5b68eed` を実行: 履歴は 5b68eed の1件のみ・37ファイル（+2290/−910）がステージ済み・作業ツリー=index 一致（Step 4 反映後）
+- 2?3回目の誤コミット（11e29af / 1a43c61）は履歴から消え、内容はステージ済みとして保持（指定どおり・未コミット）
+
+### Step 1（自動テスト修復・案A）
+- 配布物 `commit-review.ts` は単一エクスポートのまま不変。テスト実行時に配布物を `.gen/commit-review.test-target.ts` へ一時コピーし、テストが必要な内部部品（SEV_HEADER_RE / LEGACY_SEV_RE / RESOLVE_RE / REMAIN_RE / isGitCommit / hasHookBypass / readPolicy / analyzeFindings / findingToRecord / applyHistory / writeHistory / interface ReviewPolicy）にだけ export を再付与して bun test
+- 実装: `/var/folders/2r/4xmj5zsd5736vnnwzp3gj1x40000gn/T/opencode/commit-review-test/run-tests.sh`（perl で注入・毎回配布物から再生成）+ `commit-review.test.ts` の import 先を `.gen/` へ変更
+- 検証: **30 pass / 0 fail（64 expect）**。tsc（cr-check/tsconfig-can.json）exit=0
+
+### Step 2（無言ブロック・方針 (i)）
+- 両審査エージェントが起動されたのに**双方無言（結果ゼロ）**でタイムアウトもない場合 → noReply 通知 + トースト + throw でブロック（fail-closed・素通ししない）
+- 説明書（code-reviewer.md / security-auditor.md）欠落によるスキップは従来どおり通知のみで継続（恒久ブロックしない）
+
+### Step 3a（依存監査の全対象化）
+- `break`（最初の1本で停止）を撤去し、staged diff に含まれる全マニフェストに対して監査コマンドを実行・結果を結合して提示（allowlist 絞り込みは normalizePolicy で維持）
+
+### Step 3b（残存確認の重要度引き継ぎ）
+- `HIST_ENTRY_RE`（`gm` フラグ生成）で履歴の同ファイル（行番号ドリフト許容）の最新 severity を取得し、エビデンス付き残存確認ブロックに反映。履歴に見つからなければ HIGH フォールバック（安全側）
+- エビデンスなしの残存確認（警告扱い）は従来どおり MEDIUM
+- テスト追加: 「残存確認は履歴の元の重要度を引き継ぐ（無ければ HIGH）」
+
+### Step 4（説明書2点の手動同期）
+- `plugins/README.md` → テストプロジェクトへコピーし `git add`（ステージ済み37件に含まれる）
+- `harness-engineering.md` → テストプロジェクトへコピー（`.gitignore:95` で git 非追跡のランタイム配置・ステージ不要）
+- テストプロジェクト最終状態: 履歴1件（5b68eed）・37ファイルステージ済み（+2290/−910）・作業ツリー=index・未追跡なし
+
+### 残タスク
+- 自動テストランナーは作業フォルダ（/var/folders 配下）のため OS により消失しうる。恒久化は 案B（`.opencode/lib/` 分離）を将来課題として保有
+- テストプロジェクトでの実機検証（ブロック経路 E2E）は**人間がプロジェクト内 AI エージェントに指示**して実施（yori 側からは行わない）
+- yori canonical のコミットは承認待ち（`.design-notes/session-context.md` + `commit-review.ts` の2ファイル変更中）

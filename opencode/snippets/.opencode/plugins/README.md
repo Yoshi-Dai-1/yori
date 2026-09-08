@@ -23,7 +23,7 @@ OpenCode Plugin は TypeScript + Bun ランタイムで動作するイベント�
 | `env-check.ts` | `tool.execute.before` / `experimental.session.compacting` / `event` | Python/Node.js 環境パス自動書き換え + `.nvmrc` 不一致警告（セッション内1回） |
 | `rule-injector.ts` | `tool.execute.before` / `experimental.session.compacting` / `event` | ファイル種別・内容に応じてルールファイルの参照を注入（`AGENTS.md` 肥大化防止。規約未読ブロック・mkdir ゲート・tdd ハードゲート付き） |
 | `destructive-op-guard.ts` | `tool.execute.before` | 破壊的Git操作（reset --hard / rebase / push --force / rm -rf 等）のブロック |
-| `commit-review.ts` | `tool.execute.before` | git commit 検出 → 子セッションで @code-reviewer + @security-auditor を並列実行 → 問題あり・監査タイムアウト時はブロック（fail-closed） |
+| `commit-review.ts` | `tool.execute.before` | git commit 検出 → 子セッションで @code-reviewer + @security-auditor を並列実行 → 問題あり・監査タイムアウト・両監査とも無言のときはブロック（fail-closed） |
 
 ## イベントの種類
 
@@ -184,17 +184,19 @@ AI エージェントが bash で `git commit` を実行したときにのみ動
 
 - 審査結果は `docs/review-log.md` に記録される（`status: 未解決 / 解消済み / 警告`）
 - 次回コミット時は履歴を読み込み、**未解決指摘の再報告を禁止**し、「【解消確認】/【残存確認】」マーカーで状態を更新する
+- 【残存確認】の重要度は履歴に記録された元の指摘（同じファイル）から引き継ぐ（履歴が見つからない場合のみ HIGH で記録）
 - 解消済み指摘は再ブロックされない。同一指摘の無限再ブロックを防ぎ、修正が行われれば確実にコミットへ到達できる
 
 ### 監査の有界化（タイムアウト・fail-closed）
 
 - 子セッション応答は `reviewTimeoutMs`（既定 **15 分**・`review-policy.json` で調整可・下限 1 秒）で**有界化**される。モデル/環境が無応答でも無期限には待たない
 - タイムアウトした監査がある場合は**監査未完走としてコミットをブロック**（fail-closed。時間切れで通過させない）。履歴に `status: 警告` のレコードを残し、次回コミットで再審査させる
+- 両方の審査エージェントが**無言で結果を返さなかった場合もブロック**（fail-closed。審査未成立を素通ししない）
 - 開始時と経過半分時点で継続中通知（noReply）を親セッションへ表示し、待機を見える化する
 
 ### 依存監査（決定論的・マニフェスト変更時のみ・allowlist 限定）
 
-`git diff --cached --name-only` に依存マニフェスト（package.json / requirements.txt / go.mod 等）が含まれる場合のみ、対応する監査コマンドを実行し、出力を @security-auditor に添付する。毎コミットの監査は行わない（セッション開始時・package-version トリガー・sprint-audit との重複を避ける）。
+`git diff --cached --name-only` に依存マニフェスト（package.json / requirements.txt / go.mod 等）が含まれる場合のみ、**検出した全てのマニフェスト**に対応する監査コマンドを実行し、出力を @security-auditor に添付する（package.json + package-lock.json のように同じコマンドが割り当てられた複数マニフェストは 1 回の実行に集約）。毎コミットの監査は行わない（セッション開始時・package-version トリガー・sprint-audit との重複を避ける）。
 
 - **コマンドはコード内の固定 allowlist のみ実行**する（`npm audit --audit-level=high` / `pip-audit` / `govulncheck ./...` / `cargo audit` / `bundle audit` / `composer audit` / `dart pub audit`）。`review-policy.json` に allowlist 外のコマンドを登録しても実行されない（設定由来の任意コマンド実行を防ぐ）
 - 監査コマンド自体も **5 分でタイムアウト**し、その場合は「静的検査で代替確認」を @security-auditor に注記する
@@ -208,6 +210,7 @@ AI エージェントが bash で `git commit` を実行したときにのみ動
 | 人間が AI の提案をターミナルにコピペして手動実行 | ❌ 発火しない | pre-commit フック（secret patterns のみ） |
 | 人間が直接ターミナルで `git commit` | ❌ 発火しない | pre-commit フック（secret patterns のみ） |
 | 審査エージェント定義（`.opencode/agents/code-reviewer.md` / `security-auditor.md`）の欠落 | ⚠️ 該当審査をスキップ＋毎コミット通知（AI プロンプト + トースト） | 恒久ブロックせず回復へ導く。`code-reviewer.md` 欠落時も `security-auditor` は可能なら継続し監査の穴を最小化 |
+| 両審査エージェントが起動されたのに無言で結果を返さない | ✅ ブロック（fail-closed）＋通知 | 審査未成立のまま通過させない。モデル/環境復旧後に再コミット |
 
 ### 補完関係
 
