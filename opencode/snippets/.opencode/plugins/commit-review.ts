@@ -18,6 +18,11 @@ import { dirname, join } from "path"
  *   解消済み指摘の再ブロックを防ぎ、ゲートの収束を保証する（履歴 = 状態を持つゲート）
  * - 依存マニフェストが diff に含まれる場合のみ、決定的な依存監査（npm audit 等）を実行して監査結果を添付する
  * - フックバイパス（--no-verify / core.hooksPath 変更等）は commit-review 自体がブロックする
+ * - 監査は reviewTimeoutMs（既定 15 分・review-policy.json で調整可）で有界化する。タイムアウト時は「監査未完走」として
+ *   コミットをブロックする（fail-closed）。時間切れで通過はさせない。モデル/環境の応答が枯れても無期限待ちで沈黙しないよう、
+ *   開始通知と継続中通知（残り時間）を親セッションへ即時表示して待機を見える化する
+ * - 依存監査コマンドは設定（review-policy.json）から直接実行せず、コード内の固定許容リスト（allowlist）だけを実行する。
+ *   設定ファイルが改変されても任意コマンド実行にならない
  */
 
 interface Finding {
@@ -36,6 +41,7 @@ interface ReviewPolicy {
   evidenceRequired: boolean
   historyFile: string
   historyRecentLines: number
+  reviewTimeoutMs: number
   dependencyAudits: Record<string, string>
 }
 
@@ -54,6 +60,7 @@ const DEFAULT_POLICY: ReviewPolicy = {
   evidenceRequired: true,
   historyFile: "docs/review-log.md",
   historyRecentLines: 60,
+  reviewTimeoutMs: 15 * 60 * 1000,
   dependencyAudits: {
     "package.json": "npm audit --audit-level=high",
     "package-lock.json": "npm audit --audit-level=high",
@@ -73,6 +80,27 @@ const DEFAULT_POLICY: ReviewPolicy = {
     "composer.json": "composer audit",
     "pubspec.yaml": "dart pub audit",
   },
+}
+
+// 依存監査コマンドは設定（review-policy.json）から直接実行せず、コード内の固定許容リスト
+// （allowlist）だけを実行する。設定ファイルが改変されても任意コマンド実行にならない。
+const ALLOWED_AUDIT_COMMANDS = new Set([
+  "npm audit --audit-level=high",
+  "pip-audit",
+  "govulncheck ./...",
+  "cargo audit",
+  "bundle audit",
+  "composer audit",
+  "dart pub audit",
+])
+
+// 設定由来の監査コマンドは許可リストに含まれるものだけ通す
+function filterAuditCommands(map: Record<string, string>): Record<string, string> {
+  const filtered: Record<string, string> = {}
+  for (const [manifest, cmd] of Object.entries(map)) {
+    if (ALLOWED_AUDIT_COMMANDS.has(cmd)) filtered[manifest] = cmd
+  }
+  return filtered
 }
 
 const GIT_COMMIT_RE = /\bgit\s+(?:-[Cc]\s+\S+\s+)*commit\b/
@@ -107,7 +135,8 @@ function normalizePolicy(raw: any): ReviewPolicy {
     evidenceRequired: raw?.evidenceRequired ?? defaults.evidenceRequired,
     historyFile: typeof raw?.historyFile === "string" ? raw.historyFile : defaults.historyFile,
     historyRecentLines: typeof raw?.historyRecentLines === "number" ? raw.historyRecentLines : defaults.historyRecentLines,
-    dependencyAudits: { ...defaults.dependencyAudits, ...(raw?.dependencyAudits ?? {}) },
+    reviewTimeoutMs: typeof raw?.reviewTimeoutMs === "number" && raw.reviewTimeoutMs >= 1000 ? raw.reviewTimeoutMs : defaults.reviewTimeoutMs,
+    dependencyAudits: filterAuditCommands({ ...defaults.dependencyAudits, ...(raw?.dependencyAudits ?? {}) }),
   }
 }
 
@@ -136,13 +165,48 @@ async function readAgentPrompt(worktree: string, name: string): Promise<string |
   }
 }
 
+// 依存監査（npm audit 等）の上限。決定的コマンドだがネットワーク/レジストリ不達で詰まり得るため有界化する
+const AUDIT_TIMEOUT_MS = 5 * 60 * 1000
+
+type TimeoutResult<T> = { ok: true; value: T } | { ok: false }
+
+// 無期限待ちを防ぐ汎用タイムアウト。Promise.race で上限を設け、タイマーは確実に整理する。
+// タイムアウトしても裏の実行は続くが、こちらは待たずに { ok: false } で制御を返す。
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<TimeoutResult<T>> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<TimeoutResult<T>>((resolve) => {
+    timer = setTimeout(() => resolve({ ok: false }), ms)
+  })
+  return await Promise.race([promise.then((value) => ({ ok: true as const, value })), timeout]).finally(
+    () => timer && clearTimeout(timer),
+  )
+}
+
+interface ReviewRun {
+  text: string | null
+  timedOut: boolean
+}
+
+// 起動中の通知/継続中の通知を親セッションへ表示する（best-effort・ブロックしない）。
+// noReply でモデル呼び出しを伴わないため高速で、失敗してもエラー化しない。
+function postNotice(client: OpencodeClient, sessionId: string, text: string): void {
+  client.session
+    .prompt({
+      path: { id: sessionId },
+      body: { noReply: true, parts: [{ type: "text", text }] },
+    })
+    .catch(() => {})
+}
+
 async function runReviewInSession(
   client: OpencodeClient,
   parentSessionId: string,
   title: string,
+  label: string,
   systemPrompt: string,
   userMessage: string,
-): Promise<string | null> {
+  timeoutMs: number,
+): Promise<ReviewRun> {
   let childSessionId: string | undefined
   try {
     const child = await client.session.create({
@@ -150,25 +214,41 @@ async function runReviewInSession(
     })
     childSessionId = child.data?.id
   } catch {
-    return null
+    return { text: null, timedOut: false }
   }
-  if (!childSessionId) return null
+  if (!childSessionId) return { text: null, timedOut: false }
+
+  const halfMs = Math.max(1000, Math.floor(timeoutMs / 2))
+  const progressTimer = setTimeout(() => {
+    const remaining = Math.round((timeoutMs - halfMs) / 60000)
+    postNotice(client, parentSessionId, `commit-review: ${label}は継続中です（タイムアウトまで残り約 ${remaining} 分）。`)
+  }, halfMs)
 
   try {
-    const resp = await client.session.prompt({
-      path: { id: childSessionId },
-      body: {
-        parts: [{ type: "text", text: userMessage }],
-        system: systemPrompt,
-      },
-    })
-    const parts = resp.data?.parts || []
-    return parts
+    const raced = await withTimeout(
+      client.session.prompt({
+        path: { id: childSessionId },
+        body: {
+          parts: [{ type: "text", text: userMessage }],
+          system: systemPrompt,
+        },
+      }),
+      timeoutMs,
+    )
+    if (!raced.ok) {
+      // 監査が完走しないまま上限に達した。fail-closed のため commit 側でブロックする
+      return { text: null, timedOut: true }
+    }
+    const parts = raced.value.data?.parts || []
+    const text = parts
       .filter((p: any) => p.type === "text")
       .map((p: any) => p.text)
       .join("\n")
+    return { text: text || null, timedOut: false }
   } catch {
-    return null
+    return { text: null, timedOut: false }
+  } finally {
+    clearTimeout(progressTimer)
   }
 }
 
@@ -387,15 +467,18 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
     const historyRecent = readHistoryPreview(historyFull, policy)
     const policySrc = policyContext(policy)
 
-    // 4. 依存マニフェスト変更時のみ決定的な依存監査を実行
+    // 4. 依存マニフェスト変更時のみ決定的な依存監査を実行（タイムアウトで有界化）
     let auditBlock = ""
     for (const [manifest, auditCmd] of Object.entries(policy.dependencyAudits)) {
       if (stagedNames.some((n) => n === manifest || n.endsWith(`/${manifest}`))) {
-        const auditOut = (await $`${auditCmd}`.nothrow().quiet()).text().slice(0, 4000)
-        if (auditOut.trim()) {
+        const auditRaced = await withTimeout($`${auditCmd}`.nothrow().quiet(), AUDIT_TIMEOUT_MS)
+        const auditOut = (auditRaced.ok ? auditRaced.value.text() : "").slice(0, 4000)
+        if (auditRaced.ok && auditOut.trim()) {
           auditBlock =
             `依存マニフェスト（${manifest}）の変更を検出したため依存監査を実行しました:\n\`\`\`\n${auditOut}\n\`\`\`\n` +
             `HIGH 以上の脆弱性があれば [重要度: HIGH] で報告してください（検証方法は監査出力の該当行）。`
+        } else if (!auditRaced.ok) {
+          auditBlock = `依存マニフェスト（${manifest}）の依存監査はタイムアウト（上限 ${Math.round(AUDIT_TIMEOUT_MS / 60000)} 分）のため実施できませんでした。レビューでは静的検査で代替確認してください。`
         }
         break
       }
@@ -410,18 +493,31 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
     const reviewMessage = `以下の git diff のコードレビューを実施してください。\n\n【判定ポリシー】\n${policySrc}\n\n${historyHint}\n\n新規の指摘のみ [重要度: ...] 形式で報告してください。\n\n\n${diffBlock}`
     const auditMessage = `以下の git diff のセキュリティ監査を実施してください。\n\n【判定ポリシー】\n${policySrc}\n\n${historyHint}\n\n${auditBlock}\n\n新規の指摘のみ [重要度: ...] 形式で報告してください。\n\n${diffBlock}`
 
-    const [reviewResult, auditResult] = await Promise.all([
+    const reviewTimeoutMinutes = Math.round(policy.reviewTimeoutMs / 60000)
+    postNotice(
+      client,
+      sessionId,
+      `[commit-review] コードレビューとセキュリティ監査を開始しました（上限 ${reviewTimeoutMinutes} 分）。完了までコミットが一時停止します。`,
+    )
+
+    const [reviewRun, auditRun] = await Promise.all([
       reviewerMd
-        ? runReviewInSession(client, sessionId, "commit-review-code", reviewerMd, reviewMessage)
-        : Promise.resolve(null),
+        ? runReviewInSession(client, sessionId, "commit-review-code", "コードレビュー", reviewerMd, reviewMessage, policy.reviewTimeoutMs)
+        : Promise.resolve({ text: null, timedOut: false } as ReviewRun),
       auditorMd
-        ? runReviewInSession(client, sessionId, "commit-review-security", auditorMd, auditMessage)
-        : Promise.resolve(null),
+        ? runReviewInSession(client, sessionId, "commit-review-security", "セキュリティ監査", auditorMd, auditMessage, policy.reviewTimeoutMs)
+        : Promise.resolve({ text: null, timedOut: false } as ReviewRun),
     ])
+    const reviewResult = reviewRun.text
+    const auditResult = auditRun.text
+    const timedOutLabels: Array<"コードレビュー" | "セキュリティ監査"> = [
+      reviewRun.timedOut ? "コードレビュー" : null,
+      auditRun.timedOut ? "セキュリティ監査" : null,
+    ].filter((x): x is "コードレビュー" | "セキュリティ監査" => x !== null)
 
     // 6. 結果を結合
     const combined = [reviewResult, auditResult].filter(Boolean).join("\n\n")
-    if (!combined.trim()) {
+    if (!combined.trim() && timedOutLabels.length === 0) {
       if (skipNotices.length) await notifySkipped(client, sessionId, skipNotices)
       return
     }
@@ -432,6 +528,11 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
     const newRecords: string[] = []
     for (const b of blockers) newRecords.push(findingToRecord(b, "未解決"))
     for (const w of warnings) newRecords.push(findingToRecord(w, "警告"))
+    for (const label of timedOutLabels) {
+      newRecords.push(
+        `[重要度: LOW] [-] - | status: 警告 | 検証: タイムアウト（上限 ${reviewTimeoutMinutes} 分） | 問題: ${label} が完了しませんでした`,
+      )
+    }
     resolved.forEach((p) => newRecords.push(`解消済み確認: ${p} | status: 解消済み`))
     if (newRecords.length) {
       writeHistory(worktree, policy, applyHistory(historyFull, resolved, newRecords))
@@ -443,9 +544,17 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
       .filter(Boolean)
       .join("\n\n")
     const noticeText = skipNotices.length ? `${skipNotices.join("\n")}\n\n` : ""
+    const hasTimeout = timedOutLabels.length > 0
 
-    if (blockers.length > 0) {
+    if (blockers.length > 0 || hasTimeout) {
       const blockingText = blockers.map((b) => b.text).join("\n\n")
+      const blockHeader =
+        blockers.length > 0
+          ? `[commit-review] ブロック対象の指摘を ${blockers.length} 件検出しました（警告 ${warnings.length} 件）。`
+          : `[commit-review] 指摘はありませんでしたが監査にタイムアウトが発生しました（警告 ${warnings.length} 件）。`
+      const timeoutText = hasTimeout
+        ? `監査が上限（${reviewTimeoutMinutes} 分）までに完了しませんでした（${timedOutLabels.join("・")}）。監査未完走のためこのコミットはブロックされます（安全側）。モデル/環境の状態を確認し、再度コミットしてください。\n\n`
+        : ""
       await client.session.prompt({
         path: { id: sessionId },
         body: {
@@ -453,21 +562,29 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
           parts: [
             {
               type: "text",
-              text: `[commit-review] ブロック対象の指摘を ${blockers.length} 件検出しました。以下を修正してから再度コミットしてください（警告 ${warnings.length} 件）。\n\n${noticeText}${blockingText}\n\n${detailParts}`,
+              text: `${blockHeader}\n\n${timeoutText}${noticeText}${blockingText}\n\n${detailParts}`,
             },
           ],
         },
       })
 
+      const toastText = blockers.length > 0 && hasTimeout
+        ? `commit-review: 監査タイムアウト・ブロック対象 ${blockers.length} 件を検出`
+        : hasTimeout
+          ? "commit-review: 監査タイムアウトのためコミットをブロック"
+          : `commit-review: ブロック対象 ${blockers.length} 件を検出`
       await client.tui.showToast({
         body: {
-          message: `commit-review: ブロック対象 ${blockers.length} 件を検出`,
+          message: toastText,
           variant: "warning",
         },
       })
 
+      const reason = hasTimeout
+        ? `監査がタイムアウト（上限 ${reviewTimeoutMinutes} 分）したため（${timedOutLabels.join("・")}）`
+        : `ブロック対象の指摘（${blockers.length} 件）`
       throw new Error(
-        `[commit-review] コードレビューまたはセキュリティ監査でブロック対象の指摘が見つかりました（${blockers.length} 件）。修正してから再度コミットしてください。`,
+        `[commit-review] ${reason}。修正または環境確認の上、再度コミットしてください。`,
       )
     }
 

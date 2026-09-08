@@ -306,9 +306,17 @@ npm audit / pip-audit 等の決定的な依存監査も付加する。オーケ�
   同一指摘の再報告と解消済み指摘の再ブロックを防ぎ、ゲートの収束を保証する（履歴 = 状態を持つゲート）
 - 審査エージェント定義（code-reviewer.md / security-auditor.md）が欠落した場合は恒久ブロックせず、
   該当審査をスキップして毎コミット通知（AI + トースト）で回復へ導く（設定ミスを恒久ロックにしない）
+- 子セッション応答は `reviewTimeoutMs`（既定 15 分・`review-policy.json` で調整可・下限 1 秒）で**有界化**する。
+  監査が上限までに完走しない場合は**監査未完走としてブロック（fail-closed）**し、履歴に `status: 警告` を残して
+  次回コミットで再審査させる。開始通知・継続中通知（noReply）で待機を見える化し、無期限待ちの沈黙を排除する
+- 依存監査コマンドは**コード内の固定 allowlist** のみ実行する
+  （`npm audit --audit-level=high` / `pip-audit` 等）。`review-policy.json` の `dependencyAudits` に
+  allowlist 外のコマンドを登録しても実行されない（設定由来の任意コマンド実行を防ぐ）。
+  監査コマンド自体も 5 分でタイムアウトし、静的検査へ代替する
 
 **SSoT**: `.opencode/config/review-policy.json`
-severity 語彙・ブロック対象・警告対象・エビデンス必須・依存監査対象の変更はこのファイルのみで行う。
+severity 語彙・ブロック対象・警告対象・エビデンス必須・`dependencyAudits` のマニフェスト対応付けの変更はこのファイルのみで行う。
+監査コマンドそのものはプラグインの allowlist で制限されるため、新ツール追加時はコード側を改修する。
 判定語彙の解説は `.opencode/instructions/security/_risk-severity.md`。
 
 **Strategy A**: 上書き保護（`setup-harness.sh` の `config/` コピー）

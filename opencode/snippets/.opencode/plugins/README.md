@@ -23,7 +23,7 @@ OpenCode Plugin は TypeScript + Bun ランタイムで動作するイベント�
 | `env-check.ts` | `tool.execute.before` / `experimental.session.compacting` / `event` | Python/Node.js 環境パス自動書き換え + `.nvmrc` 不一致警告（セッション内1回） |
 | `rule-injector.ts` | `tool.execute.before` / `experimental.session.compacting` / `event` | ファイル種別・内容に応じてルールファイルの参照を注入（`AGENTS.md` 肥大化防止。規約未読ブロック・mkdir ゲート・tdd ハードゲート付き） |
 | `destructive-op-guard.ts` | `tool.execute.before` | 破壊的Git操作（reset --hard / rebase / push --force / rm -rf 等）のブロック |
-| `commit-review.ts` | `tool.execute.before` | git commit 検出 → 子セッションで @code-reviewer + @security-auditor を並列実行 → 問題ありならブロック |
+| `commit-review.ts` | `tool.execute.before` | git commit 検出 → 子セッションで @code-reviewer + @security-auditor を並列実行 → 問題あり・監査タイムアウト時はブロック（fail-closed） |
 
 ## イベントの種類
 
@@ -186,9 +186,18 @@ AI エージェントが bash で `git commit` を実行したときにのみ動
 - 次回コミット時は履歴を読み込み、**未解決指摘の再報告を禁止**し、「【解消確認】/【残存確認】」マーカーで状態を更新する
 - 解消済み指摘は再ブロックされない。同一指摘の無限再ブロックを防ぎ、修正が行われれば確実にコミットへ到達できる
 
-### 依存監査（決定論的・マニフェスト変更時のみ）
+### 監査の有界化（タイムアウト・fail-closed）
 
-`git diff --cached --name-only` に依存マニフェスト（package.json / requirements.txt / go.mod 等）が含まれる場合のみ、対応する監査コマンド（`npm audit --audit-level=high` 等）を実行し、出力を @security-auditor に添付する。毎コミットの監査は行わない（セッション開始時・package-version トリガー・sprint-audit との重複を避ける）。
+- 子セッション応答は `reviewTimeoutMs`（既定 **15 分**・`review-policy.json` で調整可・下限 1 秒）で**有界化**される。モデル/環境が無応答でも無期限には待たない
+- タイムアウトした監査がある場合は**監査未完走としてコミットをブロック**（fail-closed。時間切れで通過させない）。履歴に `status: 警告` のレコードを残し、次回コミットで再審査させる
+- 開始時と経過半分時点で継続中通知（noReply）を親セッションへ表示し、待機を見える化する
+
+### 依存監査（決定論的・マニフェスト変更時のみ・allowlist 限定）
+
+`git diff --cached --name-only` に依存マニフェスト（package.json / requirements.txt / go.mod 等）が含まれる場合のみ、対応する監査コマンドを実行し、出力を @security-auditor に添付する。毎コミットの監査は行わない（セッション開始時・package-version トリガー・sprint-audit との重複を避ける）。
+
+- **コマンドはコード内の固定 allowlist のみ実行**する（`npm audit --audit-level=high` / `pip-audit` / `govulncheck ./...` / `cargo audit` / `bundle audit` / `composer audit` / `dart pub audit`）。`review-policy.json` に allowlist 外のコマンドを登録しても実行されない（設定由来の任意コマンド実行を防ぐ）
+- 監査コマンド自体も **5 分でタイムアウト**し、その場合は「静的検査で代替確認」を @security-auditor に注記する
 
 ### 保護される / されないケース
 

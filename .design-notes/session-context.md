@@ -306,10 +306,76 @@
 - コンテンツ検査が .env.example に残るため、「名前は .env.example だが実値入り」は引き続きブロックされる（テストプロジェクトのローカル patch と同設計）
 - `.env` / `.envrc` の commit 防衛は .gitignore を第一層としつつ、ガード第二層が塞ぐ defense-in-depth
 
+## yori v1.15.1 適用（nintei-chosa-form-assistant 再展開 + 整合復旧）（2026-09-08 実施・コミットなし）
+
+### 実施
+- yori を v1.15.1 へ同期（`git pull`、`chore(release): 1.15.1` を取得）
+- setup-harness.sh 再実行（YORI_HAS_UI=n / QUALITY_STRATEGY=1 / USAGE_GIT=1＝初回と同一値）
+- 反映確認: plugins（commit-review.ts v1.15.0 / secrets-guard.ts v1.15.1）・instructions（_risk-severity.md 等）・agents（code-reviewer / security-auditor）が常時上書き、review-policy.json 新規作成、skills.lock → `"v1.15.1"`、pre-commit/commit-msg 再生成、.opencode/package.json 上書き
+
+### 調査で確定した「再実行でも届かないファイル」
+- 展開面 = `opencode/snippets/**` + `opencode/principles/**` + `opencode/architectures/**` の3系統のみ（`SNIPPETS=$YORI_SRC/snippets` 定義と `\$SNIPPETS/\$YORI_SRC` 全参照で確認）。opencode/README*.md・root package.json・.design-notes は展開対象外
+- (1) `.opencode/config/*.json`（config ループ A＝`if [ ! -f ]` 保護）→ テストプロジェクトの secret-patterns.json はローカル版維持（機能同等: `.env..+$` が `.env.local`/`.env.*.local` を包含・contentPatterns 同一・_comment 文言のみ旧）
+- (2) `standards/principles/{harness-engineering,subagents}.md`（マージ戦略＝既存上書きなし・`.setup-diff.log` に記録のみ）→ v1.15.1 canonical を手動コピーで同期（.gitignore 対象のため git 非追跡・ディスク上の AI 参照用）
+- opencode.json は上書き保護だが v1.14.0 現物 = 現行テンプレートと一致（差分なし）を確認
+- setup-harness.sh 自体は v1.14.0→v1.15.1 で不変（コピー/保護ロジック同一なので比較が正当）
+
+### 再実行による無条件上書きと整合復旧
+- 常時上書き対象で agent のステージ済み編集があったファイル → index を正として復旧:
+  - `.github/workflows/{codecheck,monthly-diagnosis}.yml`（SHA 完全固定・branch master 対応・permissions 最小化・GAS 向け lint）と `.ls-lint.yml`（GAS 向け規則）は `git restore --worktree` で index 版へ復元（yori 側で期間内変更なし ⇒ 競合なし）
+  - `docs/{spec-structure,sprint-contract-template,tasks-json-template}` + `decisions/000-template.md` は、agent の編集が prettier 整形のみ（fsck の未参照 blob で確認・内容ロスなし）→ v1.15.1 canonical のまま `npx prettier --write` で整形し CI（`npx prettier --check .`）を通る状態に
+  - `.opencode/plugins/secrets-guard.ts` は workdir = v1.15.1 canonical と同一を diff 確認 → canonical に統一
+- standards 2ファイルは yori v1.15.1 canonical からコピー（diff で identical 確認）
+
+### 検証（全部 PASS）
+- `npm run lint`（eslint . --max-warnings 0）exit=0
+- `npx prettier --check .` → All matched files use Prettier code style
+- `npx @ls-lint/ls-lint` → 違反なし
+- `.git/hooks/pre-commit` → [OK] セキュリティチェック通過
+- ステージ済み 37 ファイル（当初30 + review-policy.json 新規 + ハーネス刷新 + 復旧分）。コミットは未実施（ユーザー指示）
+
+## commit-review 監査の有界化 + allowlist 統合（2026-09-08 実施・未コミット）
+
+### 背景（実地で発現した失敗）
+- nintei-chosa-form-assistant のコミット時に commit-review プラグインが 1 時間以上無反応でスタック（bash ツール timeout 30分を超過）。`tool.execute.before` の `client.session.prompt` await にタイムアウトがない構造が原因
+- 調査で実証: DB（part テーブル）に子セッション結果なし・当該試行の commit-review 子セッションは生成されていない・外部プロセス（git/npm/bun）は非稼働・opencode 12プロセス並走 + DB 2.31GB の高負荷
+- 実測統計（全10回の commit-review 子セッション）: code レビュー最大 9.6 分（中央値 5.4）・security 最大 2.6 分（中央値 1.6）
+
+### 変更（yori canonical）
+- `opencode/snippets/.opencode/plugins/commit-review.ts`（137+/27-）:
+  - `withTimeout()`（Promise.race + clearTimeout）・`TimeoutResult<T>`・`ReviewRun`・`postNotice()`（noReply 通知）を追加
+  - `runReviewInSession` を置換: 引数に label / timeoutMs、上限の半分経過で継続中通知、timedOut/skipped を返す
+  - 開始通知「上限 X 分。完了までコミットが一時停止」+ タイムアウト時は fail-closed でブロック（履歴へ `status: 警告` 記録・次回再審査）
+  - 依存監査コマンドに `withTimeout(..., AUDIT_TIMEOUT_MS=5分)`。allowlist（`ALLOWED_AUDIT_COMMANDS`）+ `filterAuditCommands()` で policy 値を絞り込み
+  - `normalizeHistKey` / バイパス検知順序は正規版を維持（テスト側 variant の欠落・過検出は統合しない）
+- `opencode/snippets/.opencode/config/review-policy.json`: `reviewTimeoutMs: 900000`（15分・SSoT）を追記
+
+### 検証
+- 型チェック: `/var/folders/2r/4xmj5zsd5736vnnwzp3gj1x40000gn/T/opencode/cr-check/` で `bunx tsc --noEmit` exit=0（`.opencode/node_modules` をシンボリックリンク）
+- prettier: 変更前後とも非準拠（既存の二重引用符スタイルの既存負債）＝私の編集起因ではないことを HEAD 比較で確認。ファイル既存スタイル（二重引用符）に合わせている
+- JSON: review-policy.json パース OK（900000 = 15 分）
+- ADR: `opencode/decisions/005-audit-bounded-execution.md` を新規作成
+
+### 追加レビュー（2026-09-08・Q&A 対応）
+- 検出して修正: `ReviewRun.skipped` 未使用フィールド除去 / タイムアウト+ブロック両立時のトースト表記 / ブロックヘッダの「問題はありませんが…」矛盾文言 / ADR の「policy の ALLOWED_AUDIT_COMMANDS 拡張」誤記（allowlist はコード側）
+- ドキュメント同期: `opencode/snippets/.opencode/plugins/README.md`（配布物・監査の有界化 + allowlist 節を追記）/ `opencode/principles/harness-engineering.md`（有界化 + allowlist + SSoT 記述の範囲修正）/ `.design-notes/harness-file-strategy.md`（allowlist 補足）
+- 変更不要を確認: yori ルート README.md / README.ja.md（commit-review 言及なし）・opencode/README.md / README.ja.md（config/ に review-policy.json 記載済み）
+- fail-closed 検証: タイムアウトが発生する全経路で必ずブロック（timedOutLabels>0 は early-return を通らず block 分岐に到達）。無期限待機は全子セッション + 全依存監査コマンドで排除
+- **インデックス状態の変化を検出**: 初回編集分（session-context / 005 ADR / review-policy.json / commit-review.ts 初版）が STAGED に。2回目の修正分（ADR 言い回し / commit-review 精査修正 / README・principle 同期）は未ステージ。コミット前に2回目分も `git add` が必要
+- 最終確認（2026-09-08・ユーザー指示）: OpenCode 公式ページ（opencode.ai/docs/plugins）とインストール済み型定義（@opencode-ai/plugin / @opencode-ai/sdk）の両面で準拠確認。`Plugin` 構造・`tool.execute.before`（throw でブロック）・`client`/`$`/`worktree` コンテキスト・自動ロード・`session.create`（parentID/title）・`session.prompt`（parts/system/noReply・path.id）・`tui.showToast`（message/variant）すべて契約一致。`import type` のみの SDK 参照はランタイム依存なし。index はユーザーが手動ステージ（問題なし）→ **ステージはそのまま・コミットは指示待ち**
+
+### 保留
+- テストプロジェクトへは**ユーザー指示があるまで未反映**。反映手順候補: 固定版で上書き（.opencode/config/review-policy.json は手動コピー）→ コミット検証
+
 ## 次のセッションでやること
 - 【済 2026-09-08】commit-review 改修 + C1〜C7 は `6037088 feat: make commit-review a stateful, policy-driven gate` でコミット・プッシュ済み（2個前。origin/main へ rebase 後に push）
-- 【済 2026-09-08・未コミット】secrets-guard の .env.example ギャップ修正（step 1）。下記「secrets-guard 残余ギャップ修正」参照。コミットは人間の指示があるまでしない
-- nintei-chosa-form-assistant へのハーネス再配布可否 = 調査済み（内容は妥当と判定・不適切修正なし）。再展開（step 2）・初回コミット成立（step 3）の実施可否は人間の指示待ち。再実行で改修版 commit-review.ts / secrets-guard.ts / code-reviewer.md / security-auditor.md が上書き配布され、review-policy.json が新規作成される。config（secret-patterns.json / skills.lock.yaml）は上書き保護のためローカル版が維持される
+- 【済 2026-09-08】secrets-guard の .env.example ギャップ修正（step 1）は `9dfc1cc fix: allow .env.example edits...` でコミット・プッシュ済み（v1.15.1 に含まれる）
+- nintei-chosa-form-assistant へのハーネス再展開（step 2）= 2026-09-08 完了（上記「yori v1.15.1 適用」参照）。**初回コミット成立（step 3）のみ人間の指示待ち**。ステージ済み 37 ファイル・検証全部 PASS・コミット可能な状態で保留中
+- **commit-review 監査の有界化 + allowlist（上記 2026-09-08 節）のテストプロジェクトへの反映 = 人間の指示待ち**。反映/コミットはユーザー指示があった場合のみ実施
+- secrets-guard 残余ギャップ修正（step 1）の作業メモは上記「secrets-guard 残余ギャップ修正」参照（該当コミット反映済み）
+- TUI 色修正は「しない」決定済み（必要なら opencode.json の agent.color 明示指定が解）
+- 実機での軽量E2E（ノイズ入り初回 diff → 警告通過 / エビデンス付き HIGH → ブロック → 修正 → 履歴で再計上なし → 通過）は opencode 経由時のみ実施可能。要望があれば次回
+- 前回 nline の変更（ファイル参照バッククォート＋フルパス統一 86ファイル / naming・code-quality 常時化 / API キャスト除去）のコミット可否も未確認のまま残っている
 - TUI 色修正は「しない」決定済み（必要なら opencode.json の agent.color 明示指定が解）
 - 実機での軽量E2E（ノイズ入り初回 diff → 警告通過 / エビデンス付き HIGH → ブロック → 修正 → 履歴で再計上なし → 通過）は opencode 経由時のみ実施可能。要望があれば次回
 - 前回 nline の変更（ファイル参照バッククォート＋フルパス統一 86ファイル / naming・code-quality 常時化 / API キャスト除去）のコミット可否も未確認のまま残っている

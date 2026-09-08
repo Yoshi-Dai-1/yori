@@ -219,6 +219,7 @@ yori の修正・改善時に新規ファイルや既存ファイルの戦略を
 - **元**: `snippets/.opencode/config/*.json`, *.yaml, *.yml
 - **行**: 367-385（コピー）
 - **理由**: 単一真実源（SSoT）設定。ユーザーがカスタム secret パターン・コミット時レビュー判定ポリシー（review-policy.json）を追加する。`yori_version` フィールドを持たないため、E（yori_version の sed-in-place）は適用対象外。
+- **補足（ADR 005）**: `dependencyAudits` の監査コマンドはプラグイン内の固定 allowlist で制限されるため、policy 編集で任意コマンドを実行することはできない（allowlist 外は無視される）。`reviewTimeoutMs`（既定 15 分）もここで調整する
 
 ---
 

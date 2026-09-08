@@ -16,6 +16,7 @@
   "evidenceRequired": true,
   "historyFile": "docs/review-log.md",
   "historyRecentLines": 60,
+  "reviewTimeoutMs": 900000,
   "dependencyAudits": {
     "package.json": "npm audit --audit-level=high",
     "package-lock.json": "npm audit --audit-level=high",
