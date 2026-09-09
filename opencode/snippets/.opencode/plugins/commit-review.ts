@@ -2,6 +2,7 @@ import type { Plugin } from "@opencode-ai/plugin"
 import type { OpencodeClient } from "@opencode-ai/sdk/client"
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs"
 import { dirname, join } from "path"
+import secretPatterns from "../config/secret-patterns.json"
 
 /**
  * commit-review.ts
@@ -12,7 +13,8 @@ import { dirname, join } from "path"
  *
  * 設計方針：
  * - 判定はレビュアーの主観 severity だけでなく「severity + ブロック対象クラス + 検証方法（エビデンス）」で行う
- * - ブロック対象: [重要度: HIGH/CRITICAL] またはブロック対象クラスに該当し、検証方法が添えられた指摘
+ * - ブロック対象: ブロック対象クラスに該当、または [重要度: HIGH/CRITICAL] かつ検証方法が添えられた指摘
+ *   （evidenceRequired 有効時は HIGH/CRITICAL でも検証方法がない場合はブロックしない・警告化）
  * - 警告扱い: policy.warning.severities（既定 MEDIUM/LOW）+ エビデンス不足のブロック候補
  * - 審査履歴 docs/review-log.md を読み、未解決指摘の「解消」「残存」を確認・記録する。同一指摘の再報告と
  *   解消済み指摘の再ブロックを防ぎ、ゲートの収束を保証する（履歴 = 状態を持つゲート）
@@ -34,6 +36,12 @@ interface Finding {
   classLabels: string[]
   hasEvidence: boolean
   blockCandidate: boolean
+}
+
+interface ContentPattern {
+  pattern: string
+  label: string
+  severity?: string
 }
 
 interface ReviewPolicy {
@@ -105,23 +113,61 @@ function filterAuditCommands(map: Record<string, string>): Record<string, string
   return filtered
 }
 
-const GIT_COMMIT_RE = /\bgit\s+(?:-[Cc]\s+\S+\s+)*commit\b/
-const HOOK_BYPASS_RE = /(?:--no-verify\b|-c\s+core\.hooksPath|core\.hooksPath\s*=|GIT_HOOKS_PATH)/
+// 審査履歴（docs/review-log.md）に指摘本文・検証エビデンスを書き出す前に秘密値をマスクする。
+// レビュアーが該当コード・設定行を引用した場合に秘密値の実体が混入し、git 履歴に永続化する
+// 二次経路（secret-in-log）を塞ぐ。パターンは SSoT（secret-patterns.json）の block 系のみ使用する
+// ／SSoT は「検出」を目的としたパターンで、引用テキスト中のトークン値・鍵本文を1回のマッチで
+// 覆いきれない箇所（multi-line の鍵ブロック・Bearer 値）があるため、履歴への書き出しに限って
+// HISTORY_MASK_REGS で補完する（検出用パターンの挙動は変えない）。
+const SECRET_CONTENT_REGS: RegExp[] = (
+  secretPatterns as { contentPatterns: ContentPattern[] }
+).contentPatterns
+  .filter((c) => c.severity !== "warn")
+  .map((c) => new RegExp(c.pattern, "g"))
+const HISTORY_MASK_REGS: RegExp[] = [
+  /-----BEGIN[^-]*PRIVATE KEY[^-]*-----[\s\S]*?-----END[^-]*PRIVATE KEY[^-]*-----/g,
+  /Bearer\s+[A-Za-z0-9+/_=\-.]{8,}/g,
+  // JWT（ヘッダ.ペイロード.シグネチャ）
+  /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g,
+  // 長い不透明トークン（SSoT の形式に一致しない 28 文字以上の連続列。英数字と /+=_- を含む）
+  /\b[A-Za-z0-9+/=_\-.]{28,}\b/g,
+]
 
-const SEV_HEADER_RE = /\[重要度:\s*(CRITICAL|HIGH|MEDIUM|LOW)\]/
+// -c/-C に加えて --no-pager / --quiet 等の --flag 前置も許容して commit を検出する。
+// `--?[A-Za-z][\w-]*(?:[ =][^\s]+)?` が引数付きフラグ（-c core.hooksPath=... や --config=...）を
+// 1トークンとして吸収する。
+const GIT_COMMIT_RE = /\bgit\b(?:\s+--?[A-Za-z][\w-]*(?:[ =][^\s]+)?)*\s+commit\b/
+const HOOK_BYPASS_RE = /(?:--no-verify\b|-c\s+core\.hooksPath\b|--config-env\s*=\s*core\.hooksPath\b|GIT_CONFIG_PARAMETERS\b|GIT_HOOKS_PATH\b)/
+
+// 指摘ヘッダは行頭でのみ認識する（bullet / 太字前置は許容。`**[重要度: X]**` のように
+// 記号と `[` の間に空白がなくてもよい）。監査報告・引用・平叙文の途中に現れる
+// `[重要度: ...]` を幽霊指摘として誤検出するのを防ぐ。認識はレビュアーの報告形式
+// 「[重要度: X] …」および「**[重要度: X] …**」を契約とする。
+const SEV_HEADER_RE = /^\s*(?:[*\-]+\s*)?\[重要度:\s*(CRITICAL|HIGH|MEDIUM|LOW)\]\s*/
 const LEGACY_SEV_RE = /^\[(CRITICAL|HIGH|MEDIUM|LOW)\]\s/
 const RESOLVE_RE = /【解消確認】\s*([\w./@-]+\.\w+:\d+)/g
 const REMAIN_RE = /【残存確認】\s*([\w./@-]+\.\w+:\d+)/g
 const EVIDENCE_RE = /検証方法[:：]/
 const PATH_LINE_RE = /([\w./@-]+\.\w+):(\d+)/
 const HIST_ENTRY_RE = /^- \[重要度: (CRITICAL|HIGH|MEDIUM|LOW)\]\s*(?:\[[^\]]*\]\s*)?([\w./@-]+\.\w+:\d+)\s*\|\s*status: (未解決|解消済み|警告)/
+// 新記録（findingToRecord / タイムアウト記録）は履歴行と違い `- ` 前置を持たないため、その形式用。
+const HIST_RECORD_RE = /^\[重要度: (CRITICAL|HIGH|MEDIUM|LOW)\]\s*(?:\[[^\]]*\]\s*)?([\w./@-]+\.\w+:\d+)\s*\|\s*status: (未解決|解消済み|警告)/
 
 function isGitCommit(cmd: string): boolean {
   return GIT_COMMIT_RE.test(cmd)
 }
 
 function hasHookBypass(cmd: string): boolean {
-  return HOOK_BYPASS_RE.test(cmd)
+  // -c <値> の値が引用符で囲まれていても判定に残す。バランス型クォート（"a'b" / 'a"b' 等）を
+  // 1つの引用とみなすため、二重引用符内のアポストロフィで除去が断裂しない（後段の引用符除去で検出漏れしない）
+  const dequotedC = cmd.replace(
+    /(^|\s)-c\s+("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g,
+    (_m, pre: string, quoted: string) => `${pre} -c ${quoted.slice(1, -1)}`,
+  )
+  // メッセージ・パス等、引用符で囲まれた文字列はバイパス検出の対象外にする
+  // （コミットメッセージ本文に `core.hooksPath=` や `--no-verify` を記載した正当なコミットを誤爆しない）
+  const stripped = dequotedC.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, "")
+  return HOOK_BYPASS_RE.test(stripped)
 }
 
 function normalizePolicy(raw: any): ReviewPolicy {
@@ -264,10 +310,22 @@ function policyContext(policy: ReviewPolicy): string {
   ].join("\n")
 }
 
+// ブロッククラス判定の対象文字列。指摘タイトル（1行目）と「問題/理由」欄のみを使用する。
+// 検証方法以降（検証方法: やその他確認結果）は「ハードコードされた秘密値：なし」のような
+// 良好な確認結果（否定文）を列挙することがあり、その文言がクラス keyword にマッチして
+// 誤ブロックするため、クラス判定から除外する。
+function classificationText(raw: string): string {
+  const head = raw.split("\n")[0] ?? ""
+  const body = raw.replace(/検証方法[:：][\s\S]*$/, "")
+  const problem = historyField(body, "問題") || historyField(body, "理由")
+  return problem ? `${head}\n${problem}` : head
+}
+
 function classifyFinding(raw: string, severity: string, policy: ReviewPolicy): Finding {
   const pathMatch = raw.match(PATH_LINE_RE)
+  const classTarget = classificationText(raw).toLowerCase()
   const matchedClasses = policy.block.classes
-    .filter((c) => c.keywords.some((k) => raw.toLowerCase().includes(k.toLowerCase())))
+    .filter((c) => c.keywords.some((k) => classTarget.includes(k.toLowerCase())))
     .map((c) => c.class)
   const hasEvidence = EVIDENCE_RE.test(raw)
   const blockCandidate =
@@ -282,16 +340,51 @@ function classifyFinding(raw: string, severity: string, policy: ReviewPolicy): F
   }
 }
 
-// 残存確認の重要度は審査履歴に記録された元の指摘（同じファイル・最新の記録）から引き継ぐ。
+// 審査履歴から「同じファイル」のレコードを抽出する（severity 引継ぎ / クラス引継ぎで共用）。
+function historyMatchesInFile(pathLine: string, historyFull: string): RegExpMatchArray[] {
+  if (!historyFull) return []
+  const key = normalizeHistKey(pathLine)
+  return [...historyFull.matchAll(new RegExp(HIST_ENTRY_RE.source, "gm"))].filter(
+    (m) => normalizeHistKey(m[2]) === key,
+  )
+}
+
+// 残存確認の重要度は審査履歴に記録された元の指摘（同じファイル）から引き継ぐ。
 // 履歴に見つからない場合は null を返し、呼び出し側で安全側（HIGH）にフォールバックする。
+// 行番号ドリフト許容は「そのファイルに該当レコードが1件だけ」のときのみに限定する。
+// 同ファイルに複数レコードがある場合は行一致を要求し、別行・別指摘の重要度を取り違えない
+// （不明時は呼び出し側の HIGH フォールバックで fail-closed）。
 function severityInHistory(pathLine: string, historyFull: string): string | null {
-  if (!historyFull) return null
-  const key = pathLine.replace(/:\d+$/, "")
-  let severity: string | null = null
-  for (const m of historyFull.matchAll(new RegExp(HIST_ENTRY_RE.source, "gm"))) {
-    if (m[2].replace(/:\d+$/, "") === key) severity = m[1]
+  const matches = historyMatchesInFile(pathLine, historyFull)
+  if (matches.length === 0) return null
+  if (matches.length === 1) return matches[0][1]
+  const exact = matches.find((m) => m[2] === pathLine)
+  return exact ? exact[1] : null
+}
+
+// 履歴内の同一ファイル指摘にブロック対象クラスのラベル（[hardcoded-secret] 等）が付いているかを判定する。
+// 残存確認（再発・未解決）のブロック判定で、severity が LOW/MEDIUM でも真正の機密系クラスは
+// 警告化せずブロックに残すために使う。判定対象は severityInHistory と同じ「一意 or 行一致」の条件。
+function blockClassInHistory(pathLine: string, historyFull: string, policy: ReviewPolicy): boolean {
+  const matches = historyMatchesInFile(pathLine, historyFull)
+  if (matches.length === 0) return false
+  const labels = policy.block.classes.map((c) => c.class)
+  const candidates = matches.length === 1 ? matches : matches.filter((m) => m[2] === pathLine)
+  return candidates.some((m) => labels.some((c) => m[0].includes(`[${c}]`)))
+}
+
+// 複数エージェントの審査結果を1つの指摘集合に合成する。エージェントごとに analyzeFindings を
+// 呼んでから合成するので、一方の結果にフェンス閉じ忘れがあっても他方の指摘に影響しない。
+function mergeFindings(results: ReturnType<typeof analyzeFindings>[]): ReturnType<typeof analyzeFindings> {
+  const blockers: Finding[] = []
+  const warnings: Finding[] = []
+  const resolved: string[] = []
+  for (const r of results) {
+    blockers.push(...r.blockers)
+    warnings.push(...r.warnings)
+    resolved.push(...r.resolved)
   }
-  return severity
+  return { blockers, warnings, resolved }
 }
 
 function analyzeFindings(text: string, policy: ReviewPolicy, historyFull = "") {
@@ -303,7 +396,19 @@ function analyzeFindings(text: string, policy: ReviewPolicy, historyFull = "") {
     findings.push(classifyFinding(lines.slice(current.start, end).join("\n"), current.sev, policy))
     current = null
   }
+  let inFence = false
+  let lastFenceToggle = -1
   lines.forEach((line, i) => {
+    // コードフェンス内（履歴・diff の引用等）は severity マーカー走査の対象外にする
+    if (/^\s*```/.test(line)) {
+      inFence = !inFence
+      lastFenceToggle = i
+      return
+    }
+    if (inFence) return
+    // 審査履歴（docs/review-log.md）のレコード行は「引用」であって新規指摘ではないため走査対象外。
+    // 行頭のまま引用して「検証方法:」を追記された場合の幻影ブロック（S5 経路）を構造的に塞ぐ
+    if (HIST_ENTRY_RE.test(line)) return
     let sev = line.match(SEV_HEADER_RE)?.[1]
     if (!sev) sev = line.match(LEGACY_SEV_RE)?.[1]
     if (sev) {
@@ -312,6 +417,21 @@ function analyzeFindings(text: string, policy: ReviewPolicy, historyFull = "") {
     }
   })
   flush(lines.length)
+  // フェンスが閉じられず文末まで残った場合、最後のフェンス開始以降は指摘走査をやり直す。
+  // 閉じ忘れで CRITICAL 指摘が黙って見逃される（fail-open）のを防ぐ目的で、末尾をフェンス非考慮で
+  // 再スキャンしてマーカーを検出する（fail-closed）。閉じ忘れでも「文末の指摘」は検出される。
+  if (inFence && lastFenceToggle >= 0) {
+    for (let i = lastFenceToggle + 1; i < lines.length; i++) {
+      if (HIST_ENTRY_RE.test(lines[i])) continue
+      let sev = lines[i].match(SEV_HEADER_RE)?.[1]
+      if (!sev) sev = lines[i].match(LEGACY_SEV_RE)?.[1]
+      if (sev) {
+        flush(i)
+        current = { start: i, sev }
+      }
+    }
+    flush(lines.length)
+  }
 
   const resolved: string[] = []
   const remain: { pathLine: string; hasEvidence: boolean }[] = []
@@ -337,7 +457,15 @@ function analyzeFindings(text: string, policy: ReviewPolicy, historyFull = "") {
   for (const r of remain) {
     if (r.hasEvidence) {
       const sev = severityInHistory(r.pathLine, historyFull) ?? "HIGH"
-      blockers.push({ severity: sev, pathLine: r.pathLine, text: `【残存確認】 ${r.pathLine}`, classLabels: [], hasEvidence: true, blockCandidate: true })
+      // 残存確認は履歴の元指摘の「severity とクラス」を尊重する：policy.block.severities
+      // （既定 CRITICAL/HIGH）かブロック対象クラス（hardcoded-secret 等）の指摘のみブロックし、
+      // MEDIUM/LOW の一般指摘は警告化する。履歴に記録がない場合は安全側で HIGH 扱い（ブロック）。
+      const isBlock = policy.block.severities.includes(sev) || blockClassInHistory(r.pathLine, historyFull, policy)
+      if (isBlock) {
+        blockers.push({ severity: sev, pathLine: r.pathLine, text: `【残存確認】 ${r.pathLine}`, classLabels: [], hasEvidence: true, blockCandidate: true })
+      } else {
+        warnings.push({ severity: sev, pathLine: r.pathLine, text: `【残存確認】 ${r.pathLine}`, classLabels: [], hasEvidence: true, blockCandidate: false })
+      }
     } else {
       warnings.push({ severity: "MEDIUM", pathLine: r.pathLine, text: `【残存確認（エビデンスなし）】 ${r.pathLine}`, classLabels: [], hasEvidence: false, blockCandidate: false })
     }
@@ -368,12 +496,34 @@ function historyField(body: string, header: string): string {
 // 解消上書き（status: 未解決 → 解消済み）の対象にはならないが、これは意図的な設計：
 // path のない指摘は「同一指摘」として特定できないため、再発時は再ブロック（または警告記録）して
 // 修正されるまでゲートが収束しないのが正しい挙動。
+
+// 履歴に書き出す指摘本文・検証エビデンスの秘密値を隠す。SECRET_CONTENT_REGS と HISTORY_MASK_REGS を
+// 両方適用し、マッチは先頭 6 文字を残して *** に置換する（引用元の特定可能性だけ保つ）。
+function maskSecrets(text: string): string {
+  if (!text) return text
+  let out = text
+  for (const re of HISTORY_MASK_REGS) {
+    out = out.replace(re, (matched: string) => (matched.length <= 6 ? "***" : `${matched.slice(0, 6)}***`))
+  }
+  for (const re of SECRET_CONTENT_REGS) {
+    out = out.replace(re, (matched: string) => (matched.length <= 6 ? "***" : `${matched.slice(0, 6)}***`))
+  }
+  return out
+}
+
+// 履歴レコードの自由文（検証・問題欄）に `[重要度: X]` に類する文字列が混入すると、
+// 後にその履歴を引用した監査の報告が再びマーカーとして拾われ幽霊指摘の温床になるため、
+// 書き出し時に中和する（レコード自身の先頭ヘッダは対象外）。
+function severityNeutral(value: string): string {
+  return value.replace(/\[重要度:\s*(CRITICAL|HIGH|MEDIUM|LOW)\]/gi, "[重要度:?]")
+}
+
 function findingToRecord(f: Finding, status: string): string {
   const sev = f.severity ?? "MEDIUM"
   const cls = f.classLabels.length ? `[${f.classLabels[0]}]` : "[-]"
   const pathLine = f.pathLine ?? "-"
-  const evidence = historyField(f.text, "検証方法") || f.text.slice(0, 60).replace(/\s+/g, " ")
-  const problem = (historyField(f.text, "問題") || historyField(f.text, "理由") || "").slice(0, 120)
+  const evidence = severityNeutral(maskSecrets(historyField(f.text, "検証方法") || f.text.slice(0, 60).replace(/\s+/g, " ")))
+  const problem = severityNeutral(maskSecrets((historyField(f.text, "問題") || historyField(f.text, "理由") || "").slice(0, 120)))
   return `[重要度: ${sev}] ${cls} ${pathLine} | status: ${status} | 検証: ${evidence} | 問題: ${problem}`
 }
 
@@ -384,17 +534,61 @@ function normalizeHistKey(p: string): string {
 function applyHistory(historyFull: string, resolved: string[], newRecords: string[]): string {
   const resolvedFull = new Set(resolved)
   const resolvedPath = new Set(resolved.map(normalizeHistKey))
-  const lines = historyFull.split("\n").map((line) => {
+  const lines = historyFull.split("\n")
+  // 履歴に現れる指摘の行番号・status を集計する
+  const historyPathLines = new Set<string>()
+  const unresolvedLineIdx = new Map<string, number>() // pathLine -> その未解決レコードの行 index
+  const unresolvedCountByFile = new Map<string, number>()
+  lines.forEach((line, i) => {
+    const m = line.match(HIST_ENTRY_RE)
+    if (!m) return
+    historyPathLines.add(m[2])
+    if (m[3] === "未解決") {
+      unresolvedLineIdx.set(m[2], i)
+      const key = normalizeHistKey(m[2])
+      unresolvedCountByFile.set(key, (unresolvedCountByFile.get(key) ?? 0) + 1)
+    }
+  })
+  // 行番号ドリフト許容は「そのファイルに未解決レコードが1件だけのとき」のみにする。
+  // さらに、報告された行番号が履歴に存在しない（新しい行番号 = 本当のドリフト）場合にのみ
+  // 許容する。報告行が履歴に既に存在する（例: 解消済みの古い line を再度報告＝古い情報）なら
+  // 誤って別レコードを解消済みにしない（fail-open 防止）。
+  const newLineForFile = new Map<string, boolean>()
+  for (const p of resolved) {
+    if (!historyPathLines.has(p)) newLineForFile.set(normalizeHistKey(p), true)
+  }
+  const shouldResolve = (pathLine: string): boolean => {
+    if (resolvedFull.has(pathLine)) return true
+    const key = normalizeHistKey(pathLine)
+    return (
+      (unresolvedCountByFile.get(key) ?? 0) === 1 &&
+      resolvedPath.has(key) &&
+      newLineForFile.get(key) === true
+    )
+  }
+  const resolvedLines = lines.map((line) => {
     const m = line.match(HIST_ENTRY_RE)
     if (!m || m?.[3] !== "未解決") return line
-    const pathLine = m[2]
-    if (resolvedFull.has(pathLine) || resolvedPath.has(normalizeHistKey(pathLine))) {
-      return line.replace("status: 未解決", "status: 解消済み")
-    }
-    return line
+    return shouldResolve(m[2]) ? line.replace("status: 未解決", "status: 解消済み") : line
   })
-  const section = `## ${new Date().toISOString()}  commit-review\n${newRecords.map((r) => `- ${r}`).join("\n")}\n`
-  const head = lines.join("\n").trim()
+  // 生成物（docs/review-log.md）は git 管理下の「生成状態ファイル」であり、prettier の整形対象外
+  // （prettier --check を CI で実行するプロジェクトでは .prettierignore に docs/review-log.md を
+  // 追加する）。ここでは可読性のため、リスト行の連続スペースを1つに折り畳むだけにする。
+  const prettierLine = (r: string) => r.replace(/[ \t]{2,}/g, " ").replace(/\s+$/g, "")
+  // 未解決レコードの重複蓄積を防ぐ：同じ pathLine の未解決レコードが既にあれば追記でなく置換する
+  // （残存確認の再報告で未解決レコードが 1→2→3 と増え、一意ドリフト許容を自己無効化するのを防ぐ）
+  const merged = resolvedLines.slice()
+  const retained: string[] = []
+  for (const record of newRecords) {
+    const m = record.match(HIST_RECORD_RE)
+    if (m && m[3] === "未解決" && unresolvedLineIdx.has(m[2])) {
+      merged[unresolvedLineIdx.get(m[2])!] = `- ${prettierLine(record)}`
+      continue
+    }
+    retained.push(record)
+  }
+  const section = `## ${new Date().toISOString()} commit-review\n\n${retained.map((r) => `- ${prettierLine(r)}`).join("\n")}\n`
+  const head = merged.join("\n").trim()
   return head ? `${head}\n\n${section}` : section
 }
 
@@ -518,7 +712,7 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
     // 5. 両方のレビューを並列実行
     const diffBlock = `\`\`\`diff\n${diff}\n\`\`\``
     const historyHint = historyRecent.trim()
-      ? `【審査履歴（docs/review-log.md の直近）】\n\`\`\`\n${historyRecent}\n\`\`\`\n\n指示:\n- 履歴に status: 未解決 で記録された指摘（同じファイル:行）は再報告しない\n- そのうち今回の diff で解消されたものは「【解消確認】 ファイル:行 | 検証方法: ...」と一行で報告\n- まだ解消していないものは「【残存確認】 ファイル:行 | 検証方法: ...」と報告（検証方法必須・ブロック対象）`
+      ? `【審査履歴（docs/review-log.md の直近）】\n\`\`\`\n${historyRecent}\n\`\`\`\n\n指示:\n- 履歴に status: 未解決 で記録された指摘（同じファイル:行）は再報告しない\n- そのうち今回の diff で解消されたものは「【解消確認】 ファイル:行 | 検証方法: ...」と一行で報告\n- まだ解消していないものは「【残存確認】 ファイル:行 | 検証方法: ...」と一行で報告（検証方法必須。ブロック判定は判定ポリシーと同じ：block.severities/ブロック対象クラスに該当する指摘のみブロック、それ以外は警告として記録）`
       : "（審査履歴はまだありません）"
 
     const reviewMessage = `以下の git diff のコードレビューを実施してください。\n\n【判定ポリシー】\n${policySrc}\n\n${historyHint}\n\n新規の指摘のみ [重要度: ...] 形式で報告してください。\n\n\n${diffBlock}`
@@ -575,7 +769,12 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
       )
     }
 
-    const { blockers, warnings, resolved } = analyzeFindings(combined, policy, historyFull)
+    const merged = mergeFindings(
+      [reviewResult, auditResult]
+        .filter((r): r is string => Boolean(r))
+        .map((src) => analyzeFindings(src, policy, historyFull)),
+    )
+    const { blockers, warnings, resolved } = merged
 
     // 7. 履歴を更新（ブロック/通過どちらでも記録する）
     const newRecords: string[] = []

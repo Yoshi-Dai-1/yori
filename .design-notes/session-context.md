@@ -453,7 +453,167 @@
 - `harness-engineering.md` → テストプロジェクトへコピー（`.gitignore:95` で git 非追跡のランタイム配置・ステージ不要）
 - テストプロジェクト最終状態: 履歴1件（5b68eed）・37ファイルステージ済み（+2290/−910）・作業ツリー=index・未追跡なし
 
+### 最終検証（3点 + 最終確認4点・同日完了）
+- 公式準拠: opencode.ai/docs/plugins と照合（単一 function export / `.opencode/plugins/` 自動ロード / `tool.execute.before` throw ブロック）・tsc exit=0
+- 冗長修正: package.json + package-lock.json 同時変更で同一 npm audit が2回実行される問題 → `auditsByCommand` でコマンド単位に集約
+- ドキュメント同期: 無言ブロック・重要度引き継ぎ・全マニフェスト対象を plugins/README.md / harness-engineering.md へ反映。root・opencode/README(ja) は記述対象外（矛盾なし）
+- テスト: **31 pass / 0 fail（65 expect）**・tsc exit=0・ステージ37件=作業ツリー・未追跡なし
+
+### コミット（2026-09-08）
+- `b1c2419` `fix:` fail closed when commit-review audits return no findings silently — 4ファイル（commit-review.ts / plugins/README.md / harness-engineering.md / session-context.md）・163+/39-
+
 ### 残タスク
 - 自動テストランナーは作業フォルダ（/var/folders 配下）のため OS により消失しうる。恒久化は 案B（`.opencode/lib/` 分離）を将来課題として保有
 - テストプロジェクトでの実機検証（ブロック経路 E2E）は**人間がプロジェクト内 AI エージェントに指示**して実施（yori 側からは行わない）
-- yori canonical のコミットは承認待ち（`.design-notes/session-context.md` + `commit-review.ts` の2ファイル変更中）
+- テストプロジェクトのステージ済み37ファイルはコミット承認待ち
+
+## commit-review 監査指摘の修正バッチ（2026-09-09 実施・yori 未コミット・テストプロジェクト未反映）
+
+### 発端
+- nintei-chosa-form-assistant の再コミット試行（09-09、v1.14→v1.15.3）でプラグインが「ブロック対象3件（警告0件）」と通知。実測検証の結果、指摘1（GIT_COMMIT_RE が `--flag` 前置を不検出）は真、指摘2（フックバイパス不検出）は誤り（既に検出される）、指摘3（secret-patterns.json BEGIN 行のみ検出）は履歴漏れ経路が HISTORY_MASK で解決済み。加えて「ブロック3件 vs 警告0件」の拠出ロジックに2つの設計バグを特定:
+  1. 残存確認（REMAIN_RE）はエビデンス付きなら severity に関わらず自動ブロック（`severityInHistory() ?? "HIGH"` + 常に `blockers.push`）→ policy.block.severities=[CRITICAL/HIGH] と矛盾
+  2. クラス誤判定: 「ハードコードされた秘密値：**なし**」等の否定文が hardcoded-secret keyword にマッチし誤ブロック
+
+### 変更（yori SSoT: `opencode/snippets/.opencode/plugins/commit-review.ts`・89+/7-）
+- **secret-in-log マスク補完**（従来のポーティング）: `import secretPatterns`・`ContentPattern` interface・`SECRET_CONTENT_REGS`（block 系のみ）/ `HISTORY_MASK_REGS`（multi-line 鍵ブロック・Bearer 値）・`maskSecrets()`・`findingToRecord` の evidence/problem に適用（マッチ先頭 6 文字を残して ***）
+- **GIT_COMMIT_RE --flag 許容**: `/\bgit\b(?:\s+--?[A-Za-z][\w-]*(?:[ =][^\s]+)?)*\s+commit\b/`（`--no-pager` / `--quiet` / 引数付き `-c` を1トークン吸収）
+- **残存確認の severity 尊重**: エビデンス付き残存は `policy.block.severities`（CRITICAL/HIGH）**または**履歴にブロック対象クラスラベル（`blockClassInHistory` 追加）がある場合のみブロック。MEDIUM/LOW の一般指摘は警告化。履歴なしは HIGH（安全側）のまま
+- **クラス誤判定防止**: `classificationText()` を追加し、クラス判定を「指摘タイトル（1行目）+ 問題/理由欄」に限定。検証方法以降（良好な確認結果・否定文が列挙される区間）を除外
+- **review-log.md 生成を prettier 準拠に**（B 案・`.prettierignore` は配布しない）: `applyHistory` で見出しをシングルスペース化、見出しとリスト間に空行、`prettierLine` で行内連続スペースを折り畳み
+
+### 変更しないもの
+- `HOOK_BYPASS_RE`（指摘2は誤検出のため無変更・`env GIT_CONFIG_PARAMETERS=... core.hooksPath=...` は既に検出）
+- secret-patterns.json（指摘3は履歴漏れ経路がマスクで解決済み・検出パターンは不変）
+- `.prettierignore` の配布はしない（非 prettier プロジェクトへのノイズ・yori の汎用性）
+
+### 検証（全部 PASS）
+- モジュールロード: `bun` で `CommitReviewPlugin` を import → LOAD_OK（JSON import 解決・構文 OK）
+- GIT_COMMIT_RE: `git commit` / `--no-pager` / `--quiet` / `--no-pager --quiet` / `-c core.hooksPath=...` → true、`git checkout` / `git stash` → false（9ケース全部 OK）
+- HISTORY_MASK: multi-line PRIVATE KEY / Bearer トークンが一括マスク（PRIVATE KEY 行・トークン値が残らない）
+- クラス誤判定: 否定文（「ハードコードされた秘密値：なし」）→ block=false、真正の機密系→ hardcoded-secret クラス・block=true
+- 残存確認: LOW → 警告化 / HIGH → ブロック / LOW でも機密クラスラベル → ブロック
+- prettier: 生成履歴サンプルを実 prettier で `--check` → All matched files use Prettier code style
+- 検証用一時スクリプト（verify-commit-review.test.ts）は削除済み（plugins/*.ts の配布対象混入防止）
+
+### 残タスク
+- **yori のコミット承認待ち**（`fix:` 型。AGENTS.md により人間の明示指示時のみ）
+- 古い履歴セクション（見出しダブルスペース等）は prettier 非準拠のまま残るが、review-log.md 削除でベースラインは新形式に置き換わる
+
+## commit-review 監査指摘の修正バッチ 最終確認（2026-09-09 追記・yori 未コミット）
+
+### 4項目の最終確認（ユーザー指示）・全部完了
+1. **OpenCode 公式準拠**: 公式ページ（opencode.ai/docs/plugins）で照合。ローカルファイル/npm 配布・`.opencode/` 配下のプラグイン設定・package.json の main キー参照（npm 方式）・フック型（tool.execute.before 等）・プラグイン再読込が公式仕様。現行プラグインは単一 function export + `.opencode/plugins/` 自動ロード + tool.execute.before（throw でブロック）で準拠
+2. **AI エージェント判断・データフロー追跡**: 履歴ヒント（historyHint）送付 → 【解消確認】/【残存確認】パース → severity/クラス尊重 → ブロッカー集計 → findingToRecord でマスク → applyHistory 更新 → prettier 整形 → review-log.md 書込を追跡し、残存確認のブロック条件が「判定ポリシーと同一」である設計と実装・説明書3ファイル（historyHint / harness-engineering.md L307 / plugins/README.md）の整合を確認
+3. **整合性**: 設計矛盾3箇所（「残存確認はブロック対象」が実装と不一致）を発見し修正済み。コメントブロック分離（pathなし指摘の設計ノート + maskSecrets 注記）。subagent（code-reviewer/security-auditor）は再報告禁止・解消/残存確認に従うのみで矛盾なし。unit test 33件（後述）・tsc exit=0・prettier PASS
+4. **README 反映**: 5件中該当は opencode/snippets/.opencode/plugins/README.md（発火条件 `--flag` 前置・審査履歴に残存確認のブロック条件同一/マスク/prettier 準拠を追記済み）。ルート README×2・opencode/README×2 は commit-review 詳細に言及せず対象外。harness-engineering.md は L307 更新済み
+
+### テストハーネスの更新（新挙動へ追随）
+- `/var/folders/.../T/opencode/commit-review-test/run-tests.sh`: 注入 export に `blockClassInHistory` を追加
+- `commit-review.test.ts`: 残存確認テストを「MEDIUM は警告・未記録時は HIGH ブロック」に変更（旧挙動の固定ブロックを前提としていたため）、`git --flag` 形式（--no-pager/--quiet）を isGitCommit に追加、残存 LOW+機密クラス由来 = blockClassInHistory ブロックのテストを新規追加
+- **33 pass / 0 fail（73 expect）**
+- 実行前提: 配布物の `../config/secret-patterns.json` 相対参照のため `commit-review-test/config/secret-patterns.json` へコピーが必要（cr-check 用の `/T/opencode/config/` とは別）
+
+### テストプロジェクト反映（人間の指示で再同期）
+- テストプロジェクトへ yori canonical を再コピー（historyHint 文言・コメント分離の2エディットが直前の反映時点より後に入ったため）:
+  `.opencode/plugins/commit-review.ts` / `.opencode/plugins/README.md` / `.opencode/standards/principles/harness-engineering.md` → すべて IDENTICAL（diff 確認）・bun LOAD_OK・`npx prettier --check .` PASS
+- テストプロジェクト git: commit-review.ts・README が `MM`（ステージ済み版 + 未ステージ再同期分）。ステージ・コミットはユーザー管理
+
+## ADR 006 根本修正バッチ（2026-09-09 追記・yori 未コミット・ユーザーはステージ/コミットを明示禁止）
+
+### 背景: 幽霊指摘の実発現と発言者の特定
+- テストプロジェクトのコミットで「ブロック対象の指摘を 3 件検出」が発生したが、実在する指摘はゼロだった（ファントム）。「**総合判定**：ブロック対象なし。」はセキュリティ監査サブエージェントの報告末尾の自由記述で、プラグインのメッセージ（3件検出）と矛盾するものではなく、両者は正しかった
+- 実行者を `~/.local/share/opencode/opencode.db`（part テーブルの data JSON / session テーブルの parent_id）から特定: 「3件」= commit-review.ts 内部、コードレビュアー（child commit-review-code）が平叙文の引用に `[重要度: HIGH]` を含めたのが起点
+- メカニズム: 旧 `SEV_HEADER_RE` が行内のどこでも `[重要度: X]` にマッチ → 引用「…該当する問題はありません」を指摘化 → 直後の「検証方法:」行を取り込んで HIGH+エビデンス化 → 3件ブロック。生成された review-log.md に汚染レコード（空の「問題」欄・文途中切断・severity 不一致）が残り、履歴引用経由で再発する自己増殖だった
+- 検証により反証された旧主張: 「生成される review-log.md は prettier 準拠」（08:13 生成物で `prettier --check .` 失敗）
+
+### 措置（ユーザーが質問ツールで3方針とも「推奨」を選択）
+1. **認識契約**: SEV_HEADER_RE を行頭アンカー化 `^\s*(?:[*\-]+\s*)?\[重要度: ...\]`（bullet/太字前置・`**[重要度: X]**` 許容）。コードフェンス内は走査除外。findingToRecord 書き出し時に自由文のマーカー類似文字列を `[重要度:?]` へ中和
+2. **一意ドリフト**: severityInHistory / blockClassInHistory / applyHistory の行番号ドリフト許容を「そのファイルに該当レコード1件のみ」に限定。複数なら行一致要求、不明時は HIGH フォールバック（fail-closed）
+3. **バイパス検出の走査範囲**: hasHookBypass で `-c` の値の引用符を除去（`git -c "core.hooksPath=..."` も検出）し、引用符で囲まれた文字列（メッセージ本文等）を除外。HOOK_BYPASS_RE は `core.hooksPath=`（バア値）パターンを削除し `-c\s+core\.hooksPath\b` に
+4. **マスク拡張**: HISTORY_MASK_REGS に JWT（`eyJ…`）と 28 文字以上の長い不透明トークンを追加
+5. **prettier 再定義**: review-log.md は「生成状態ファイル＝整形対象外」に。.prettierignore へ再追加、準拠主張を撤回（可読性のためのスペース折り畳みのみ残す）
+6. **エージェント契約**: code-reviewer.md / security-auditor.md に「マーカーは行頭で開始」「引用・結論文の文中に置かない・フェンスで囲う」を明記
+
+### 変更ファイル（yori canonical）
+- `opencode/snippets/.opencode/plugins/commit-review.ts`（SEV_HEADER_RE・analyzeFindings・findingToRecord+severityNeutral・severityInHistory・blockClassInHistory・applyHistory・HOOK_BYPASS_RE・hasHookBypass・HISTORY_MASK_REGS・コメント是正）
+- `opencode/snippets/.opencode/plugins/README.md` / `opencode/principles/harness-engineering.md`（認識契約・一意ドリフト・prettier 対象外・マスク拡張を同期）
+- `opencode/snippets/agents/subagents/code-reviewer.md` / `security-auditor.md`（認識契約追記）
+- `opencode/decisions/006-severity-recognition-contract.md` 新設
+
+### テスト
+- run-tests.sh: 注入 export に `maskSecrets` / `severityNeutral` を追加
+- 新規回帰 14 件（R1〜R11 / B1〜B3）: 平叙文引用→非ブロック・検証フィールド内引用→非検出・太字行頭検出/文中非検出・フェンス内無視・bullet 前置・複数レコード時 HIGH フォールバック・一意ドリフト・過剰解消なし・写実的幽霊シナリオ・書き出し中和・JWT/不透明トークンマスク・メッセージ本文誤爆なし・引用符付き -c・env/実フラグ
+- **47 pass / 0 fail（113 expect）**・cr-check tsc exit=0
+- 既存テスト1件の名称を「最新レコード優先」→「同ファイル・行一致レコードを引き継ぐ（複数時は行一致要求）」に改正（シナリオは同一結果のまま）
+
+### テストプロジェクト復旧（2026-09-09）・ステージ/コミットなし
+- 同期（yori SSoT → nintei-chosa-form-assistant）: `.opencode/plugins/commit-review.ts` / `.opencode/plugins/README.md` / `.opencode/agents/code-reviewer.md` / `.opencode/agents/security-auditor.md` / `.opencode/standards/principles/harness-engineering.md`
+- 汚染済み `docs/review-log.md`（untracked）を破棄 → 次回コミット時にクリーンな状態から再生成される
+- `.prettierignore` に `docs/review-log.md` を再追加 → `npx prettier --check .` PASS
+- 検証: 配布コピーが SSoT と一致・tcr-check tsc exit=0・47 pass
+
+### 残タスク・次回
+- **yori のコミット承認待ち**（`fix:` 型。AGENTS.md により人間の明示指示時のみ。今回もステージ/コミット禁止を遵守）
+- テストプロジェクトの「37前後のステージ済み変更 + MM 再同期分」はユーザー管理でコミット（今回の禁止指示は挙動確認のための一時措置）
+- スコープ外として記録: commit-review.ts 737行（ARCHITECTURE 300行超過）と `any` 使用は未リファクタリング（ADR 006 の結果セクションに言及のみ）
+- 認識契約の遵守はエージェントプロンプト依存（行頭アンカー外の非準拠報告は検出しない）— モデル回帰があれば監査結果の属性パターンを再確認する
+
+## ADR 006 レビュー後修正（2026-09-09 追記・設計レビュー依頼対応）
+
+### 設計レビュー（explore サブエージェント + 実測）で発見・修正した問題
+| ID | 問題 | 修正 |
+|----|------|------|
+| D-1 | `hasHookBypass` が二重引用符内のアポストロフィ（`"don't use --no-verify"`）で誤爆 | バランス型クォート `"(?:[^"\\]|\\.)*"\|'(?:[^'\\]|\\.)*'` に変更。`-c` デクォートも同様 |
+| D-2 | フェンス閉じ忘れで末尾の CRITICAL が黙って見逃される（fail-open）＋ 2監査を `\n\n` 連結→片方のフェンス状態が他方に波及 | `analyzeFindings` 末尾再スキャン（最後のフェンス開始以降を再走査）+ 監査ごとに分離解析して `mergeFindings` で合成 |
+| D-3 | 残存確認の再報告で同一 pathLine の未解決レコードが蓄積→一意ドリフト許容が自己無効化 | `HIST_RECORD_RE`（`- ` 前置なし形式）で新記録をマッチし、既存未解決レコードを**置換**（追記でなく） |
+| D-4 | 解消済みの古い行を再報告→別行の新規未解決を誤って解消（fail-open） | ドリフト許容は「報告行が履歴に存在しない場合のみ」（newLineForFile マップ） |
+| E-1 | 履歴レコード行の行頭引用＋検証方法追記で幻影ブロッカー化 | `analyzeFindings` で `HIST_ENTRY_RE` 合致行を走査対象外に |
+| A-1 | ADR 006 の正規表現表記 `\s+` が実装 `\s*` と不一致 | ADR 修正＋既定の太字前置 `**[重要度: X]**` も契約に明記 |
+| B-1/B-2 | `new RegExp(HIST_ENTRY_RE.source, "gm")` の重複・severity/クラス引継ぎの前半ロジック重複 | `historyMatchesInFile` / `mergeFindings` ヘルパーへ集約 |
+
+- レビューで指摘された numbered items（`1. [重要度: X]`）非検出: エージェント契約が bullet/太字のみ許可のため仕様内として記録のみ（未変更。勝手に認識範囲を拡げない）
+
+### 検証
+- 回帰テスト **52 pass / 0 fail（127 expect）**（新規 R12〜R15 / D1 追加）
+- tsc exit=0（mergeFindings の `string|null` narrowing に型ガード `.filter((r): r is string => Boolean(r))` を追加）
+- テストプロジェクトへ commit-review.ts 再同期（他4ファイルは既同期）・`npx prettier --check .` PASS
+- 5件の同期ファイル全 IDENTICAL 確認（diff -q）
+
+### 残タスク
+- **yori のコミット承認待ち**（`fix:` 型。ステージ/コミットは引き続き人間指示待ち）
+- テストプロジェクトのステージ・コミットはユーザー管理
+
+## 最終確認（2026-09-09 最終確認ターン）
+
+- 公式 opencode.ai/docs/plugins（Last updated: Sep 8, 2026）再照合: 単一function export・`.opencode/plugins/` 自動ロード・`tool.execute.before`・`Plugin` 型 import・SDK client 全て仕様一致。依存は `../config/secret-patterns.json` の静的読込のみで npm 不要（公式の Dependencies は外部パッケージ利用時のみ要件）
+- 新しい subagent（explore）最終レビュー（857行全読・ADR 006 照合・hasHookBypass 実効 5ケース検証）:
+  - **ADR 006 の8項目すべて実装一致**（行頭アンカー・フェンス除外・履歴レコード行除外・マーカー中和・一意ドリフト・バランス型クォート・フェンス再スキャン+監査分離・applyHistory の置換+新行ドリフト門）を確認
+  - 誤字脱字・未使用コード・型エラーなし
+  - **README/コメントの矛盾1件を発見・修正**: 旧記述「[重要度: HIGH/CRITICAL] は無条件ブロック」が実装（L448 `evidenceRequired: true` なら無条件でなく検証方法必要→警告化）と矛盾 → plugins/README.md L179 と commit-review.ts ヘッダコメント（L16-17）を実装に合わせて修正・再同期
+  - 既知の設計範囲外 WARN（コード変更なし・今回は報告のみ）: 空インデックス時のfail-open（`git commit -a` 等）/ `-C <dir>` 時に誤 worktree の diff 参照 / `git add -A && git commit` の staging 無 rollback / 片側監査の暗黙エラー / クォート付きフラグの検出回避。すべて ADR 006 より前から存在する設計制約
+- **ツール起因の事故と復旧**: yori 側（prettier 設定なし→デフォルト semi:true）で `npx prettier --write` を実行し、セミコロンレス形式のプラグインを全行書き換えてしまった（629行差）。テストプロジェクトの `.prettierrc`（semi:false）が正規のエクスポート形式基準のため、テストプロジェクト版から復元し修正2件のみ再適用。**以後 yori 側では prettier --write を使用しない**
+- 最終検証結果: 回帰テスト **52 pass / 0 fail** / tsc exit=0 / テストプロジェクト `npx prettier --check .` PASS / 配布5ファイル ALL-IDENTICAL（commit-review.ts・plugins/README.md・code-reviewer.md・security-auditor.md・harness-engineering.md）diff -q 確認
+
+### 残タスク
+- yori / テストプロジェクトのステージ・コミットは**人間の明示指示待ち**（yori は `fix: 文言修正` 相当の未コミット差分が5ファイル+ADR 006ノントラック）
+- 既知設計WARN（上記4件）は別途プロジェクトレベルの判断が必要（ADR 追記 + 対応実装があれば次セッションで）
+
+## 実戦監査の最終確認と --config-env 根本修正（2026-09-09）
+
+### テストプロジェクト（nintei-chosa-form-assistant）初回コミットの監査検証
+- コミット 5083934（yoriハーネス v1.14→v1.15.4 更新）で 4件の警告（block なし・正しい判定）。review-log.md に記録された指摘を git 2.52 実機 + 実コードで追検証
+- 指摘の性質を3分類に確定:
+  1. eslint ignore（MEDIUM）: 事実だが**設計違反ではない**。プラグインの品質ゲートは yori 側（回帰テスト+tsc）でありターゲット eslint の対象外は設計意図 → 変更しない
+  2. フックバイパス検出漏れ（MEDIUM）: regex 上の2経路（`--config` / `-ccore.hooksPath=`）は git 2.52 が `unknown option` で受理せず実害なし。**真のギャップ**は `--config-env=<name>=<envvar>`（usage に存在）
+  3. npm audit fail-closed（LOW）: 意図的仕様（ARCHITECTURE 多層防御）→ 変更しない
+  4. マスク可読性（LOW）: ADR 4 の文書化済みトレードオフ → 緩和しない（セキュリティ低下）
+
+### 実施した変更
+- `HOOK_BYPASS_RE` に `--config-env\s*=\s*core\.hooksPath\b` を追加（yori SSoT + テストプロジェクトに同期済み・prettier PASS）
+- 回帰テストに `--config-env` 検出 + 引用符内非検出を追加 → **53 pass / 0 fail**、tsc=0
+- ADR 006 適用履歴に最終確認の結論を追記
+
+### テストプロジェクトのコミット取り消し（--soft）
+- ユーザー指示により `git reset --soft HEAD~1` で 5083934 を取り消し（作業ツリー・ステージ不変、37ファイルステージ済み・HEAD=5b68eed）
+- `docs/review-log.md` は**削除**（推奨結論）: 全レコードが `status: 警告` でゲート状態の損失ゼロ・修正前コードの行番号参照・生成済み状態ファイル（prettierignore 登録済み）。次回コミットで監査が自動再生成
+- 次の流れ: ユーザーがテストプロジェクトの AI エージェントへ再コミット指示 → 修正版プラグインで再審査され、review-log.md が再生成される
