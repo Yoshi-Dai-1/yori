@@ -17,11 +17,14 @@ import type { Plugin } from "@opencode-ai/plugin"
  *     → .design-notes/subagent-session.md 参照
  *   - 最悪ケース（subagent が親と sessionID 共有）でも現状と同じ
  *
- * 検知する3つのシグナル：
- *   1. 編集頻度の閾値超過（セッション単位、直近 EDIT_VOLUME_WINDOW_MS 内に EDIT_VOLUME_THRESHOLD 件。`>=` 判定＋発火済みフラグで閾値超過ごとに1回）
- *   2. 同一ファイルの連続編集（セッション単位、直近 LOOP_WINDOW_MS 内に LOOP_THRESHOLD 件）
- *   3. tasks.json の pass 率が 50% 未満（session.idle 時、project-wide。
- *      購読は公式の `event` フックで `session.idle` をフィルタして行う）
+ * 検知する2つのシグナル：
+ *   1. 同一コードファイルの連続編集（セッション単位、直近 LOOP_WINDOW_MS 内に LOOP_THRESHOLD 件）
+ *      文書磨き（Markdown / 作業ディレクトリ配下 / スキル参照資料）は意図的な反復が正常なため対象外。
+ *      量検知（旧シグナル1: 10分20回）は文書磨きとの相性が悪く、自動コンパクション下では
+ *      前提（Context Anxiety の頻発）が成立しないため撤去した（トースト含む）。
+ *   2. tasks.json の pass 率が 50% 未満（session.idle 時、project-wide。
+ *      購読は公式の `event` フックで `session.idle` をフィルタして行う。
+ *      同一内容の連投を防ぐため、通過数の変化またはクールダウン経過時のみ通知する）
  *
  * 設計原則「Plugin は AI と対話する」に従い、警告は Toast + AI への prompt 通知を行う。
  * ただし通知は「トリガー時点の事実」のみ。AI に判断を委ねない。
@@ -35,7 +38,6 @@ interface EditEvent {
 interface SessionStats {
   edits: EditEvent[]
   lastActivity: number
-  volumeAlerted: boolean
 }
 
 // セッション毎の sliding window を保持
@@ -43,8 +45,6 @@ interface SessionStats {
 const sessionStats = new Map<string, SessionStats>()
 
 // 閾値設定
-const EDIT_VOLUME_WINDOW_MS = 10 * 60 * 1000  // 10分
-const EDIT_VOLUME_THRESHOLD = 20  // 10分で 20 回
 const LOOP_WINDOW_MS = 5 * 60 * 1000  // 5分
 const LOOP_THRESHOLD = 6  // 同一ファイルを5分以内に6回編集（3→6: 通常編集との分離のため緩和）
 
@@ -55,14 +55,18 @@ const SETUP_PATHS = [
   'ARCHITECTURE.md',
   'AGENTS.md',
 ]
+// 文書磨きは反復が正常作業のため LOOP 検出から除外する（コード暴走のみを検知する）
+const LOOP_SKIP_RE = /(^|\/)(docs\/working\/|skills\/[^/]+\/references\/)|\.md$/i
 const PASS_RATE_THRESHOLD = 0.5
 const MIN_TASKS_FOR_ALERT = 5
 const SESSION_TTL_MS = 30 * 60 * 1000  // 30分無操作で stale 判定
+const PASS_ALERT_COOLDOWN_MS = 30 * 60 * 1000  // 同一内容の pass 率警告の再通知間隔
+const passAlertState = new Map<string, { passed: number; total: number; at: number }>()
 
 function getOrCreateStats(sessionId: string): SessionStats {
   let stats = sessionStats.get(sessionId)
   if (!stats) {
-    stats = { edits: [], lastActivity: 0, volumeAlerted: false }
+    stats = { edits: [], lastActivity: 0 }
     sessionStats.set(sessionId, stats)
   }
   return stats
@@ -70,12 +74,8 @@ function getOrCreateStats(sessionId: string): SessionStats {
 
 function pruneSessionEdits(stats: SessionStats, now: number): void {
   stats.lastActivity = now
-  while (stats.edits.length > 0 && now - stats.edits[0].timestamp > EDIT_VOLUME_WINDOW_MS) {
+  while (stats.edits.length > 0 && now - stats.edits[0].timestamp > LOOP_WINDOW_MS) {
     stats.edits.shift()
-  }
-  // 閾値未満に戻ったら発火済みフラグを解除する（次の閾値超過で再発火できるように）
-  if (stats.edits.length < EDIT_VOLUME_THRESHOLD) {
-    stats.volumeAlerted = false
   }
 }
 
@@ -83,6 +83,12 @@ function pruneStaleSessions(now: number): void {
   for (const [id, stats] of sessionStats) {
     if (now - stats.lastActivity > SESSION_TTL_MS) {
       sessionStats.delete(id)
+      passAlertState.delete(id)
+    }
+  }
+  for (const [id, state] of passAlertState) {
+    if (now - state.at > SESSION_TTL_MS) {
+      passAlertState.delete(id)
     }
   }
 }
@@ -145,34 +151,13 @@ export const HarnessHealthPlugin: Plugin = async ({ client }) => {
         stats.edits.push({ fp, timestamp: now })
       }
 
-      // シグナル1：編集頻度の閾値超過（セッション単位）
-      // `>=` 判定（multiedit は一度に複数ファイルを push するため `===` では
-      // 閾値を飛び越えて発火しないことがある）＋ 発火済みフラグで1回だけ通知
-      if (stats.edits.length >= EDIT_VOLUME_THRESHOLD && !stats.volumeAlerted) {
-        stats.volumeAlerted = true
-        const windowMin = EDIT_VOLUME_WINDOW_MS / 60000
-        await client.tui.showToast({
-          body: {
-            message: `harness-health: 直近 ${windowMin} 分で ${stats.edits.length} 回編集（暴走の可能性）`,
-            variant: "warning",
-          },
-        })
-        await notifyAI(
-          client,
-          sessionId,
-          `harness-health: 直近 ${windowMin} 分間で ${stats.edits.length} 回の編集を検知。` +
-            `閾値 ${EDIT_VOLUME_THRESHOLD}/${windowMin}分 に達しました。` +
-            `編集ペースが異常に高いため、Context Reset を強く推奨します。` +
-            `（「今日はここまで」と伝える、または \`.opencode/handoff-artifact.md\` を生成して新規セッションを開始）`,
-        )
-      }
-
-      // シグナル2：同一ファイルの連続編集（セッション単位）
+      // 同一ファイルの連続編集（セッション単位）
       // セッション単位なので、親セッションの編集がサブエージェントの
       // 同一ファイル検知を巻き込むことはない
-      // 初期セットアップ中のファイルはワークフロー起因の編集として除外
+      // 初期セットアップ中のファイル・文書磨きはワークフロー起因の反復として除外
       for (const fp of [...new Set(fps)]) {
         if (SETUP_PATHS.some((p) => fp.includes(p))) continue
+        if (LOOP_SKIP_RE.test(fp)) continue
         const sameFileRecent = stats.edits.filter(
           (e) => e.fp === fp && now - e.timestamp < LOOP_WINDOW_MS,
         )
@@ -201,16 +186,36 @@ export const HarnessHealthPlugin: Plugin = async ({ client }) => {
 
     // セッションのアイドル検知は公式の `event` フックで行う
     // （`session.idle` は Hooks 型に未宣言のため、フック名としてのディスパッチは保証されない）。
-    // ここでは tasks.json の pass 率閾値超過（シグナル3）を通知する。
+    // ここでは tasks.json の pass 率閾値超過を通知する。
+    // アイドル毎の連投を防ぐため、通過数に変化があった場合またはクールダウン経過時のみ通知する。
     event: async (input) => {
       const ev = input.event
-      if (!ev || ev.type !== "session.idle") return
+      if (!ev) return
+      if (ev.type === "session.deleted") {
+        const sid = (ev.properties as { info: { id: string } }).info?.id ?? (ev.properties as any).sessionID
+        if (sid) {
+          passAlertState.delete(sid)
+          sessionStats.delete(sid)
+        }
+        return
+      }
+      if (ev.type !== "session.idle") return
       const sessionId = ev.properties.sessionID
 
       const result = await checkTasksPassRate()
       if (!result) return
       if (result.total < MIN_TASKS_FOR_ALERT) return
-      if (result.rate >= PASS_RATE_THRESHOLD) return
+      if (result.rate >= PASS_RATE_THRESHOLD) {
+        passAlertState.delete(sessionId)
+        return
+      }
+
+      const now = Date.now()
+      const prev = passAlertState.get(sessionId)
+      if (prev && prev.passed === result.passed && prev.total === result.total) {
+        if (now - prev.at < PASS_ALERT_COOLDOWN_MS) return
+      }
+      passAlertState.set(sessionId, { passed: result.passed, total: result.total, at: now })
 
       const passRate = (result.rate * 100).toFixed(0)
 

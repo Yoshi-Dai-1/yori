@@ -83,6 +83,8 @@ After execution, the following files are created/copied:
 
 ### Step 1: Open the project in OpenCode
 
+To minimize misalignment between you and the AI, work out your project's design in as much detail as you can before starting the first session.
+
 Open the target project folder in OpenCode and tell the AI to start a new session.
 
 ### Step 2: Follow the AI's guidance

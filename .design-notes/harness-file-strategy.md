@@ -199,10 +199,10 @@ yori の修正・改善時に新規ファイルや既存ファイルの戦略を
 ## `.github/workflows/`（GitHub Actions テンプレート）
 
 ### `codecheck.yml.template`, `monthly-diagnosis.yml.template`
-- **戦略**: C
+- **戦略**: A
 - **元**: `snippets/.github/workflows/*.template`
 - **行**: 650-660
-- **理由**: GitHub Actions ワークフローのテンプレート。プロジェクトは独自のワークフローファイルを作成し、テンプレートを直接編集しない。yori の改善（トリガー条件・ステップ修正）を届ける必要がある。
+- **理由**: GitHub Actions ワークフローのテンプレート。プロジェクトはブランチ・権限・SHAピン留め等をカスタマイズする。`if [ ! -f ]` で存在しない場合のみコピーし、既存プロジェクトのカスタムを上書きしない（旧 C から変更。yori の改善は新規プロジェクトにのみ届く）。
 
 ---
 

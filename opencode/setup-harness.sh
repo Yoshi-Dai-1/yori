@@ -647,14 +647,18 @@ else
   echo "ℹ️  .github/dependabot.yml は既に存在します（上書き保護）"
 fi
 
-# .github/workflows/ のテンプレートをコピー（GitHub Actions CI/CD。常時上書き）
+# .github/workflows/ のテンプレートをコピー（GitHub Actions CI/CD。上書き保護）
 if [ -d "$SNIPPETS/.github/workflows" ]; then
   mkdir -p .github/workflows
   for TEMPLATE in "$SNIPPETS/.github/workflows/"*.template; do
     if [ -f "$TEMPLATE" ]; then
       BASENAME=$(basename "$TEMPLATE" .template)
-      cp "$TEMPLATE" ".github/workflows/$BASENAME"
-      echo "✅ .github/workflows/$BASENAME をコピーしました（GitHub Actions CI/CD）"
+      if [ ! -f ".github/workflows/$BASENAME" ]; then
+        cp "$TEMPLATE" ".github/workflows/$BASENAME"
+        echo "✅ .github/workflows/$BASENAME をコピーしました（GitHub Actions CI/CD）"
+      else
+        echo "ℹ️  .github/workflows/$BASENAME は既に存在します（上書き保護）"
+      fi
     fi
   done
 fi
@@ -1061,7 +1065,12 @@ fi
 echo ""
 echo "🎉 セットアップ完了！"
 echo ""
+echo "▶ 初期状態と以降の変更を分けて記録するため、現段階でのコミットを推奨します。"
+echo "  git add -A && git commit -m \"chore: yoriハーネスを初期セットアップ\""
+echo ""
 echo "▶ これから始める方へ："
+echo "  人間とAIの認識のずれを最小限とするため、プロジェクトの設計を考えうる限り詳細にしてから初回セッションに進むことをお勧めします。"
+echo ""
 echo "  OpenCode でこのプロジェクトフォルダを開き、セッションを開始する旨をAIに伝えてください。"
 echo "  AI が自動的にプロジェクト定義・アーキテクチャ・設計のセットアップを案内します。"
 echo ""

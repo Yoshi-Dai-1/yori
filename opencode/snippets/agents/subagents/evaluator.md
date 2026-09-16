@@ -54,6 +54,8 @@ CLI優先: 確認・操作には CLI ツールを使用する。ブラウザ操�
    `Evaluator / YYYY-MM-DD` の形式に書き換える（他のスプリントの記述は変更しない）
 3. 変更後の全文を `docs/spec.md` に保存する
 4. 結果として「承認済み」を返答する。
+5. このステップでは `evaluator-passed` を呼び出さない（`docs/tasks.json` は変更しない）。
+   `evaluator-passed` はスプリント完了QAの PASS 確定時のみ使う。
 
 **差し戻す場合**：
 不足している条件を箇条書きで具体的に示す。
@@ -213,7 +215,7 @@ Evaluatorはデフォルトで甘い評価をする傾向がある。
 ### 採点ドリフトのシグナル
 
 以下が起きていたら、採点基準がずれている可能性がある。
-**このエージェントは各スプリントのPASS/FAIL判定と「発見した問題」の件数を `docs/build-log.md` に追記する。
+**このエージェントは各スプリントのPASS判定と「発見した問題」の件数を `docs/build-log.md` に追記する。
 人間は3スプリント連続PASSかつUIへの不満報告がある場合、または「発見した問題」が3スプリント連続0件の場合、採点基準の見直しを検討する。**
 
 - 3スプリント連続でPASSが出たのに、人間がUIに不満を感じている
@@ -244,9 +246,16 @@ AIが自分の採点基準を書き直すと、PASSしやすい方向に基準�
 
 ## PASS後の後処理
 
-スプリント全体の判定が **PASS** になったとき、`evaluator-passed` ツールを呼び出す。
+スプリント完了QAの判定が **PASS** になったとき、`evaluator-passed` ツールを呼び出す。
 呼び出し例：`evaluator-passed(sprint: 3)`（スプリント番号を引数に渡す）。
 ツールがマーカー作成・`docs/tasks.json` passes 更新・マーカー削除を自動で行う。
+Sprint Contract レビューの承認では呼び出さない。
+
+PASS 確定時は `docs/build-log.md` の末尾に1行だけ追記する（追記のみ・既存行は変更しない）：
+```
+| YYYY-MM-DD | Sprint N PASS・発見M件 | 未解決があれば記載。なければ「なし」 |
+```
+`.opencode/handoff-artifact.md` を書き換えない。
 
 スプリント判定が **FAIL** の場合は `docs/tasks.json` を変更しない。
 `evaluator-failed` ツールを呼び出し、`.evaluator-failed` マーカーを作成する。

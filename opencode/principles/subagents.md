@@ -158,6 +158,9 @@ Sprint [番号] の評価をしてください。
 PASSの場合は `docs/tasks.json` の該当スプリントの passes を true に更新してください。
 ```
 
+注意：Sprint Contract レビューの承認では `evaluator-passed` を呼ばない（`tasks.json` 不変）。
+完了QAの PASS 確定時のみ呼ぶ。PASS確定時に `docs/build-log.md` に1行だけ追記する。
+
 → 詳細は `.opencode/standards/principles/harness-engineering.md` の Planner・Generator・Evaluator の 3 段階構成を参照。
 
 ---

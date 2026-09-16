@@ -15,15 +15,15 @@ OpenCode Plugin は TypeScript + Bun ランタイムで動作するイベント�
 | `arch-diag.ts` | `tool.execute.after` / `experimental.session.compacting` / `event` | アーキテクチャ変更検知・スキル診断推奨（記入中抑制・変更検知・ENF セッション内1回） |
 | `skill-tracker.ts` | `tool.execute.after` | スキル使用履歴の記録 |
 | `lockfile-record.ts` | `tool.execute.after` | 外部スキルインストール検出・`.opencode/config/skills.lock.yaml` への自動記録 |
-| `harness-health.ts` | `tool.execute.after` / `event` | Context Anxiety 兆候の検知（P0-3 per-session sliding window + TTL cleanup、multiedit 対応。pass 率は `event` 内で `session.idle` を購読） |
+| `harness-health.ts` | `tool.execute.after` / `event` | コード暴走の検知（per-session sliding window + TTL cleanup、multiedit 対応。文書磨きは対象外。pass 率は `event` 内で `session.idle` を購読し、変化または30分経過時のみ通知） |
 | `task-archive.ts` | `event` | 作業ディレクトリの自動アーカイブ提案（全タスク完了時。`event` 内で `session.idle` を購読） |
-| `working-dir-guide.ts` | `tool.execute.before` / `experimental.session.compacting` / `event` | `docs/working/` ファイル Read/Write/Edit 検知時のルール注入 |
-| `evaluator-tools.ts` | `tool`（カスタムツール） | `evaluator-passed` / `evaluator-failed` ツール定義 |
+| `working-dir-guide.ts` | `tool.execute.before` / `experimental.session.compacting` / `event` | `docs/working/` ファイル Read/Write/Edit 検知時のルール注入（同一文面の30秒以内の連続注入は抑止） |
+| `evaluator-tools.ts` | `tool`（カスタムツール） | `evaluator-passed`（完了QAの PASS 確定時のみ。契約承認では呼ばない） / `evaluator-failed` ツール定義 |
 | `compaction-context.ts` | `experimental.session.compacting` | コンパクション時に作業ディレクトリの状態を維持 |
 | `env-check.ts` | `tool.execute.before` / `experimental.session.compacting` / `event` | Python/Node.js 環境パス自動書き換え + `.nvmrc` 不一致警告（セッション内1回） |
 | `rule-injector.ts` | `tool.execute.before` / `experimental.session.compacting` / `event` | ファイル種別・内容に応じてルールファイルの参照を注入（`AGENTS.md` 肥大化防止。規約未読ブロック・mkdir ゲート・tdd ハードゲート付き） |
 | `destructive-op-guard.ts` | `tool.execute.before` | 破壊的Git操作（reset --hard / rebase / push --force / rm -rf 等）のブロック |
-| `commit-review.ts` | `tool.execute.before` | git commit 検出 → 子セッションで @code-reviewer + @security-auditor を並列実行 → 問題あり・監査タイムアウト・両監査とも無言のときはブロック（fail-closed） |
+| `commit-review.ts` | `tool.execute.before` | git commit 検出 → 子セッションで @code-reviewer + @security-auditor を並列実行 → 問題あり・監査タイムアウト・両監査とも無言のときはブロック（fail-closed）。同一コマンド内の `git add <paths> && git commit`・`git commit -a` のステージ補完あり |
 
 ## イベントの種類
 

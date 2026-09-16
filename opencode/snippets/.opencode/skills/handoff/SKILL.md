@@ -8,12 +8,12 @@ description: |
   「サービスを終了したい」「閉鎖する」「廃止する」「アーカイブしたい」
   Make sure to use this skill even when the user does not explicitly say
   "handoff" — any context reset, development pause, or session end qualifies.
-  Also trigger when all OpenCode Todos are completed
-  (the AI knows from its own todowrite tool calls that all Todos are done).
+  Also trigger when a sprint QA passes and docs/tasks.json has no remaining
+  passes:false (count, do not guess from todowrite Todos).
 license: MIT
 compatibility: Designed for OpenCode (and similar agent products that support Agent Skills)
 metadata:
-  template-version: 2.0.0
+  template-version: 3.0.0
   template-status: active
 ---
 
@@ -23,7 +23,8 @@ metadata:
 - セッションをまたいで作業を引き継ぐとき
 - 長期停止・別の人への引き継ぎ前
 - 本番リリース後（状態の記録として）
-- **OpenCode Todo 全完了時**: todowrite ツールで管理中の Todo がすべて完了状態になったとき
+- **スプリント完了QAの PASS 確定後、他に未完了タスクがないとき**:
+  `docs/tasks.json` に `passes: false` が1件もなければ呼び出す。1件でもあれば呼ばず続行する
 
 ## Workflow
 
@@ -31,9 +32,10 @@ metadata:
 
 以下のいずれかに該当する場合のみ以降の手順を実行する：
 - 人間が明示的にセッション終了を指示した（description 記載の trigger 句に合致）
-- 全 OpenCode Todo が完了状態になった
+- スプリント完了QAの PASS 確定後、`docs/tasks.json` の `passes: false` が0件になった（存在しない場合は0件とみなす）
 
 上記以外の場合 → 何もせずに return する（スキルの呼び出しを取り消す）。
+「必要なら」は判断しない。数えて0件なら呼ぶ、1件以上なら呼ばない。
 
 ### 常時実行
 
@@ -96,7 +98,8 @@ metadata:
 
 2. **Build Log に行を追記する**
    `docs/build-log.md` が存在しない場合は作成してから、末尾に新しい行を追記する
-   （追記のみ。既存の行は変更しない。ファイル内の HTML コメントは維持すること）：
+   （追記のみ。既存の行は変更しない。ファイル内の HTML コメントは維持すること。
+   省略禁止。evaluator の行とは別のセッション記録である）：
    ```
    | YYYY-MM-DD | [完了した内容の概要] | [未解決があれば記載。なければ「なし」] |
    ```

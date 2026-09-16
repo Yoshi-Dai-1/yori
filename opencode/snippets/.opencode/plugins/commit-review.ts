@@ -157,6 +157,110 @@ function isGitCommit(cmd: string): boolean {
   return GIT_COMMIT_RE.test(cmd)
 }
 
+// 同一 bash コマンド内の `git add` を逐語で再実行するための抽出。
+// hook は bash 実行前に発火するため、`add && commit` を同コマンドで繋ぐと cached 差分が空に見える。
+// フラグ（`-f` / `--all` 等）やクォートを落とさず逐語で再実行することで、コミット内容を変えずに
+// 差分を可視化する。`commit` セグメント以降の `add` は対象外とする。
+function extractAddSegments(cmd: string): string[] {
+  const commitAt = cmd.search(/\bgit\s+commit\b/)
+  const head = commitAt >= 0 ? cmd.slice(0, commitAt) : ""
+  if (!head.trim()) return []
+  const segments: string[] = []
+  let cur = ""
+  let inSingle = false
+  let inDouble = false
+  let escape = false
+  for (let i = 0; i < head.length; i++) {
+    const c = head[i]
+    if (escape) {
+      cur += c
+      escape = false
+      continue
+    }
+    if (c === "\\" && (inSingle || inDouble)) {
+      escape = true
+      cur += c
+      continue
+    }
+    if (c === "'" && !inDouble) {
+      inSingle = !inSingle
+      cur += c
+      continue
+    }
+    if (c === '"' && !inSingle) {
+      inDouble = !inDouble
+      cur += c
+      continue
+    }
+    if (!inSingle && !inDouble) {
+      if (head.startsWith("&&", i) || head.startsWith("||", i)) {
+        segments.push(cur)
+        cur = ""
+        i += 1
+        continue
+      }
+      if (c === ";") {
+        segments.push(cur)
+        cur = ""
+        continue
+      }
+    }
+    cur += c
+  }
+  if (cur.trim()) segments.push(cur)
+  return segments
+    .map((s) => s.trim())
+    .filter((s) => /^\s*git(?:\s+--[^\s=]+(?:[ =](?:"[^"]*"|'[^']*'|[^\s]+))?|\s+-[A-Za-z]+(?:\s+(?:"[^"]*"|'[^']*'|[^\s]+))?)*\s+add\b/.test(s))
+}
+
+// `git commit -a/--all`（同一コマンド内の commit セグメント）を検出する。
+// `-m` / `--message` 等の値に含まれる `-a` の誤検出を避けるため、値付きオプションを除去してから判定する。
+// 誤検出で `git add -u` を先行すると追跡済み変更までステージしてコミット内容が変わるため厳密に判定する。
+function hasCommitAllFlag(cmd: string): boolean {
+  const idx = cmd.search(/\bgit\s+commit\b/)
+  if (idx < 0) return false
+  let seg = cmd.slice(idx)
+  // commit セグメントのみ（後続の && ; || は除外。クォート外のみで分割）
+  let end = -1
+  let inS = false
+  let inD = false
+  let esc = false
+  for (let i = 0; i < seg.length; i++) {
+    const c = seg[i]
+    if (esc) {
+      esc = false
+      continue
+    }
+    if (c === "\\" && (inS || inD)) {
+      esc = true
+      continue
+    }
+    if (c === "'" && !inD) {
+      inS = !inS
+      continue
+    }
+    if (c === '"' && !inS) {
+      inD = !inD
+      continue
+    }
+    if (!inS && !inD) {
+      if (seg.startsWith("&&", i) || seg.startsWith("||", i) || c === ";") {
+        end = i
+        break
+      }
+    }
+  }
+  if (end >= 0) seg = seg.slice(0, end)
+  // 値付きオプション（-m/-F/-C/--message/--author 等）は値ごと除去してから判定する。
+  // クォート内の `-a` を誤検出しないよう、クォート付き値を先に除去する。
+  let stripped = seg.replace(/\s-m\s+(?:"[^"\\]*"|'[^'\\]*'|[^\s]+)/g, " ")
+  stripped = stripped.replace(/\s--message(?:=|\s+)(?:"[^"\\]*"|'[^'\\]*'|[^\s]+)/g, " ")
+  stripped = stripped.replace(/\s--author(?:=|\s+)(?:"[^"\\]*"|'[^'\\]*'|[^\s]+)/g, " ")
+  stripped = stripped.replace(/\s-[FC]\s+(?:"[^"\\]*"|'[^'\\]*'|[^\s]+)/g, " ")
+  stripped = stripped.replace(/"([^"\\]|\\.)*"|'([^'\\]|\\.)*'/g, "")
+  return /(?:^|\s)-[A-Za-z]*a[A-Za-z]*(?=\s|$)/.test(stripped) || /(?:^|\s)--all(?=\s|$)/.test(stripped)
+}
+
 function hasHookBypass(cmd: string): boolean {
   // -c <値> の値が引用符で囲まれていても判定に残す。バランス型クォート（"a'b" / 'a"b' 等）を
   // 1つの引用とみなすため、二重引用符内のアポストロフィで除去が断裂しない（後段の引用符除去で検出漏れしない）
@@ -644,8 +748,29 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
     const policy = await readPolicy(worktree)
 
     // 1. ステージ済み差分を取得
-    if (/^git\s+add\s+-A\s*&&\s*git\s+commit\b/.test(cmd)) {
-      await $`git add -A`.nothrow().quiet()
+    // 同一コマンド内の `git add ... && git commit` に対応するため、commit より前の
+    // `git add` セグメントを逐語で先にステージする。従来は `git add -A` のみ対応で、
+    // パス指定 add が空差分で素通りしていた（hook は bash 実行前のため）。
+    // 逐語再実行は実コマンドと同一内容のためコミット内容は変えない。
+    // 安定性最優先：ブロック時は index を hook 前に復元し、残留ステージを残さない。
+    let preTree: string | null = null
+    try {
+      const r = await $`git write-tree`.nothrow().quiet()
+      const t = r.text().trim()
+      if (/^[0-9a-f]{40}$/.test(t)) preTree = t
+    } catch {}
+    const addSegments = extractAddSegments(cmd)
+    for (const seg of addSegments) {
+      await Bun.spawn(["bash", "-c", seg], { cwd: worktree }).exited
+    }
+    // `git commit -a/--all` は tracked の変更をコミット時に取込むため、cached だけでは空になる。
+    // 同等の `git add -u` を先行して差分を可視化する（untracked は含めない点も commit -a と同一）。
+    if (hasCommitAllFlag(cmd)) {
+      await $`git add -u`.nothrow().quiet()
+    }
+    const restoreIndex = async () => {
+      if (!preTree) return
+      await $`git read-tree ${preTree}`.nothrow().quiet()
     }
     const diffResult = await $`git diff --cached`.nothrow().quiet()
     const diff = diffResult.text()
@@ -764,6 +889,7 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
       await client.tui.showToast({
         body: { message: "commit-review: 両監査とも無言のためコミットをブロック", variant: "warning" },
       })
+      await restoreIndex()
       throw new Error(
         "[commit-review] コードレビューとセキュリティ監査の両方が結果を返しませんでした（無言）。モデル/環境の状態を確認し、再度コミットしてください。",
       )
@@ -832,6 +958,7 @@ export const CommitReviewPlugin: Plugin = async ({ client, $, worktree }) => ({
         },
       })
 
+      await restoreIndex()
       const reason = hasTimeout
         ? `監査がタイムアウト（上限 ${reviewTimeoutMinutes} 分）したため（${timedOutLabels.join("・")}）`
         : `ブロック対象の指摘（${blockers.length} 件）`

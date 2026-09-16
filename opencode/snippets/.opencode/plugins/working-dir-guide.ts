@@ -6,7 +6,8 @@ import type { Plugin } from "@opencode-ai/plugin"
  * docs/working/ 内ファイルの Read/Write/Edit 検知時にルールを注入する。
  *
  * - Read: 初回のみ注入（セッション内キャッシュでノイズ軽減）
- * - Write/Edit: 毎回注入（常識が陳腐化しないよう最新のルールを保証）
+ * - Write/Edit: 原則毎回注入（常識が陳腐化しないよう最新のルールを保証）。
+ *   ただし同一文面の30秒以内の連続注入は捨てる（複数ファイル連続操作時の連投軽減）。
  *
  * tasks.json の Read も検知し、group フィールドとアーカイブ条件を通知する。
  */
@@ -53,6 +54,11 @@ const TASKS_JSON_RULES = `
 `.trim()
 
 const INJECTED_SESSIONS = new Set<string>()
+// 同一文面の連続注入を抑えるための最終送信時刻（セッションID + 文面種別）。
+// 複数ファイルを続けて触ると同一ルールが連投されるため、短時間の重複は捨てる。
+// ルール自体は `read` 初回・`write/edit` 毎回の原則を変えない（鮮度は保つ）。
+const LAST_INJECT_AT = new Map<string, number>()
+const INJECT_DEDUP_MS = 30 * 1000
 // セッションIDとファイルパスを並べる際の区切り。バックスラッシュゼロはパスに現れない。
 // これを使うことで「ID が前方一致する別セッションのキー」を誤削除しない（例: "S1" が "S12" を巻き込む）。
 const KEY_SEP = "\u0000"
@@ -64,6 +70,11 @@ function resetAfterCompaction(sessionId: string) {
   for (const key of INJECTED_SESSIONS) {
     if (key.startsWith(prefix)) {
       INJECTED_SESSIONS.delete(key)
+    }
+  }
+  for (const key of LAST_INJECT_AT.keys()) {
+    if (key.startsWith(prefix)) {
+      LAST_INJECT_AT.delete(key)
     }
   }
 }
@@ -78,9 +89,10 @@ export const WorkingDirGuidePlugin: Plugin = async ({ client }) => ({
     if (!isWorkingDir && !isTasksJson) return
 
     const sessionId = input.sessionID
+    if (!sessionId) return
     let rules = isTasksJson ? TASKS_JSON_RULES : WORKING_DIR_RULES
 
-    // review-checklist.md の Read 時に FAIL マーカーを検知
+    // review-checklist.md の Read 時に FAIL マーカーを検知（キャッシュより先に判定し、FAIL は隠れない）
     const isReviewChecklist = fp.includes("review-checklist.md")
     if (isReviewChecklist && input.tool === "read") {
       const failed = await Bun.file(".opencode/.evaluator-failed")
@@ -92,13 +104,25 @@ export const WorkingDirGuidePlugin: Plugin = async ({ client }) => ({
       }
     }
 
-    if (input.tool === "read") {
-      const key = sessionId + KEY_SEP + fp
-      if (INJECTED_SESSIONS.has(key)) return
-      INJECTED_SESSIONS.add(key)
+    // FAIL 以外は同一文面の短時間連投を束ねる（連投軽減）。操作別に束ねるため
+    // Read→直後Write の通常手順が抑止されない。FAIL は状態通知のため対象外。
+    if (rules !== FAIL_RULES) {
+      const op = input.tool === "read" ? "read" : "write"
+      const kind = isTasksJson ? `tasks:${op}` : `working:${op}`
+      const dk = sessionId + KEY_SEP + kind
+      const now = Date.now()
+      const last = LAST_INJECT_AT.get(dk)
+      if (last !== undefined && now - last < INJECT_DEDUP_MS) return
+      LAST_INJECT_AT.set(dk, now)
     }
 
-    if (!sessionId) return
+    if (input.tool === "read" && rules !== FAIL_RULES) {
+      const key = sessionId + KEY_SEP + fp
+      if (INJECTED_SESSIONS.has(key)) {
+        // 束ねで抑止された場合は登録していないため、ここは純粋な二回目 Read の抑止
+        return
+      }
+    }
     await client.session.prompt({
       path: { id: sessionId },
       body: {
@@ -106,6 +130,9 @@ export const WorkingDirGuidePlugin: Plugin = async ({ client }) => ({
         parts: [{ type: "text", text: rules }],
       },
     })
+    if (input.tool === "read" && rules !== FAIL_RULES) {
+      INJECTED_SESSIONS.add(sessionId + KEY_SEP + fp)
+    }
   },
   // コンパクション検知：Read 初回注入キャッシュをリセット（記憶喪失後の再注入を可能にする）
   "experimental.session.compacting": async (input) => {

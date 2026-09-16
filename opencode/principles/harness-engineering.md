@@ -177,7 +177,7 @@ Planner がスプリント計画と同時に生成する機能追跡ファイル
 機械的に保護される。
 
 - **ブロック対象**: 実装エージェントが誤って `passes: true` を設定する操作
-- **許可条件**: `.opencode/.evaluator-updating` マーカーファイルが存在する場合のみ
+- **許可条件**: `.opencode/.evaluator-updating` マーカーファイルが存在し内容が空でない場合のみ（空ファイル残留では通らない）
 - **評価エージェントの責務**: `PASS` 判定後、マーカー作成 → `passes` 更新 → マーカー削除の順に実行
 - **詳細**: `.opencode/plugins/tasks-guard.ts` と
   `.opencode/agents/evaluator.md` の「PASS後の後処理」セクションを参照
@@ -376,8 +376,8 @@ npm（JavaScript/TypeScript）、pip（Python）、cargo（Rust）、gomod（Go�
 - `codecheck.yml.template`: リント・型チェック・ls-lint を PR 作成時に実行
 - `monthly-diagnosis.yml.template`: 月次診断（フルテストスイート + Knip + 脆弱性スキャン）
 
-**Strategy C**: 常時上書き（`setup-harness.sh` 650-660行目）
-`.template` サフィックスを外してコピー。プロジェクトは独自のワークフローファイルを作成し、テンプレートを直接編集しない。
+**Strategy A**: 上書き保護（`setup-harness.sh` 650-660行目）
+`if [ ! -f ]` で存在しない場合のみコピー。既存プロジェクトのブランチ等のカスタムを上書きしない。プロジェクトは独自のワークフローファイルを作成し、テンプレートを直接編集しない。
 
 ---
 
@@ -413,8 +413,15 @@ Compaction ではなく Context Reset を選ぶ。
 
 長時間タスクでコンテキストが肥大化したとき（Context Anxiety の兆候が見られる場合）：
 
-handoff スキルが自動生成した `.opencode/handoff-artifact.md` を、
+handoff スキルが生成した `.opencode/handoff-artifact.md` を、
 新しいセッションの Session Protocol step 1 が自動読取する。
+
+記録の分担：`docs/build-log.md` への追記は evaluator（スプリントQA確定時に1行）と
+handoff スキル（実行時に1行）が行う。既存行の変更・削除はしない。
+`.opencode/handoff-artifact.md` の上書きは handoff スキルのみが行う。
+Sprint 境界では handoff を呼ばない場合も `.opencode/project-context.md` を必ず更新する。
+Sprint完了を契機に handoff を呼ぶ条件は「スプリント完了QAの PASS 確定後、`docs/tasks.json` の
+`passes: false` が0件」のときのみ（リリース等は別条件で呼ぶ）。
 
 ```markdown
 # `.opencode/handoff-artifact.md` の内容

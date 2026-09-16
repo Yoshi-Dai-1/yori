@@ -617,3 +617,70 @@
 - ユーザー指示により `git reset --soft HEAD~1` で 5083934 を取り消し（作業ツリー・ステージ不変、37ファイルステージ済み・HEAD=5b68eed）
 - `docs/review-log.md` は**削除**（推奨結論）: 全レコードが `status: 警告` でゲート状態の損失ゼロ・修正前コードの行番号参照・生成済み状態ファイル（prettierignore 登録済み）。次回コミットで監査が自動再生成
 - 次の流れ: ユーザーがテストプロジェクトの AI エージェントへ再コミット指示 → 修正版プラグインで再審査され、review-log.md が再生成される
+
+## テストPJ動作検証の根本修正バッチ（2026-09-14 実施・未コミット）
+
+### 背景（nintei-chosa-form-assistant Sprint1-3 の DB 実測で確定）
+- コミット監査の抜け：9/12 の AI 実行 6 コミット中 5 件が無監査で成立。根本原因は hook が bash 実行前に発火するため、同一コマンド内の `git add <paths> && git commit` が cached 空差分で素通りしていた（従来は `git add -A` のみ補完）。pre-commit フックのみ通過
+- harness-health 量検知（10分20回）は Sprint 期間に発火ゼロ、ループ検知 3 回は全て人間主導の文書磨きの誤検知。noReply 63 件が窓を汚染
+- pass 率警告はアイドル毎に 20 回以上連投（2/7 固定内容）。母数が全体のため Sprint 直後は必ず警告になる
+- working-dir ルールは同一文面が 12:29 に 6 連投（複数ファイル連続操作のため）
+- Sprint3 契約再レビューが `evaluator-passed sprint:3` で早期 flip し完了 QA を非ゲート化（tool 説明「PASS 時」の曖昧さが根本）
+- build-log / handoff 凍結の根本は責任の孤児化（template「両方が追記」vs evaluator 手順なし vs handoff 終了時のみ）
+- `[重要度: ?]` は審査役違反ではなく Plugin の severityNeutral 中和（ADR 006 の意図的処理）。重複 `問題：` は欄混線（検証方法欄に問題文混入）＋原文連結が根本
+
+### 変更ファイル（yori 本体 14 件・コミットは指示待ち）
+- `snippets/.opencode/plugins/commit-review.ts`：extractAddPaths（同一コマンド内 add 補完）＋ hasCommitAllFlag（commit -a は add -u 先行・クォート内誤検出防止）
+- `snippets/.opencode/plugins/harness-health.ts`：量検知撤去（トースト含む）・ループはコードのみ（md/working/references 除外）・pass 率は変化または30分経過時のみ＋deleted 清掃
+- `snippets/.opencode/plugins/working-dir-guide.ts`：同一文面30秒 dedup（FAIL 除外）＋ compaction/deleted 清掃
+- `snippets/.opencode/plugins/evaluator-tools.ts`：完了QAのみ・契約承認では呼ばないを明記
+- `snippets/agents/subagents/evaluator.md`：契約承認は spec のみ・完了QAで build-log 1行追記（日記は evaluator・写真は handoff の SSoT 明記）
+- `snippets/agents/subagents/code-reviewer.md` / `security-auditor.md`：欄混線禁止の1行追加（Plugin 中和は維持）
+- `snippets/.opencode/skills/handoff/SKILL.md`：発動条件を無曖昧化（QA PASS 後 passes:false を数えて0件なら呼ぶ・1件以上なら呼ばない。「必要なら」撤去）
+- `snippets/.opencode/usage/rule-hits.md`：表紙を手動・月次用に修正
+- `snippets/.opencode/usage/skill-usage.md`：月次手順の重複を monthly-diagnosis へ一本化（記録データのみ保持）
+- `snippets/docs/build-log.md.template` / `principles/harness-engineering.md` / `principles/subagents.md` / `snippets/.opencode/plugins/README.md`：上記の文書同期
+
+### 検証
+- `bunx --bun tsc --noEmit --strict --skipLibCheck --types bun plugins/*.ts` → TSC_ALL_EXIT=0
+- extractAddPaths / hasCommitAllFlag の bun 単体検証 PASS（-A/パス指定/引用/メッセージ内 -a の誤検出なし。`--amend` は非 staging のため false が正解）
+- LOOP_SKIP_RE 検証 PASS（md/working/references 除外・tasks.json とコードは対象維持）
+- コミットは未実施（AGENTS.md により人間の明示指示時のみ）
+
+### 追補（2026-09-14・全件検証で発覚した tasks-guard 無効化バグ）
+- 根本原因：evaluator-tools が使用後にマーカーへ空書き込み（`Bun.write(path, "")`）し、tasks-guard が存在判定（`then(() => true)`）だったため、初回 PASS 以降ガードが恒久無効化されていた。テストPJでは 9/10 12:30 の初回 PASS から手動 `rm`（9/12 17:00）まで穴が開いていた（悪用形跡なし）
+- 修正：tasks-guard は内容非空を有効条件に（空残留でも自己治癒）、evaluator-tools は削除（`rm force`）に変更。`harness-engineering.md:180` の許可条件も同期。bun 実測で absent/empty/active/rm後の4状態を検証 PASS、tsc 全 PASS
+
+### 追補2（2026-09-14・8問検証と表現の具体化）
+- 比喩（日記/写真）を全4箇所から除去し動作記述に置換：`build-log.md.template`（追記する人・禁止3項）、`evaluator.md`（handoff-artifact には触れない）、handoff SKILL（手順2省略禁止）、`harness-engineering.md`（記録の分担）。Q1最小性：読否で判断が変わる行のみ残し、plugins README の歴史 fragment（量検知は撤去）を削除
+- agentskills.io 照合：handoff は name=dir 一致・description 514/1024・compatibility 76/500 で準拠。本文は無制限のため evaluator 言及も準拠。metadata は任意 map のため template-version 据置（内容変更で bump した前例なし）
+- OpenCode 公式照合：`event(session.idle)` は公式 example と同型、`tool.execute.before/after`＋throw、`tool` カスタムツール、`experimental.session.compacting`、`$`/`client`/`worktree` は文書通り。Plugin は単一関数 export を維持
+- 参照パス照合：追加した全パスは展開後フルパス＋バッククォート（file-reference-convention 準拠）。`docs/tasks.json` は planner 生成だが handoff 発動時点で存在する前提で正当
+- 5件 README：root 2件は概要のみで言及なし・opencode 2件は構成一覧のみで行為記述なし→変更不要。plugins README は同期済み
+- コミット監査の残存抜け道：人間ターミナル実行（設計通り・pre-commit が秘密のみ保護）、`--allow-empty`（監査対象なし）、バイパス系は全てブロック。品質劣化なし（監査対象は bash 実行内容と同一）
+
+### 追補3（2026-09-14・4問検証と主体表現の修正）
+- 「追記する人」→「追記：」に修正（build-log.md.template）。evaluator・スキルは人ではなく、主体誤認のため
+- evaluator.md は「handoff-artifact.md を書き換えない。」に確定。evaluator は同ファイルを読む設計ではないため「読み取りは可」の但し書きを削除（不要な概念の導入だった）
+- handoff SKILL の project-context 行を削除。更新義務は AGENTS.md step 7＋harness-engineering.md に既存し、実測でも指示なしで実行されていたためスキル内の重複だった。手順2の省略禁止行は維持（自手順の防御であり、読否で省略判断が変わるため）
+- version：agentskills.io に version 規定なし・template-version の参照元コードなし（宣言のみ）・内容変更で bump した前例なし。変更の版は yori リリース version＋skills.lock.yaml の yori_version が担うため据置
+
+### 追補4（2026-09-14・handoff 3.0.0）
+- 前回「据置」とした判断を撤回。template-version はコード参照なし・bump 前例なしだが、存在目的（動作変更の追跡）に照らせば今回の発動条件書換えは bump 対象。発動契約の非互換変更のため major として 2.0.0 → 3.0.0
+- 運用：発動条件・手順の非互換変更=major、後方互換の改善=minor、誤字修正は据置。版の正本は yori リリース version＋skills.lock.yaml の yori_version が担い、template-version はスキル単体の世代表示
+
+### 追補5（2026-09-14・evaluator 権限の実測と手順2注記の局在化）
+- DB 実測：Sprint1-3 の evaluator 子 27 件すべて edit=0・write=0。唯一の書き込みは evaluator-passed 経由の tasks.json 更新。契約承認の spec.md 承認欄書換えも未実行（口頭承認のみ）。権限定義の edit 許可は verified（定義読取）だが行使はゼロのため、handoff-artifact 禁止は権限ある経路の予防として維持
+- 手順2注記を 実行判断 から手順2本文へ移動（独立した注意書きが手順2へ注意を集中させる余地を除去。局在化により手順1優位は構造で担保）
+
+### 追補6（2026-09-14・全ステージ監査と適用可否の確定）
+- 監査で skill-usage 手順移管の欠落を検出（積極使用 tier・スキル化提案が行き場なし）→ monthly-diagnosis のスキルGCレポートへ補完し単一正本化。相互参照は手順→正本・正本→データの一方向で循環なし
+- handoff 実行判断に tasks.json 不存在時の決定論（0件とみなす）を追加。QA パス経路では存在が自明だが判断枝を残さない
+- テストPJ適用可否（setup-harness.sh 実測）：自動反映＝plugins 5件・agents 3件・skills（handoff・monthly-diagnosis 含む非stub）。手動コピー要＝usage 2件（保護）・standards 2件（merge保護）・既存 docs/build-log.md（保護。template は新規のみ）。データ起因（凍結履歴・tasks-sprint4-8.json 重複・旧group名・旧 review-log 行）はコード修正の対象外
+- ARCHITECTURE.md の開発プロセス／コミット実行の参照先は実在確認済み（ダングリング疑いは解消）
+
+### 追補7（2026-09-14・安定性最優先の add 逐語＋W1/W2 完全解消）
+- add 逐語：安定性最優先では逐語は意図しないファイルを含めない（同一内容のため）。危険は `commit -a` の `add -u` 先行の誤検出のみ。クォート内の `-a`・`-m` 値・`--author=`・`&&` 等を区別する厳密判定＋フラグ保持の逐語再実行＋`write-tree`/`read-tree` によるブロック時 index 復元で残留ゼロに
+- hasCommitAllFlag を値付きオプション（-m/--message/--author/-F/-C）をクォート付きで除去してから判定するよう全面書換え。`git commit -m "fix" --all` の誤消費を解消。抽出はクォート外でのみ `&&`/`;`/`||` 分割し、`git -C` 等のフラグ付き `add` も逐語対象に
+- W1/W2：毎回注入の約束は回復しつつ連投も解消される。操作別（read/write）で30秒束ね、束ね時は登録しないため恒久喪失なし。FAIL は束ね・キャッシュ対象外で隠れない。cache 登録を prompt 成功後に移動
+- harness-health：passAlertState の TTL 掃除と sessionStats の deleted 清掃を追加。evaluator-tools は try/finally で例外時もマーカー削除を保証

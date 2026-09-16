@@ -32,11 +32,14 @@ export const TasksGuardPlugin: Plugin = async () => ({
     const fp = output.args.filePath || output.args.path || ""
     if (!fp.includes("tasks.json")) return
 
-    const markerExists = await Bun.file(".opencode/.evaluator-updating")
+    // マーカーは内容が空でないときのみ有効とする。evaluator-tools は使用後に
+    // ファイルを削除するが、空ファイルが残留してもガードが恒久無効化されないための防御。
+    // （空書き込みで存在判定していた旧実装では、初回 PASS 以降ガードが死んでいた）
+    const markerActive = await Bun.file(".opencode/.evaluator-updating")
       .text()
-      .then(() => true)
+      .then((t) => t.trim().length > 0)
       .catch(() => false)
-    if (markerExists) return
+    if (markerActive) return
 
     const existingContent = await Bun.file(fp)
       .text()
